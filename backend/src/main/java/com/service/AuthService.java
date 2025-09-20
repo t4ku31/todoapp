@@ -3,8 +3,7 @@ package com.service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
-
-import com.config.AppConfigurationProperties;
+import org.springframework.beans.factory.annotation.Value;
 import com.dto.AuthResponse;
 import com.model.User;
 import com.repository.UserRepository;
@@ -19,7 +18,6 @@ public class AuthService {
 
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
-    private final AppConfigurationProperties properties;
     private final JwtUtils jwtUtils;
 
     private static final Logger logger = Logger.getLogger(AuthService.class.getName());
@@ -27,11 +25,9 @@ public class AuthService {
     public AuthService(
             PasswordEncoder passwordEncoder,
             UserRepository userRepository,
-            AppConfigurationProperties properties,
             JwtUtils jwtUtils) {
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
-        this.properties = properties;
         this.jwtUtils = jwtUtils;
     }
 
@@ -48,11 +44,9 @@ public class AuthService {
             // JWT key and token generation
             String subject = user.getId().toString();
             String audience = user.getEmail().toString();
-            SecretKey secretKey = jwtUtils.generateSecretKey(properties.getJwt().getSecret());
-            String token = jwtUtils.generateToken(subject, audience, properties.getJwt().getExpiresIn(), secretKey);
+            String token = jwtUtils.generateToken(subject, audience);
 
             return AuthResponse.builder()
-                    .email(user.getEmail())
                     .token(token)
                     .build();
         }
@@ -69,14 +63,14 @@ public class AuthService {
         if (savedUser != null) {
             String subject = savedUser.getId().toString();
             String audience = savedUser.getEmail().toString();
-            SecretKey secretKey = jwtUtils.generateSecretKey(properties.getJwt().getSecret());
-            String token = jwtUtils.generateToken(subject, audience, properties.getJwt().getExpiresIn(), secretKey);
+
+            String token = jwtUtils.generateToken(subject, audience);
 
             return AuthResponse.builder()
-                    .email(user.getEmail())
                     .token(token)
                     .build();
         }
         return null;
     }
+
 }

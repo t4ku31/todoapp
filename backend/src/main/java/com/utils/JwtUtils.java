@@ -15,11 +15,24 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
+import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
 public class JwtUtils {
+    private final String issuer;
+    private final int expires;
+    private final SecretKey jwtSecretKey;
+
+    public JwtUtils(SecretKey jwtSecretKey,
+            @Value("${com.group.project.jwt.issuer}") String issuer,
+            @Value("${com.group.project.jwt.expires}") int expires) {
+        this.jwtSecretKey = jwtSecretKey;
+        this.issuer = issuer;
+        this.expires = expires;
+    }
 
     // 鍵でjwtを検証
     public Claims getPayload(String jwt, SecretKey secretKey) {
@@ -43,18 +56,18 @@ public class JwtUtils {
     }
 
     // jwt本体を生成
-    public String generateToken(String subject, String audience, int expiresIn,
-            SecretKey secretKey) {
-        validateInputs(subject, audience, secretKey);
+    public String generateToken(String subject, String audience) {
+        validateInputs(subject, audience, jwtSecretKey);
 
         Date issuedAt = new Date();
-        Date expiration = new Date(issuedAt.getTime() + expiresIn * 1000L);
+        Date expiration = new Date(issuedAt.getTime() + expires * 1000L);
 
         log.debug("Generating JWT token for subject: {}, audience: {}, issuedAt: {}, expiresIn: {} seconds",
-                subject, audience, issuedAt, expiresIn);
+                subject, audience, issuedAt, expires);
 
         return Jwts.builder()
                 .subject(subject)
+                .setIssuer(issuer)
                 .id(UUID.randomUUID().toString())
                 .audience()
                 .add(audience)
@@ -62,7 +75,7 @@ public class JwtUtils {
                 .issuedAt(issuedAt)
                 .notBefore(issuedAt)
                 .expiration(expiration)
-                .signWith(secretKey)
+                .signWith(SignatureAlgorithm.HS256, jwtSecretKey)
                 .compact();
     }
 
@@ -71,6 +84,7 @@ public class JwtUtils {
         if (Objects.isNull(signingKey) || signingKey.trim().isEmpty()) {
             throw new IllegalArgumentException("Authentication signing key is missing.");
         }
+        // このバイト列はこのアルゴリズム用の秘密鍵であることを明示する
         return Keys.hmacShaKeyFor(signingKey.getBytes(StandardCharsets.UTF_8));
     }
 
