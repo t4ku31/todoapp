@@ -1,2 +1,0 @@
-2025-09-09T00:10:17.924Z DEBUG 78 --- [app1] [http-nio-8080-exec-1] com.controller.AuthController            : authcontroller signup - email: user4@email.com, password: password
-2025-09-09T00:10:17.930Z  INFO 78 --- [app1] [http-nio-8080-exec-1] com.service.AuthService                  : Signup started for email: user4@email.com
