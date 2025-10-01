@@ -15,17 +15,27 @@ spring:
 
 logging:
   level:
-    org.springframework.security: TRACE
-    com.example.app1: DEBUG
+    root: ERROR
+    com.service.AuthService: DEBUG
+    com.controller.AuthController: DEBUG
+    com.utils.JwtUtils: DEBUG
+    com.utils.JwtConfig: INFOd
+
   file:
-    name: /home/takumi/todo-app/backend/logs/app1.log
+    name: /app/logs/app1.log
+  logback:
+    rollingpolicy:
+      file-name-pattern: /app/logs/app1.%d{yyyy-MM-dd}.%i.log
+      max-file-size: 10MB
+      max-history: 30
+      total-size-cap: 1GB
 
 
 com:
   group:
     project:
       jwt:
-        secret: X/ssIXQSQI1RVHLN1AZ8AcK4EkB0oJSEYwZK1K//okAaCFI9SZZ0UzeHNmVAbJeLVbFkzJdBtBI4A+TkzPe+7w==
+        secret: ++36xfSobeiERWDtfXGvtF1MTkxHITOKR0R8j/8OsTs=
         issuer: ${OAUTH2_ISSUER_URI:http://localhost:8080}
         expires: 900
       cookie:
