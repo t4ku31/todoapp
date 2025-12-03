@@ -6,6 +6,6 @@ RUN mvn clean package -DskipTests
 
 # === run stage ===
 FROM eclipse-temurin:17-jdk
-WORKDIR /app
+RUN mkdir -p /app/logs
 COPY --from=builder /app/target/bff-server.jar /app/app.jar
 CMD ["java", "-jar", "/app/app.jar"]
