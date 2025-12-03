@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: app1
+
+  datasource:
+    url: jdbc:mysql://db:3306/todoapp?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Tokyo
+    username: root
+    password: secret
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+      
+  flyway:
+    enabled: false
+    locations: classpath:db/migration
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://dev-1jp2ogye74qnxdfh.jp.auth0.com/
+          jws-algorithms: RS256
+          jwk-set-uri: https://dev-1jp2ogye74qnxdfh.jp.auth0.com/.well-known/jwks.json
+          audiences: todo-app-api # Auth0で作成するAPIのIdentifierに合わせてください
+       
+
+logging:
+  level:
+    root: INFO
+    com.example.app1.controller: DEBUG  # TRACE → DEBUG に変更（情報量調整）
+    com.example.app1.service: DEBUG
+    org.springframework.security: DEBUG  # TRACE → DEBUG に変更
+    org.springframework.security.oauth2: DEBUG
+    com.example.app1: DEBUG
+  file:
+    name: /home/takumi/todo-app/backend/logs/app1.log
+
+
+app:
+  security:
+    jwk:
+      private-key: 
+      public-key:
+      key-id:
+# com:
+#   group:
+#     project:
+#       jwt:
+#         secret: X/ssIXQSQI1RVHLN1AZ8AcK4EkB0oJSEYwZK1K//okAaCFI9SZZ0UzeHNmVAbJeLVbFkzJdBtBI4A+TkzPe+7w==
+#         issuer: ${OAUTH2_ISSUER_URI:http://localhost:8080}
+#         expires: 900
+#       cookie:
+#         name: accessToken
+#         expires: 86400

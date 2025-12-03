@@ -1,6 +1,5 @@
-import { AppSidebar } from "./app-sidebar";
-import { Menu } from "lucide-react";
 import { useState } from "react";
+import { AppSidebar } from "./app-sidebar";
 
 export default function SidebarLayout() {
     const [open, setOpen] = useState(false);

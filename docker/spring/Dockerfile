@@ -1,7 +1,20 @@
-# 開発用
-FROM maven:3.9.6-eclipse-temurin-17
+# # 開発用
+# FROM maven:3.9.6-eclipse-temurin-17
 
+# WORKDIR /app
+
+# # ボリュームで /app にソースが入る前提で、Maven で起動
+# CMD ["mvn", "spring-boot:run"]
+
+# Stage 1: Build
+FROM maven:3.9.3-eclipse-temurin-17 AS build
 WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests
 
-# ボリュームで /app にソースが入る前提で、Maven で起動
-CMD ["mvn", "spring-boot:run"]
+# Stage 2: Run
+FROM eclipse-temurin:17-jdk-alpine
+WORKDIR /app
+COPY --from=build /app/target/demo-1.0-SNAPSHOT.jar app.jar
+ENTRYPOINT ["java","-jar","app.jar"]

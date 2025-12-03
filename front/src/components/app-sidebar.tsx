@@ -1,8 +1,8 @@
-import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar"
-import { LogOut, CheckSquare, } from "lucide-react"
-import { Link } from "react-router-dom"
-import Logo from "@/components/common/Logo"
+import Logo from "@/components/common/Logo";
+import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { CheckSquare, LogOut, } from "lucide-react";
+import { Link } from "react-router-dom";
 
 type AppSidebarProps = React.HTMLAttributes<HTMLDivElement>;
 export function AppSidebar({ className, ...props }: AppSidebarProps) {
@@ -25,11 +25,25 @@ export function AppSidebar({ className, ...props }: AppSidebarProps) {
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton asChild>
-                            <Link to="/todo/settings">
-
-                                <LogOut />
-                                <span>logout</span>
+                            <Link to="/debug">
+                                <CheckSquare className="h-4 w-4" />
+                                <span>Debug</span>
                             </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild>
+                            <a href="/bff/logout" onClick={(e) => {
+                                e.preventDefault();
+                                const form = document.createElement('form');
+                                form.method = 'POST';
+                                form.action = '/bff/logout';
+                                document.body.appendChild(form);
+                                form.submit();
+                            }}>
+                                <LogOut />
+                                <span>Logout</span>
+                            </a>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>

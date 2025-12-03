@@ -1,12 +1,12 @@
 # docker-compose.yml
 services:
+  # mysql
   db:
-    container_name: mysql-db
     image: mysql:8.0
+    container_name: db
     environment:
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_DATABASE: todoapp
-    restart: unless-stopped
     ports:
       - "3306:3306"
     volumes:
@@ -16,43 +16,108 @@ services:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       timeout: 20s
       retries: 10
+    networks:
+      - app-net
 
+  # flyway
   flyway:
-    container_name: flyway
     build:
       context: ./docker/flyway
       dockerfile: Dockerfile
     volumes:
-      - ./backend/src/main/resources/db/sql:/flyway/sql
+      - ./docker/flyway/db:/flyway/db
+      - ./docker/flyway/sql:/flyway/sql
+      - ./docker/flyway/conf:/flyway/conf
     depends_on:
       db:
         condition: service_healthy
-    environment:
-      FLYWAY_URL: jdbc:mysql://db:3306/todoapp
-      FLYWAY_USER: root
-      FLYWAY_PASSWORD: secret
     command: -connectRetries=60 migrate
-  backend:
-    container_name: spring-app
+    networks:
+      - app-net
+  nginx:
+    image: nginx:latest
+    container_name: todo_nginx
+    ports:
+      - "443:443"
+    volumes:
+      # React ビルド成果物を Nginx の公開ディレクトリにマウント
+      - ./front/dist:/usr/share/nginx/html
+
+      # Nginx 設定ファイ
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+
+      # SSL 証明書
+      - ./docker/nginx/certs/localhost.crt:/etc/ssl/certs/nginx.crt
+      - ./docker/nginx/certs/localhost.key:/etc/ssl/private/nginx.key
+    restart: unless-stopped
+    depends_on:
+      bff-server:
+        condition: service_started # BFFのコンテナが起動するのを待
+      front-server:
+        condition: service_started
+    networks:
+      - app-net
+  resource-server:
+    container_name: resource-server
     build:
-      context: ./docker/spring
+      context: ./servlet/resource
       dockerfile: Dockerfile
     depends_on:
       flyway:
         condition: service_completed_successfully
-    volumes:
-      - ./backend:/app
-      - /home/takumi/todo-app/backend/logs:/app/logs
     ports:
       - "8080:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/todoapp
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: secret
-    working_dir: /app
+    networks:
+      - app-net
 
-  frontend:
-    container_name: react-app
+  bff-server:
+    container_name: bff-server
+    build:
+      context: ./servlet/bff
+      dockerfile: Dockerfile
+    depends_on:
+      flyway:
+        condition: service_completed_successfully
+    ports:
+      - "7070:7070"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/todoapp
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: secret
+      ISSUER_URI: http://auth-server:9000
+    networks:
+      - app-net
+
+  auth-server:
+    container_name: auth-server
+    build:
+      context: ./servlet/authorization
+      dockerfile: Dockerfile
+    depends_on:
+      flyway:
+        condition: service_completed_successfully
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./servlet/authorization:/app
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/todoapp
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: secret
+      ISSUER_URI: http://auth-server:9000
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/actuator/health" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - app-net
+
+  front-server:
     image: node:20
     working_dir: /app
     command: sh -c "npm ci && npm run dev -- --host"
@@ -64,7 +129,16 @@ services:
     stdin_open: true
     tty: true
     restart: unless-stopped
+    networks:
+      - app-net
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
 
 volumes:
   mysql_data:
-    driver: local
+
+
+networks:
+  app-net:
+    driver: bridge
