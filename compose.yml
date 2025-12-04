@@ -88,32 +88,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/todoapp
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: secret
-      ISSUER_URI: http://auth-server:9000
-    networks:
-      - app-net
 
-  auth-server:
-    container_name: auth-server
-    build:
-      context: ./servlet/authorization
-      dockerfile: Dockerfile
-    depends_on:
-      flyway:
-        condition: service_completed_successfully
-    ports:
-      - "9000:9000"
-    volumes:
-      - ./servlet/authorization:/app
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/todoapp
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: secret
-      ISSUER_URI: http://auth-server:9000
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9000/actuator/health" ]
-      interval: 10s
-      timeout: 3s
-      retries: 5
     networks:
       - app-net
 
