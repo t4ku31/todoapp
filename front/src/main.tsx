@@ -7,16 +7,14 @@ import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-d
 import './index.css'
 import Debug from './pages/debug/index'
 import Login from './pages/login/index'
-import Signin from './pages/signin/index'
-import Signup from './pages/signup/index'
+
 import Todo from './pages/todo/index'
 
 function App() {
   return (
     <Router basename="/front">
       <Routes>
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/signin" element={<Signin />} />
+
         <Route path="/auth" element={<Login />} />
         <Route path="/todo" element={
           <SidebarProvider>
@@ -42,7 +40,7 @@ function App() {
             </div>
           </SidebarProvider>
         } />
-        <Route path="/" element={<Navigate to="/signin" replace />} />
+        <Route path="/" element={<Navigate to="/auth" replace />} />
       </Routes>
     </Router >
   )

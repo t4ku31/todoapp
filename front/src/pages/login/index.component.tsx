@@ -19,7 +19,6 @@ export default function LoginPage() {
 
                             <Button
                                 onClick={handleLogin}
-                                variant="sign"
                                 className="w-full"
                             >
                                 Send GET Request to /login
