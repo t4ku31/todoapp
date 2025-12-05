@@ -23,9 +23,6 @@ server:
       resourceserver:
         jwt:
           issuer-uri: https://dev-1jp2ogye74qnxdfh.jp.auth0.com/
-          jws-algorithms: RS256
-          jwk-set-uri: https://dev-1jp2ogye74qnxdfh.jp.auth0.com/.well-known/jwks.json
-          audiences: todo-app-api # Auth0で作成するAPIのIdentifierに合わせてください
        
 
 logging:
