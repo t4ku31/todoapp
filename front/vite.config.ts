@@ -5,7 +5,7 @@ import { defineConfig } from 'vite'
 
 // 簡単な proxy 設定例
 export default defineConfig({
-  base: '/front/',
+  //   base: '/front/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

@@ -12,7 +12,7 @@ import Todo from './pages/todo/index'
 
 function App() {
   return (
-    <Router basename="/front">
+    <Router>
       <Routes>
 
         <Route path="/auth" element={<Login />} />
