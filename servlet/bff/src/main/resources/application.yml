@@ -1,26 +1,5 @@
-# spring:
-#   security:
-#     oauth2:
-#       client:
-#         registration:
-#             user-client:
-#               client-id: user-client-id
-#               authorization-grant-type: authorization_code
-#               client-authentication-method: private_key_jwt
-#               redirect-uri: "http://local-host:8080/login/oauth2/code/{registrationId}"
-#               scope: openid, profile
-#               provider: okta
-#         provider:
-#           okta:
-#             issuer-uri: http://auth-server:9000
-
-
-#   server:
-#     forward-headers-strategy: framework
-
-
-    # BFF側 (bff-server:8080)
 server:
+  address: 0.0.0.0
   port: 7070
   forward-headers-strategy: FRAMEWORK
 
@@ -36,10 +15,10 @@ spring:
         registration:
           bff-client:
             provider: auth0
-            client-id: NoffZG4GJCOTbDiyU9byXt48vTCH2nen
-            client-secret: C_XPDRidYdVpMxyUo46T1UuoPaw_JoemCjc4TY_ZjQvN91WBPWnQYayzHCENm3no
+            client-id: ${OAUTH2_CLIENT_ID:NoffZG4GJCOTbDiyU9byXt48vTCH2nen}
+            client-secret: ${OAUTH2_CLIENT_SECRET:C_XPDRidYdVpMxyUo46T1UuoPaw_JoemCjc4TY_ZjQvN91WBPWnQYayzHCENm3no}
             authorization-grant-type: authorization_code
-            redirect-uri: "https://localhost/bff/login/oauth2/code/bff-client"
+            redirect-uri: "${APP_BASE_URL:https://localhost}/bff/login/oauth2/code/bff-client"
             scope:
               - openid
               - profile
@@ -55,5 +34,6 @@ logging:
     org.springframework.security.oauth2.client: TRACE
 
 app:
+  base-url: ${APP_BASE_URL:https://localhost}
   resource-server:
-    url: http://resource-server:8080
+    url: ${RESOURCE_SERVER_URL:http://resource-server:8080}

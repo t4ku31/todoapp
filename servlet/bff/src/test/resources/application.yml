@@ -23,5 +23,6 @@ spring:
           test-provider:
             issuer-uri: https://dev-1jp2ogye74qnxdfh.jp.auth0.com/ # Using real issuer to avoid mocking discovery for now, or mock it?
 app:
+  base-url: http://localhost:7070
   resource-server:
     url: http://localhost:8080

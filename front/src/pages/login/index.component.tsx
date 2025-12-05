@@ -1,11 +1,12 @@
 import Logo from '@/components/common/Logo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from "@/components/ui/card";
+import { env } from '@/config/env'; 
 
 export default function LoginPage() {
 
     const handleLogin = async () => {
-        window.location.href = 'https://localhost/bff/oauth2/authorization/bff-client';
+        window.location.href = `${env.bffApiBaseUrl}/oauth2/authorization/bff-client`;
     }
 
     return (

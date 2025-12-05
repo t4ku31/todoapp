@@ -15,6 +15,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 public class CorsConfig {
 
+    @org.springframework.beans.factory.annotation.Value("${app.base-url}")
+    private String appBaseUrl;
+
     /**
      * Configure CORS to allow requests from BFF Server.
      * This is necessary because BFF and Resource Server are on different hosts
@@ -27,7 +30,7 @@ public class CorsConfig {
         // Allow BFF Server origin (Docker internal network)
         config.setAllowedOrigins(List.of(
                 "http://bff-server:7070",
-                "https://localhost" // For Nginx-proxied requests
+                appBaseUrl // For Nginx-proxied requests or production
         ));
 
         // Allow common HTTP methods

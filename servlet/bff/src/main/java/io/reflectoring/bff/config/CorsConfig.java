@@ -2,6 +2,7 @@ package io.reflectoring.bff.config;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -14,6 +15,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 public class CorsConfig {
 
+    @Value("${app.base-url}")
+    private String appBaseUrl;
+
     /**
      * Configure CORS to allow requests from frontend through Nginx.
      * Since Nginx proxies all requests under https://localhost,
@@ -24,7 +28,7 @@ public class CorsConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         // Allow frontend origin (Nginx-proxied)
-        config.setAllowedOrigins(List.of("https://localhost"));
+        config.setAllowedOrigins(List.of(appBaseUrl));
 
         // Allow common HTTP methods
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));

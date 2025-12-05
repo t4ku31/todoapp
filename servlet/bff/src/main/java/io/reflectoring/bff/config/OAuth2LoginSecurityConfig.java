@@ -24,6 +24,9 @@ import org.springframework.security.web.session.HttpSessionEventPublisher;
 @EnableWebSecurity
 public class OAuth2LoginSecurityConfig {
 
+        @org.springframework.beans.factory.annotation.Value("${app.base-url}")
+        private String appBaseUrl;
+
         /**
          * Enable PathPatternRequestMatcher for Spring Security.
          * This allows using PathPattern-based request matching instead of Ant-based
@@ -43,11 +46,15 @@ public class OAuth2LoginSecurityConfig {
                                                 .requestMatchers("/oauth2/**", "/login/**").permitAll()
                                                 // Permit actuator health endpoint for monitoring
                                                 .requestMatchers("/actuator/health").permitAll()
+                                                // Permit Swagger UI and API Docs
+                                                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**",
+                                                                "/swagger-ui.html")
+                                                .permitAll()
                                                 // All other requests require authentication
                                                 .anyRequest().authenticated())
                                 .csrf(csrf -> csrf.disable()) // Disable CSRF for simplicity
                                 .oauth2Login(oauth2 -> oauth2
-                                                .defaultSuccessUrl("https://localhost/front/todo", true));
+                                                .defaultSuccessUrl(appBaseUrl + "/front/todo", true));
 
                 http.logout(logout -> logout
                                 .logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrationRepository)));
@@ -79,7 +86,7 @@ public class OAuth2LoginSecurityConfig {
 
                 // Set the location that the End-User's User Agent will be redirected to
                 // after the logout has been performed at the Provider
-                oidcLogoutSuccessHandler.setPostLogoutRedirectUri("https://localhost/front/auth");
+                oidcLogoutSuccessHandler.setPostLogoutRedirectUri(appBaseUrl + "/front/auth");
 
                 return oidcLogoutSuccessHandler;
         }
