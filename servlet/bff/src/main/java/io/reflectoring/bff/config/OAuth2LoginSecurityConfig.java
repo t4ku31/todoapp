@@ -27,6 +27,9 @@ public class OAuth2LoginSecurityConfig {
         @org.springframework.beans.factory.annotation.Value("${app.base-url}")
         private String appBaseUrl;
 
+        @org.springframework.beans.factory.annotation.Value("${app.front-server-url}")
+        private String frontServerUrl;
+
         /**
          * Enable PathPatternRequestMatcher for Spring Security.
          * This allows using PathPattern-based request matching instead of Ant-based
@@ -54,7 +57,7 @@ public class OAuth2LoginSecurityConfig {
                                                 .anyRequest().authenticated())
                                 .csrf(csrf -> csrf.disable()) // Disable CSRF for simplicity
                                 .oauth2Login(oauth2 -> oauth2
-                                                .defaultSuccessUrl(appBaseUrl + "/front/todo", true));
+                                                .defaultSuccessUrl(frontServerUrl + "/todo", true));
 
                 http.logout(logout -> logout
                                 .logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrationRepository)));
