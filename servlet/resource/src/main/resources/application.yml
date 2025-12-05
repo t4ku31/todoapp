@@ -1,6 +1,8 @@
 spring:
   application:
     name: app1
+server:
+  port: ${PORT:8080}
 
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://db:3306/todoapp?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Tokyo}
