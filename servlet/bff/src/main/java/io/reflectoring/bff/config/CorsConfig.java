@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-/**
+/*
  * CORS configuration for BFF Server.
  * Allows requests from frontend (via Nginx reverse proxy).
  */
@@ -18,17 +18,20 @@ public class CorsConfig {
     @Value("${app.base-url}")
     private String appBaseUrl;
 
-    /**
-     * Configure CORS to allow requests from frontend through Nginx.
-     * Since Nginx proxies all requests under https://localhost,
-     * this is the only origin we need to allow.
+     @Value("${app.front-server-url}")
+    private String frontServerUrl;
+
+    /*
+     Configure CORS to allow requests from frontend through Nginx.
+     Since Nginx proxies all requests under https://localhost,
+     this is the only origin we need to allow.
      */
     @Bean
     UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
         // Allow frontend origin (Nginx-proxied)
-        config.setAllowedOrigins(List.of(appBaseUrl));
+        config.setAllowedOrigins(List.of(appBaseUrl, frontServerUrl));
 
         // Allow common HTTP methods
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));

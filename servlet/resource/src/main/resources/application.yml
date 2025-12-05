@@ -40,6 +40,7 @@ logging:
 
 app:
   base-url: ${APP_BASE_URL:https://localhost}
+  bff-server-url: ${APP_BFF_SERVER_URL:https://localhost:8081}
   security:
     jwk:
       private-key: 

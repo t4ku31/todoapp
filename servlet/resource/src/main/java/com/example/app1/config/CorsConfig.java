@@ -2,6 +2,7 @@ package com.example.app1.config;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -15,8 +16,11 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 public class CorsConfig {
 
-    @org.springframework.beans.factory.annotation.Value("${app.base-url}")
+    @Value("${app.base-url}")
     private String appBaseUrl;
+
+    @Value("${app.bff-server-url}")
+    private String bffServerUrl;
 
     /**
      * Configure CORS to allow requests from BFF Server.
@@ -29,7 +33,7 @@ public class CorsConfig {
 
         // Allow BFF Server origin (Docker internal network)
         config.setAllowedOrigins(List.of(
-                "http://bff-server:7070",
+                bffServerUrl,
                 appBaseUrl // For Nginx-proxied requests or production
         ));
 

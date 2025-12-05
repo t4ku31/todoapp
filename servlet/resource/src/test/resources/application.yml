@@ -11,7 +11,11 @@ spring:
   flyway:
     enabled: false
 app:
+  base-url: ${APP_BASE_URL: http://localhost:8080}
+  bff-server:
+    url: ${BFF_SERVER_URL: http://localhost:7070}
+ 
   jwt:
-    issuer-uri: http://localhost:8080/realms/master
-    jwk-set-uri: http://localhost:8080/realms/master/protocol/openid-connect/certs
+    issuer-uri: ${APP_BASE_URL: http://localhost:8080}/realms/master
+    jwk-set-uri: ${APP_BASE_URL: http://localhost:8080}/realms/master/protocol/openid-connect/certs
     audiences: account

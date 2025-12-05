@@ -71,6 +71,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/todoapp
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: secret
+      APP_BASE_URL: https://localhost
+      APP_BFF_SERVER_URL: http://bff-server:7070
     networks:
       - app-net
 
@@ -88,6 +90,9 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/todoapp
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: secret
+      APP_BASE_URL: https://localhost
+      RESOURCE_SERVER_URL: http://resource-server:8080
+      FRONT_SERVER_URL: http://front-server:5173
 
     networks:
       - app-net
