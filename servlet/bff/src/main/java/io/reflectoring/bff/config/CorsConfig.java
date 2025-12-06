@@ -18,13 +18,13 @@ public class CorsConfig {
     @Value("${app.base-url}")
     private String appBaseUrl;
 
-     @Value("${app.front-server-url}")
+    @Value("${app.front-server-url}")
     private String frontServerUrl;
 
     /*
-     Configure CORS to allow requests from frontend through Nginx.
-     Since Nginx proxies all requests under https://localhost,
-     this is the only origin we need to allow.
+     * Configure CORS to allow requests from frontend through Nginx.
+     * Since Nginx proxies all requests under https://localhost,
+     * this is the only origin we need to allow.
      */
     @Bean
     UrlBasedCorsConfigurationSource corsConfigurationSource() {
