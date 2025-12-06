@@ -93,7 +93,7 @@ public class OAuth2LoginSecurityConfig {
 
                 // Set the location that the End-User's User Agent will be redirected to
                 // after the logout has been performed at the Provider
-                oidcLogoutSuccessHandler.setPostLogoutRedirectUri(appBaseUrl + "/front/auth");
+                oidcLogoutSuccessHandler.setPostLogoutRedirectUri(frontServerUrl + "/auth");
 
                 return oidcLogoutSuccessHandler;
         }
