@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils";
 import { CheckSquare, LogOut, } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import { env } from "@/config/env";
+
 type AppSidebarProps = React.HTMLAttributes<HTMLDivElement>;
 export function AppSidebar({ className, ...props }: AppSidebarProps) {
     return (
@@ -19,7 +21,7 @@ export function AppSidebar({ className, ...props }: AppSidebarProps) {
                         <SidebarMenuButton asChild>
                             <Link to="/todo">
                                 <CheckSquare className="h-4 w-4" />
-                                <span>Tasks</span>
+                                <span className="text-base">Tasks</span>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -27,22 +29,22 @@ export function AppSidebar({ className, ...props }: AppSidebarProps) {
                         <SidebarMenuButton asChild>
                             <Link to="/debug">
                                 <CheckSquare className="h-4 w-4" />
-                                <span>Debug</span>
+                                <span className="text-base">Debug</span>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton asChild>
-                            <a href="/bff/logout" onClick={(e) => {
+                            <a href={`${env.bffApiBaseUrl}/logout`} onClick={(e) => {
                                 e.preventDefault();
                                 const form = document.createElement('form');
                                 form.method = 'POST';
-                                form.action = '/bff/logout';
+                                form.action = `${env.bffApiBaseUrl}/logout`;
                                 document.body.appendChild(form);
                                 form.submit();
                             }}>
                                 <LogOut />
-                                <span>Logout</span>
+                                <span className="text-base">Logout</span>
                             </a>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
