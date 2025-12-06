@@ -18,7 +18,7 @@ spring:
             client-id: ${OAUTH2_CLIENT_ID:NoffZG4GJCOTbDiyU9byXt48vTCH2nen}
             client-secret: ${OAUTH2_CLIENT_SECRET:C_XPDRidYdVpMxyUo46T1UuoPaw_JoemCjc4TY_ZjQvN91WBPWnQYayzHCENm3no}
             authorization-grant-type: authorization_code
-            redirect-uri: "${APP_BASE_URL:https://localhost}/bff/login/oauth2/code/bff-client"
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}" 
             scope:
               - openid
               - profile
