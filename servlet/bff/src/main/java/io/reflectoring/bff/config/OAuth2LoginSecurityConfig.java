@@ -1,11 +1,13 @@
 package io.reflectoring.bff.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.web.PathPatternRequestMatcherBuilderFactoryBean;
 import org.springframework.security.oauth2.client.JdbcOAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProvider;
@@ -17,33 +19,32 @@ import org.springframework.security.oauth2.client.web.AuthenticatedPrincipalOAut
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
 public class OAuth2LoginSecurityConfig {
+        private final UrlBasedCorsConfigurationSource corsConfigurationSource;
 
-        @org.springframework.beans.factory.annotation.Value("${app.base-url}")
-        private String appBaseUrl;
-
-        @org.springframework.beans.factory.annotation.Value("${app.front-server-url}")
+        @Value("${app.front-server-url}")
         private String frontServerUrl;
 
-        /**
-         * Enable PathPatternRequestMatcher for Spring Security.
-         * This allows using PathPattern-based request matching instead of Ant-based
-         * matching.
-         */
-        @Bean
-        PathPatternRequestMatcherBuilderFactoryBean usePathPattern() {
-                return new PathPatternRequestMatcherBuilderFactoryBean();
+        @Value("${app.base-url}")
+        private String appBaseUrl;
+
+        @Autowired
+        public OAuth2LoginSecurityConfig(UrlBasedCorsConfigurationSource corsConfigurationSource) {
+                this.corsConfigurationSource = corsConfigurationSource;
         }
 
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http,
                         ClientRegistrationRepository clientRegistrationRepository) throws Exception {
                 http
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                                 .authorizeHttpRequests(authorize -> authorize
                                                 // Permit OAuth2 login endpoints
                                                 .requestMatchers("/oauth2/**", "/login/**").permitAll()
@@ -55,12 +56,16 @@ public class OAuth2LoginSecurityConfig {
                                                 .permitAll()
                                                 // All other requests require authentication
                                                 .anyRequest().authenticated())
+                                .exceptionHandling(exception -> exception
+                                                .authenticationEntryPoint(
+                                                                new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                                 .csrf(csrf -> csrf.disable()) // Disable CSRF for simplicity
                                 .oauth2Login(oauth2 -> oauth2
                                                 .defaultSuccessUrl(frontServerUrl + "/todo", true));
 
                 http.logout(logout -> logout
                                 .logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrationRepository)));
+
                 return http.build();
         }
 
@@ -70,8 +75,7 @@ public class OAuth2LoginSecurityConfig {
         }
 
         @Bean
-        public OAuth2AuthorizedClientService authorizedClientService(
-                        JdbcOperations jdbcOperations,
+        public OAuth2AuthorizedClientService authorizedClientService(JdbcOperations jdbcOperations,
                         ClientRegistrationRepository clientRegistrationRepository) {
                 return new JdbcOAuth2AuthorizedClientService(jdbcOperations, clientRegistrationRepository);
         }
@@ -98,7 +102,6 @@ public class OAuth2LoginSecurityConfig {
         public OAuth2AuthorizedClientManager authorizedClientManager(
                         ClientRegistrationRepository clientRegistrationRepository,
                         OAuth2AuthorizedClientRepository authorizedClientRepository) {
-
                 OAuth2AuthorizedClientProvider authorizedClientProvider = OAuth2AuthorizedClientProviderBuilder
                                 .builder()
                                 .authorizationCode()
