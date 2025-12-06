@@ -47,7 +47,7 @@ public class OAuth2LoginSecurityConfig {
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                                 .authorizeHttpRequests(authorize -> authorize
                                                 // Permit OAuth2 login endpoints
-                                                .requestMatchers("/oauth2/**", "/login/**").permitAll()
+                                                .requestMatchers("/oauth2/**", "/login/**", "/logout").permitAll()
                                                 // Permit actuator health endpoint for monitoring
                                                 .requestMatchers("/actuator/health").permitAll()
                                                 // Permit Swagger UI and API Docs

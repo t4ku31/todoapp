@@ -34,7 +34,7 @@ public class CorsConfig {
         config.setAllowedOrigins(List.of(appBaseUrl, frontServerUrl));
 
         // Allow common HTTP methods
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 
         // Allow all headers (can be restricted later if needed)
         config.setAllowedHeaders(List.of("*"));

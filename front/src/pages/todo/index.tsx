@@ -49,7 +49,7 @@ export default function Todo() {
 
             console.log("Updated task status:", taskId, newStatus);
 
-            await apiClient.patch(`/ api / tasks / ${taskId} `, { status: newStatus });
+            await apiClient.patch(`/api/tasks/${taskId}`, { status: newStatus });
         } catch (err) {
             console.error('Failed to update task status:', err);
             // Revert optimistic update (optional, but good practice)
@@ -71,7 +71,7 @@ export default function Todo() {
 
             console.log("Updated task title:", taskId, newTitle);
 
-            await apiClient.patch(`/ api / tasks / ${taskId} `, { title: newTitle });
+            await apiClient.patch(`/api/tasks/${taskId}`, { title: newTitle });
         } catch (err) {
             console.error('Failed to update task title:', err);
             // Re-throw to let component handle the error
@@ -88,7 +88,7 @@ export default function Todo() {
 
             console.log("Updated task list title:", taskListId, newTitle);
 
-            await apiClient.patch(`/ api / tasklists / ${taskListId} `, { title: newTitle });
+            await apiClient.patch(`/api/tasklists/${taskListId}`, { title: newTitle });
         } catch (err) {
             console.error('Failed to update task list title:', err);
             // Re-throw to let component handle the error
@@ -105,7 +105,7 @@ export default function Todo() {
 
             console.log("Updated task list date:", taskListId, newDate);
 
-            await apiClient.patch(`/ api / tasklists / ${taskListId} `, { dueDate: newDate });
+            await apiClient.patch(`/api/tasklists/${taskListId}`, { dueDate: newDate });
         } catch (err) {
             console.error('Failed to update task list date:', err);
             // Re-throw to let component handle the error
