@@ -40,6 +40,5 @@ logging:
 
 app:
   base-url: ${APP_BASE_URL:https://localhost}
-  resource-server:
-    url: ${RESOURCE_SERVER_URL:http://resource-server:8080}
+  resource-server-url: ${RESOURCE_SERVER_URL:http://resource-server:8080}
   front-server-url: ${FRONT_SERVER_URL:http://localhost:5173}

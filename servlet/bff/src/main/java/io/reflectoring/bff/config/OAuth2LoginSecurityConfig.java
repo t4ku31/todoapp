@@ -1,7 +1,6 @@
 package io.reflectoring.bff.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -29,15 +28,13 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class OAuth2LoginSecurityConfig {
         private final UrlBasedCorsConfigurationSource corsConfigurationSource;
 
-        @Value("${app.front-server-url}")
-        private String frontServerUrl;
-
-        @Value("${app.base-url}")
-        private String appBaseUrl;
+        private final AppProperties appProperties;
 
         @Autowired
-        public OAuth2LoginSecurityConfig(UrlBasedCorsConfigurationSource corsConfigurationSource) {
+        public OAuth2LoginSecurityConfig(UrlBasedCorsConfigurationSource corsConfigurationSource,
+                        AppProperties appProperties) {
                 this.corsConfigurationSource = corsConfigurationSource;
+                this.appProperties = appProperties;
         }
 
         @Bean
@@ -61,7 +58,7 @@ public class OAuth2LoginSecurityConfig {
                                                                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                                 .csrf(csrf -> csrf.disable()) // Disable CSRF for simplicity
                                 .oauth2Login(oauth2 -> oauth2
-                                                .defaultSuccessUrl(frontServerUrl + "/todo", true));
+                                                .defaultSuccessUrl(appProperties.getFrontServerUrl() + "/todo", true));
 
                 http.logout(logout -> logout
                                 .logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrationRepository)));
@@ -93,7 +90,8 @@ public class OAuth2LoginSecurityConfig {
 
                 // Set the location that the End-User's User Agent will be redirected to
                 // after the logout has been performed at the Provider
-                oidcLogoutSuccessHandler.setPostLogoutRedirectUri(frontServerUrl + "/auth");
+                oidcLogoutSuccessHandler.setPostLogoutRedirectUri(appProperties.getFrontServerUrl() + "/auth");
+                oidcLogoutSuccessHandler.setDefaultTargetUrl(appProperties.getFrontServerUrl() + "/auth");
 
                 return oidcLogoutSuccessHandler;
         }

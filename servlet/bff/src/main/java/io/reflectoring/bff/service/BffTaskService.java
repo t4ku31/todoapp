@@ -20,8 +20,8 @@ public class BffTaskService {
     private final String resourceUrl;
 
     public BffTaskService(RestClient.Builder builder, AppProperties appProperties) {
-        this.restClient = builder.build();
-        this.resourceUrl = appProperties.getResourceServer().getUrl() + "/api";
+        this.restClient = builder.baseUrl(appProperties.getResourceServerUrl()).build();
+        this.resourceUrl = appProperties.getResourceServerUrl() + "/api";
     }
 
     public List<Task> getUserTasks(String token) {

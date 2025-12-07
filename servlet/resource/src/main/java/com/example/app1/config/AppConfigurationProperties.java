@@ -9,6 +9,8 @@ import lombok.Setter;
 @Setter
 @ConfigurationProperties(prefix = "app")
 public class AppConfigurationProperties {
+    private String baseUrl;
+    private String bffServerUrl;
     private JwtConfiguration jwt;
 
     @Getter

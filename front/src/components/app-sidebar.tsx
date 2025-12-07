@@ -37,6 +37,7 @@ export function AppSidebar({ className, ...props }: AppSidebarProps) {
                         <SidebarMenuButton asChild>
                             <a href={`${env.bffApiBaseUrl}/logout`} onClick={(e) => {
                                 e.preventDefault();
+                                console.log('Logout URL:', `${env.bffApiBaseUrl}/logout`);
                                 const form = document.createElement('form');
                                 form.method = 'POST';
                                 form.action = `${env.bffApiBaseUrl}/logout`;

@@ -24,14 +24,16 @@ public class BffTaskListService {
     private final String resourceUrl;
 
     public BffTaskListService(RestClient.Builder builder, AppProperties appProperties) {
-        this.restClient = builder.build();
-        this.resourceUrl = appProperties.getResourceServer().getUrl() + "/api";
+        this.restClient = builder.baseUrl(appProperties.getResourceServerUrl() + "/api").build();
+        this.resourceUrl = appProperties.getResourceServerUrl() + "/api"; // This line is kept for now, as the
+                                                                          // instruction didn't explicitly remove the
+                                                                          // field or all its usages.
     }
 
     public List<BffTaskListResponse> getUserTaskLists(String token) {
         log.info("Fetching user task lists from Resource Server");
         List<TaskList> taskLists = restClient.get()
-                .uri(resourceUrl + "/tasklists")
+                .uri("/tasklists") // Changed to relative URI
                 .headers(h -> h.setBearerAuth(token))
                 .retrieve()
                 .body(new ParameterizedTypeReference<List<TaskList>>() {

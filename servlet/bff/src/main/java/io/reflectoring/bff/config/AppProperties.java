@@ -5,23 +5,32 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties("app")
 public class AppProperties {
 
-    private final ResourceServer resourceServer = new ResourceServer();
+    private String baseUrl;
+    private String resourceServerUrl;
+    private String frontServerUrl;
 
-    public ResourceServer getResourceServer() {
-        return this.resourceServer;
+    public String getBaseUrl() {
+        return this.baseUrl;
     }
 
-    public static class ResourceServer {
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
 
-        private String url;
+    public String getResourceServerUrl() {
+        return this.resourceServerUrl;
+    }
 
-        public String getUrl() {
-            return this.url;
-        }
+    public void setResourceServerUrl(String resourceServerUrl) {
+        this.resourceServerUrl = resourceServerUrl;
+    }
 
-        public void setUrl(String url) {
-            this.url = url;
-        }
+    public String getFrontServerUrl() {
+        return this.frontServerUrl;
+    }
+
+    public void setFrontServerUrl(String frontServerUrl) {
+        this.frontServerUrl = frontServerUrl;
     }
 
 }
