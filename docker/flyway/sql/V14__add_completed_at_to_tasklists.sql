@@ -1,1 +1,0 @@
-ALTER TABLE tasklists ADD COLUMN completed_at DATETIME DEFAULT NULL;

@@ -1,1 +1,0 @@
-ALTER TABLE tasklists ADD COLUMN is_completed BOOLEAN DEFAULT FALSE;
