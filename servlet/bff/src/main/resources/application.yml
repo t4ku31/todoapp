@@ -35,8 +35,8 @@ spring:
 
 logging:
   level:
-    org.springframework.security.oauth2: DEBUG
-    org.springframework.security.oauth2.client: TRACE
+    org.springframework.security.oauth2: INFO
+    org.springframework.security.oauth2.client: INFO
 
 app:
   base-url: ${APP_BASE_URL:https://localhost}

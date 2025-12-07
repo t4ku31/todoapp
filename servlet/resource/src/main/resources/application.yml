@@ -28,11 +28,11 @@ server:
 logging:
   level:
     root: INFO
-    com.example.app1.controller: DEBUG  # TRACE → DEBUG に変更（情報量調整）
-    com.example.app1.service: DEBUG
-    org.springframework.security: DEBUG  # TRACE → DEBUG に変更
-    org.springframework.security.oauth2: DEBUG
-    com.example.app1: DEBUG
+    com.example.app1.controller: INFO
+    com.example.app1.service: INFO
+    org.springframework.security: INFO
+    org.springframework.security.oauth2: INFO
+    com.example.app1: INFO
   file:
     name: /home/takumi/todo-app/backend/logs/app1.log
 
