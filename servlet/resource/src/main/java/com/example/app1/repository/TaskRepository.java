@@ -1,8 +1,12 @@
 package com.example.app1.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.example.app1.model.Task;
@@ -48,7 +52,17 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * @param userId Auth0 sub claim identifying the user
      * @return Optional containing the task if found and owned by user
      */
-    java.util.Optional<Task> findByIdAndUserId(Long id, String userId);
+    @Query("SELECT t FROM Task t WHERE t.id = :id AND t.userId = :userId")
+    Optional<Task> findByIdAndUserId(@Param("id") Long id, @Param("userId") String userId);
+
+    /**
+     * Delete all tasks belonging to a specific task list.
+     * 
+     * @param taskListId Task list ID
+     */
+    @Modifying
+    @Query("DELETE FROM Task t WHERE t.taskList.id = :taskListId")
+    void deleteByTaskListId(@Param("taskListId") Long taskListId);
 
     /**
      * Delete a task by ID and user ID.

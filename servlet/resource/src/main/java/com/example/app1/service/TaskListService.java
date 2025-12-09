@@ -14,6 +14,7 @@ import com.example.app1.model.Task;
 import com.example.app1.model.TaskList;
 import com.example.app1.model.TaskStatus;
 import com.example.app1.repository.TaskListRepository;
+import com.example.app1.repository.TaskRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TaskListService {
 
     private final TaskListRepository taskListRepository;
+    private final TaskRepository taskRepository;
 
     /**
      * Get all task lists for a specific user.
@@ -165,13 +167,20 @@ public class TaskListService {
     public void deleteTaskList(Long id, String userId) {
         log.info("Deleting task list {} for user: {}", id, userId);
 
-        // Verify ownership before deleting
-        if (!taskListRepository.existsByIdAndUserId(id, userId)) {
-            log.warn("Task list {} not found for user: {}", id, userId);
-            throw new IllegalArgumentException("Task list not found or access denied");
-        }
+        // Verify ownership and get entity before deleting
+        TaskList taskList = taskListRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> {
+                    log.warn("Task list {} not found for user: {}", id, userId);
+                    return new IllegalArgumentException("Task list not found or access denied");
+                });
 
-        taskListRepository.deleteByIdAndUserId(id, userId);
+        // Use delete(entity) to trigger JPA cascades (deleting children tasks)
+        // Direct JPQL delete (deleteByIdAndUserId) bypasses cascades and causes FK
+        // constraint violations
+        // Explicitly delete tasks first to avoid FK violations
+        taskRepository.deleteByTaskListId(id);
+
+        taskListRepository.delete(taskList);
         log.info("Deleted task list {} for user: {}", id, userId);
     }
 }

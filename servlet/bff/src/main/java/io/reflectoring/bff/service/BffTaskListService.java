@@ -22,13 +22,9 @@ public class BffTaskListService {
 
         private static final Logger log = LoggerFactory.getLogger(BffTaskListService.class);
         private final RestClient restClient;
-        private final String resourceUrl;
 
         public BffTaskListService(RestClient.Builder builder, AppProperties appProperties) {
                 this.restClient = builder.baseUrl(appProperties.getResourceServerUrl() + "/api").build();
-                this.resourceUrl = appProperties.getResourceServerUrl() + "/api"; // This line is kept for now, as the
-                // instruction didn't explicitly remove the
-                // field or all its usages.
         }
 
         public List<TaskListResponse> getUserTaskLists(String token) {
@@ -54,7 +50,7 @@ public class BffTaskListService {
                 Objects.requireNonNull(taskListCreateRequest);
                 Objects.requireNonNull(token);
                 TaskList created = restClient.post()
-                                .uri(resourceUrl + "/tasklists")
+                                .uri("/tasklists")
                                 .headers(h -> h.setBearerAuth(token))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .body(taskListCreateRequest)
@@ -88,7 +84,7 @@ public class BffTaskListService {
         public void updateTaskList(Long id, TaskListUpdateRequest taskListUpdateRequest, String token) {
                 log.info("Updating task list {} with request: {}", id, taskListUpdateRequest);
                 restClient.patch()
-                                .uri(resourceUrl + "/tasklists/{id}", id)
+                                .uri("/tasklists/{id}", id)
                                 .headers(h -> h.setBearerAuth(token))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .body(taskListUpdateRequest)
@@ -100,7 +96,7 @@ public class BffTaskListService {
         public void deleteTaskList(Long id, String token) {
                 log.info("Deleting task list {}", id);
                 restClient.delete()
-                                .uri(resourceUrl + "/tasklists/{id}", id)
+                                .uri("/tasklists/{id}", id)
                                 .headers(h -> h.setBearerAuth(token))
                                 .retrieve()
                                 .toBodilessEntity();
