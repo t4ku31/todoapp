@@ -82,9 +82,7 @@ export default function TaskCard({ taskLists, loading, error, onStatusChange, on
                                                                         title={task.title}
                                                                         onTitleChange={onTaskTitleChange}
                                                                     />
-                                                                    {task.detail && (
-                                                                        <p className="text-sm text-gray-600 mt-1">{task.detail}</p>
-                                                                    )}
+
                                                                 </div>
                                                                 <StatusChangeButton
                                                                     status={task.status}
@@ -92,9 +90,7 @@ export default function TaskCard({ taskLists, loading, error, onStatusChange, on
                                                                 />
                                                             </div>
                                                             <div className="flex gap-3 mt-2 text-xs text-gray-500">
-                                                                {task.limit && (
-                                                                    <span>Due: {new Date(task.limit).toLocaleDateString()}</span>
-                                                                )}
+
                                                             </div>
                                                         </div>
                                                     </div>
