@@ -22,7 +22,7 @@ interface CreateTaskListFormProps {
 export default function CreateTaskListForm({ onTaskListCreated, onCancel, className }: CreateTaskListFormProps) {
     const [title, setTitle] = useState('');
     const [tasks, setTasks] = useState<TaskInput[]>([]);
-    const [date, setDate] = useState<Date>();
+    const [date, setDate] = useState<Date>(new Date());
 
     // Add new task
     const handleAddTask = () => {
