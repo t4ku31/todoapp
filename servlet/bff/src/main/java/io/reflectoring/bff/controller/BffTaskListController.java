@@ -16,11 +16,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestClientResponseException;
 
-import io.reflectoring.bff.dto.BffTaskListResponse;
-import io.reflectoring.bff.dto.TaskListPatchRequest;
-import io.reflectoring.bff.model.TaskList;
-import io.reflectoring.bff.model.TaskListCreateRequest;
+import io.reflectoring.bff.dto.TaskListCreateRequest;
+import io.reflectoring.bff.dto.TaskListResponse;
+import io.reflectoring.bff.dto.TaskListUpdateRequest;
 import io.reflectoring.bff.service.BffTaskListService;
 
 @RestController
@@ -34,53 +34,46 @@ public class BffTaskListController {
         this.taskListService = taskListService;
     }
 
+    // done to test
     @GetMapping
-    public ResponseEntity<List<BffTaskListResponse>> getUserTaskLists(
+    public ResponseEntity<List<TaskListResponse>> getUserTaskLists(
             @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
-        log.info("[GET /api/tasklists] Proxying request to Resource Server");
-        List<BffTaskListResponse> taskLists = taskListService.getUserTaskLists(client.getAccessToken().getTokenValue());
+        log.info("[GET /api/tasklists] Request by user: {}", client.getPrincipalName());
+        List<TaskListResponse> taskLists = taskListService.getUserTaskLists(client.getAccessToken().getTokenValue());
         return ResponseEntity.ok(taskLists);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<TaskList> getTaskList(
-            @PathVariable Long id,
-            @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
-        log.info("[GET /api/tasklists/{}] Proxying request to Resource Server", id);
-        try {
-            TaskList taskList = taskListService.getTaskList(id, client.getAccessToken().getTokenValue());
-            return ResponseEntity.ok(taskList);
-        } catch (Exception e) {
-            log.warn("Error fetching task list {}: {}", id, e.getMessage());
-            return ResponseEntity.notFound().build();
-        }
-    }
-
+    // done to test
     @PostMapping
-    public ResponseEntity<TaskList> createTaskList(
+    public ResponseEntity<TaskListResponse> createTaskList(
             @RequestBody TaskListCreateRequest taskListCreateRequest,
             @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
-        log.info("[POST /api/tasklists] Proxying request to Resource Server");
-        TaskList created = taskListService.createTaskList(taskListCreateRequest,
+        log.info("[POST /api/tasklists] Request by user: {}", client.getPrincipalName());
+        log.info("[POST /api/tasklists] Request new list: {}", taskListCreateRequest);
+        TaskListResponse created = taskListService.createTaskList(taskListCreateRequest,
                 client.getAccessToken().getTokenValue());
-
+        log.info("[POST /api/tasklists] Created TaskListResponse: {}", created);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
+    // done to test
     @PatchMapping("/{id}")
     public ResponseEntity<Void> updateTaskList(
             @PathVariable Long id,
-            @RequestBody TaskListPatchRequest taskListPatchRequest,
+            @RequestBody TaskListUpdateRequest taskListUpdateRequest,
             @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
-        log.info("[Patch /api/tasklists/{}] Proxying request to Resource Server. body: {}, id: {}", id,
-                taskListPatchRequest);
+        log.info("[PATCH /api/tasklists/{id}] Request by user: {}", client.getPrincipalName());
+        log.info("[PATCH /api/tasklists/{id}] Updating task list {} with request: {}", id, taskListUpdateRequest);
         try {
-            taskListService.patchTaskList(id, taskListPatchRequest,
+            taskListService.updateTaskList(id, taskListUpdateRequest,
                     client.getAccessToken().getTokenValue());
             return ResponseEntity.noContent().build();
+        } catch (RestClientResponseException e) {
+            log.warn("[PATCH /api/tasklists/{id}] Error updating task list {}: {}", id, e.getMessage());
+            return ResponseEntity.status(e.getStatusCode()).body(null);
         } catch (Exception e) {
-            log.warn("Error updating task list {}: {}", id, e.getMessage());
-            return ResponseEntity.notFound().build();
+            log.warn("[PATCH /api/tasklists/{id}] Unexpected error updating task list {}: {}", id, e.getMessage());
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -88,13 +81,16 @@ public class BffTaskListController {
     public ResponseEntity<Void> deleteTaskList(
             @PathVariable Long id,
             @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
-        log.info("[DELETE /api/tasklists/{}] Proxying request to Resource Server", id);
+        log.info("Deleting task list {}", id);
         try {
             taskListService.deleteTaskList(id, client.getAccessToken().getTokenValue());
             return ResponseEntity.noContent().build();
+        } catch (RestClientResponseException e) {
+            log.warn("[DELETE /api/tasklists/{id}] Error deleting task list {}: {}", id, e.getMessage());
+            return ResponseEntity.status(e.getStatusCode()).build();
         } catch (Exception e) {
             log.warn("Error deleting task list {}: {}", id, e.getMessage());
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.internalServerError().build();
         }
     }
 }

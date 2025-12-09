@@ -53,6 +53,7 @@ export default function CreateTaskListForm({ onTaskListCreated, onCancel, classN
                 dueDate: date ? format(date, 'yyyy-MM-dd') : null,
             };
             try {
+                console.log("Request new list:", tasklist);
                 const response = await apiClient.post<TaskList>('/api/tasklists', tasklist);
                 console.log("Response new list:", response.data);
                 onTaskListCreated(response.data);

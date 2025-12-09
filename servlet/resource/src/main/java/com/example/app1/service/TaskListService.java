@@ -8,8 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.app1.dto.TaskListCreateRequest;
-import com.example.app1.dto.TaskListPatchRequest;
-import com.example.app1.dto.TaskListSummary;
+import com.example.app1.dto.TaskListUpdateRequest;
 import com.example.app1.exception.TaskListValidationException;
 import com.example.app1.model.Task;
 import com.example.app1.model.TaskList;
@@ -29,7 +28,6 @@ import lombok.extern.slf4j.Slf4j;
 public class TaskListService {
 
     private final TaskListRepository taskListRepository;
-    private final TaskService taskService;
 
     /**
      * Get all task lists for a specific user.
@@ -38,9 +36,9 @@ public class TaskListService {
      * @return List of task lists owned by the user
      */
     @Transactional(readOnly = true)
-    public List<TaskListSummary> getUserTaskLists(String userId) {
+    public List<TaskList> getUserTaskLists(String userId) {
         log.info("Getting task lists for user: {}", userId);
-        List<TaskListSummary> taskLists = taskListRepository.findSummaryByUserId(userId);
+        List<TaskList> taskLists = taskListRepository.findByUserId(userId);
         log.info("Found {} task lists for user: {}", taskLists.size(), userId);
         return taskLists;
     }
@@ -96,14 +94,13 @@ public class TaskListService {
 
         try {
             TaskList saved = taskListRepository.save(taskList);
-
             log.info("Created task list {} for user: {}", saved, userId);
 
             return saved;
 
         } catch (DataAccessException e) {
             log.error("DB save failed. entity={}", taskList, e);
-            throw e; // ★再throwしないと不整合を生む
+            throw e;
         }
     }
 
@@ -119,7 +116,7 @@ public class TaskListService {
      *                                  user
      */
     @Transactional
-    public void updateTaskList(Long id, TaskListPatchRequest request, String userId) {
+    public void updateTaskList(Long id, TaskListUpdateRequest request, String userId) {
         log.info("Updating task list {} for user: {}", id, userId);
 
         TaskList existing = getTaskList(id, userId);

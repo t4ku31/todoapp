@@ -8,12 +8,15 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.app1.dto.TaskCreateRequest;
+import com.example.app1.dto.TaskUpdateRequest;
 import com.example.app1.model.Task;
 import com.example.app1.service.TaskService;
 
@@ -44,13 +47,14 @@ public class TaskController {
             @PathVariable Long taskListId,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
-        log.info("[GET /api/tasklists/{}/tasks] Request from user: {}", taskListId, userId);
+        log.info("Received request to fetch tasks for list {} for user: {}", taskListId, userId);
 
         try {
             List<Task> tasks = taskService.getTasksByTaskListId(taskListId, userId);
+            log.info("Returning {} tasks for list {} for user: {}", tasks.size(), taskListId, userId);
             return ResponseEntity.ok(tasks);
         } catch (IllegalArgumentException e) {
-            log.warn("[GET /api/tasklists/{}/tasks] Task list not found for user: {}", taskListId, userId);
+            log.warn("Task list {} not found for user: {}", taskListId, userId);
             return ResponseEntity.notFound().build();
         }
     }
@@ -64,9 +68,10 @@ public class TaskController {
     @GetMapping("/tasks")
     public ResponseEntity<List<Task>> getUserTasks(@AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
-        log.info("[GET /api/tasks] Request from user: {}", userId);
+        log.info("Received request to fetch all tasks for user: {}", userId);
 
         List<Task> tasks = taskService.getUserTasks(userId);
+        log.info("Returning {} tasks for user: {}", tasks.size(), userId);
         return ResponseEntity.ok(tasks);
     }
 
@@ -82,13 +87,14 @@ public class TaskController {
             @PathVariable Long id,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
-        log.info("[GET /api/tasks/{}] Request from user: {}", id, userId);
+        log.info("Received request to fetch task {} for user: {}", id, userId);
 
         try {
             Task task = taskService.getTask(id, userId);
+            log.info("Successfully fetched task {} for user: {}", id, userId);
             return ResponseEntity.ok(task);
         } catch (IllegalArgumentException e) {
-            log.warn("[GET /api/tasks/{}] Not found for user: {}", id, userId);
+            log.warn("Task {} not found for user: {}", id, userId);
             return ResponseEntity.notFound().build();
         }
     }
@@ -102,44 +108,23 @@ public class TaskController {
      */
     @PostMapping("/tasks")
     public ResponseEntity<Task> createTask(
-            @RequestBody Task task,
+            @RequestBody TaskCreateRequest taskCreateRequest,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
-        log.info("[POST /api/tasks] Request from user: {}", userId);
+        log.info("Received request to create task for user: {}", userId);
+
+        // Ensure userId in request matches authenticated user
+        taskCreateRequest.setUserId(userId);
 
         try {
-            Task created = taskService.createTask(task, userId);
+            Task created = taskService.createTask(taskCreateRequest);
+            log.info("Successfully created task {} for user: {}", created.getId(), userId);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (IllegalArgumentException e) {
-            log.warn("[POST /api/tasks] Task list not found for user: {}", userId);
+            log.warn("Task list not found for user: {}", userId);
             return ResponseEntity.badRequest().build();
         }
     }
-
-    /**
-     * Update an existing task.
-     * 
-     * @param id   Task ID
-     * @param task Task with updated fields
-     * @param jwt  JWT token containing user information
-     * @return The updated task
-     */
-    // @PutMapping("/tasks/{id}")
-    // public ResponseEntity<Task> updateTask(
-    // @PathVariable Long id,
-    // @RequestBody Task task,
-    // @AuthenticationPrincipal Jwt jwt) {
-    // String userId = jwt.getSubject();
-    // log.info("[PUT /api/tasks/{}] Request from user: {}", id, userId);
-
-    // try {
-    // Task updated = taskService.updateTask(id, task, userId);
-    // return ResponseEntity.ok(updated);
-    // } catch (IllegalArgumentException e) {
-    // log.warn("[PUT /api/tasks/{}] Not found for user: {}", id, userId);
-    // return ResponseEntity.notFound().build();
-    // }
-    // }
 
     /**
      * Patch an existing task.
@@ -150,19 +135,20 @@ public class TaskController {
      * @return No content
      */
 
-    @org.springframework.web.bind.annotation.PatchMapping("/tasks/{id}")
-    public ResponseEntity<Void> patchTask(
+    @PatchMapping("/tasks/{id}")
+    public ResponseEntity<Void> updateTask(
             @PathVariable Long id,
-            @RequestBody com.example.app1.dto.TaskPatchRequest request,
+            @RequestBody TaskUpdateRequest request,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
-        log.info("[patch /api/tasks/{}] Request from user: {}", id, userId);
+        log.info("Received request to update task {} for user: {}", id, userId);
 
         try {
-            taskService.patchTask(id, request, userId);
+            taskService.updateTask(id, request, userId);
+            log.info("Successfully updated task {} for user: {}", id, userId);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
-            log.warn("[PATCH /api/tasks/{}] Not found for user: {}", id, userId);
+            log.warn("Task {} not found for user: {}", id, userId);
             return ResponseEntity.notFound().build();
         }
     }
@@ -179,13 +165,14 @@ public class TaskController {
             @PathVariable Long id,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
-        log.info("[DELETE /api/tasks/{}] Request from user: {}", id, userId);
+        log.info("Received request to delete task {} for user: {}", id, userId);
 
         try {
             taskService.deleteTask(id, userId);
+            log.info("Successfully deleted task {} for user: {}", id, userId);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
-            log.warn("[DELETE /api/tasks/{}] Not found for user: {}", id, userId);
+            log.warn("Task {} not found for user: {}", id, userId);
             return ResponseEntity.notFound().build();
         }
     }

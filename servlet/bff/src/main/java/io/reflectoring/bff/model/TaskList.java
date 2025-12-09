@@ -8,9 +8,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record TaskList(
-        Long id,
-        String title,
-        @JsonProperty("due_date") LocalDate dueDate,
-        @JsonProperty("is_completed") Boolean isCompleted,
-        List<Task> tasks) {
+                Long id,
+                String title,
+                @JsonProperty("due_date") LocalDate dueDate,
+                Boolean isCompleted,
+                List<Task> tasks) {
 }

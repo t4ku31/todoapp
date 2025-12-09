@@ -29,6 +29,7 @@ export default function Todo() {
         };
 
         fetchTaskLists();
+        console.log("taskLists", taskLists);
     }, []);
 
     // Add new task list to state

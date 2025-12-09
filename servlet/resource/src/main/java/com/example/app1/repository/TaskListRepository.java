@@ -30,15 +30,6 @@ public interface TaskListRepository extends JpaRepository<TaskList, Long> {
     List<TaskList> findByUserId(@Param("userId") String userId);
 
     /**
-     * Find all task lists for a user, projecting only necessary columns.
-     * 
-     * @param userId Auth0 sub claim identifying the user
-     * @return List of TaskListSummary projections
-     */
-    @Query("SELECT tl FROM TaskList tl WHERE tl.userId = :userId")
-    List<com.example.app1.dto.TaskListSummary> findSummaryByUserId(@Param("userId") String userId);
-
-    /**
      * Find all task lists belonging to a specific user with pagination.
      * 
      * @param userId   Auth0 sub claim identifying the user

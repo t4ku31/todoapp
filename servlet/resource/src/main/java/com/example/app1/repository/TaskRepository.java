@@ -38,7 +38,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * @param userId     Auth0 sub claim identifying the user
      * @return List of tasks in the task list owned by the user
      */
-    List<Task> findByTaskListIdAndUserId(Long taskListId, String userId);
+    List<Task> findByTaskList_IdAndUserId(Long taskListId, String userId);
 
     /**
      * Find a specific task by ID and user ID.

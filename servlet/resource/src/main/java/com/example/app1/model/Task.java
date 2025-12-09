@@ -6,6 +6,9 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import io.micrometer.common.lang.NonNull;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -82,7 +85,18 @@ public class Task {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_list_id", nullable = false)
     @ToString.Exclude
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @JsonIgnore
     @NonNull
     private TaskList taskList;
+
+    @Column(name = "task_list_id", insertable = false, updatable = false)
+    private Long taskListId;
+
+    @JsonProperty("taskListId")
+    public Long getTaskListId() {
+        if (taskListId != null) {
+            return taskListId;
+        }
+        return taskList != null ? taskList.getId() : null;
+    }
 }

@@ -1,7 +1,0 @@
-CREATE TABLE refresh_token (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    token VARCHAR(512) NOT NULL,
-    expiry_date TIMESTAMP NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);

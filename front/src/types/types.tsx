@@ -8,9 +8,7 @@ export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
 export interface Task {
     id: number;
     title: string;
-    detail: string;
     status: TaskStatus;
-    limit: string; // ISO 8601 datetime string
     taskListId: number;
 }
 

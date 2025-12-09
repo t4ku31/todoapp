@@ -4,10 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.oauth2.client.JdbcOAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProvider;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder;
@@ -69,12 +67,6 @@ public class OAuth2LoginSecurityConfig {
         @Bean
         public HttpSessionEventPublisher sessionEventPublisher() {
                 return new HttpSessionEventPublisher();
-        }
-
-        @Bean
-        public OAuth2AuthorizedClientService authorizedClientService(JdbcOperations jdbcOperations,
-                        ClientRegistrationRepository clientRegistrationRepository) {
-                return new JdbcOAuth2AuthorizedClientService(jdbcOperations, clientRegistrationRepository);
         }
 
         @Bean

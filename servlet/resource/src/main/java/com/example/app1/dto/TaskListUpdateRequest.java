@@ -8,7 +8,7 @@ import lombok.Data;
 
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class TaskListPatchRequest {
+public class TaskListUpdateRequest {
     private String title;
     private LocalDate dueDate;
     private Boolean isCompleted;

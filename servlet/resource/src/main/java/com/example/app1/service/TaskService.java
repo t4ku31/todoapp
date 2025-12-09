@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.app1.dto.TaskCreateRequest;
+import com.example.app1.dto.TaskUpdateRequest;
 import com.example.app1.model.Task;
 import com.example.app1.model.TaskList;
 import com.example.app1.model.TaskStatus;
@@ -46,7 +47,7 @@ public class TaskService {
             throw new IllegalArgumentException("Task list not found or access denied");
         }
 
-        List<Task> tasks = taskRepository.findByTaskListIdAndUserId(taskListId, userId);
+        List<Task> tasks = taskRepository.findByTaskList_IdAndUserId(taskListId, userId);
         log.info("Found {} tasks for task list {} and user: {}", tasks.size(), taskListId, userId);
         return tasks;
     }
@@ -76,8 +77,10 @@ public class TaskService {
      */
     @Transactional(readOnly = true)
     public Task getTask(Long id, String userId) {
+        log.info("Getting task {} for user: {}", id, userId);
         return taskRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> {
+                    log.warn("Task {} not found for user: {}", id, userId);
                     return new IllegalArgumentException("Task not found or access denied");
                 });
     }
@@ -93,6 +96,7 @@ public class TaskService {
      */
     @Transactional
     public Task createTask(TaskCreateRequest taskCreateRequest) {
+        log.info("Creating task for user: {}", taskCreateRequest.getUserId());
 
         // Verify user owns the task list
         if (!taskListRepository.existsByIdAndUserId(taskCreateRequest.getTaskListId(), taskCreateRequest.getUserId())) {
@@ -117,52 +121,7 @@ public class TaskService {
                 .build();
 
         Task saved = taskRepository.save(task);
-        return saved;
-    }
-
-    /**
-     * Create a new task (Overload for Controller compatibility).
-     * 
-     * @param task   Task entity from controller
-     * @param userId User ID
-     * @return Created task
-     */
-    @Transactional
-    public Task createTask(Task task, String userId) {
-        TaskCreateRequest request = TaskCreateRequest.builder()
-                .title(task.getTitle())
-                .status(task.getStatus())
-                .userId(userId)
-                .taskListId(task.getTaskList().getId())
-                .build();
-        return createTask(request);
-    }
-
-    /**
-     * Update an existing task.
-     * Ensures the task belongs to the user.
-     * 
-     * @param id      Task ID
-     * @param updates Task with updated fields
-     * @param userId  Auth0 sub claim identifying the user
-     * @return The updated task
-     * @throws IllegalArgumentException if task not found or doesn't belong to user
-     */
-    @Transactional
-    public Task updateTask(Long id, Task updates, String userId) {
-
-        Task existing = getTask(id, userId);
-
-        // Update fields
-        if (updates.getTitle() != null) {
-            existing.setTitle(updates.getTitle());
-        }
-        if (updates.getStatus() != null) {
-            existing.setStatus(updates.getStatus());
-        }
-        // Note: taskListId and userId should not be updated
-
-        Task saved = taskRepository.save(existing);
+        log.info("Created task {} for user: {}", saved.getId(), saved.getUserId());
         return saved;
     }
 
@@ -199,9 +158,10 @@ public class TaskService {
      * @throws IllegalArgumentException if task not found or doesn't belong to user
      */
     @Transactional
-    public Task patchTask(Long id, com.example.app1.dto.TaskPatchRequest request, String userId) {
+    public Task updateTask(Long id, TaskUpdateRequest request, String userId) {
+        log.info("Updating task {} for user: {}", id, userId);
         if (request == null) {
-            throw new IllegalArgumentException("Patch request cannot be null");
+            throw new IllegalArgumentException("Update request cannot be null");
         }
         Task existing = getTask(id, userId);
 
@@ -212,7 +172,7 @@ public class TaskService {
             existing.setStatus(request.status());
         }
         Task saved = taskRepository.save(existing);
-        log.info("Patched task {} for user: {}", saved, userId);
+        log.info("Updated task {} for user: {}", saved, userId);
         return saved;
     }
 }

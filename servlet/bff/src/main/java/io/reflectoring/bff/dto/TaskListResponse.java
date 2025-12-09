@@ -11,18 +11,10 @@ import lombok.Data;
  */
 @Data
 @Builder
-public class BffTaskListResponse {
+public class TaskListResponse {
     private Long id;
     private String title;
     private LocalDate dueDate;
     private Boolean isCompleted;
-    private List<TaskSummary> tasks;
-
-    @Data
-    @Builder
-    public static class TaskSummary {
-        private Long id;
-        private String title;
-        private String status;
-    }
+    private List<TaskResponse> tasks;
 }
