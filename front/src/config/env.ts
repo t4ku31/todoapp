@@ -31,6 +31,11 @@ apiClient.interceptors.response.use(
         if (error.response) {
             // Server responded with error status
             console.error('API Error:', error.response.status, error.response.data);
+
+            if (error.response.status === 401) {
+                // Session expired or unauthorized, redirect to login
+                window.location.href = `${env.bffApiBaseUrl}/oauth2/authorization/bff-client`;
+            }
         } else if (error.request) {
             // Request made but no response received
             console.error('Network Error:', error.message);
