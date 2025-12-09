@@ -1,6 +1,9 @@
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusChangeButton } from "@/pages/todo/StatusChangeButton";
 import type { TaskList, TaskStatus } from "@/types/types";
+import { Trash2 } from "lucide-react";
 import { ClearButton } from "./ClearButton";
 import { EditableDate } from "./EditableDate";
 import { EditableTitle } from "./EditableTitle";
@@ -14,9 +17,10 @@ interface TaskCardProps {
     onTaskListTitleChange: (taskListId: number, newTitle: string) => Promise<void>;
     onTaskListDateChange: (taskListId: number, newDate: string) => Promise<void>;
     onIsCompletedChange: (taskListId: number, isCompleted: boolean) => Promise<void>;
+    onDeleteTaskList: (taskListId: number) => Promise<void>;
 }
 
-export default function TaskCard({ taskLists, loading, error, onStatusChange, onTaskTitleChange, onTaskListTitleChange, onTaskListDateChange, onIsCompletedChange }: TaskCardProps) {
+export default function TaskCard({ taskLists, loading, error, onStatusChange, onTaskTitleChange, onTaskListTitleChange, onTaskListDateChange, onIsCompletedChange, onDeleteTaskList }: TaskCardProps) {
 
     return (
         <>
@@ -62,12 +66,35 @@ export default function TaskCard({ taskLists, loading, error, onStatusChange, on
                                                     onDateChange={onTaskListDateChange}
                                                 />
                                             </div>
-                                            <ClearButton
-                                                isCompleted={taskList.isCompleted}
-                                                onToggleCompletion={() => onIsCompletedChange(taskList.id, !taskList.isCompleted)}
-                                                disabled={!canComplete}
-                                                disabledReason={disabledReason}
-                                            />
+                                            <div className="flex items-center gap-1">
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>タスクリストを削除しますか？</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                この操作は取り消せません。リストに含まれるすべてのタスクも削除されます。
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => onDeleteTaskList(taskList.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                                                削除
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                                <ClearButton
+                                                    isCompleted={taskList.isCompleted}
+                                                    onToggleCompletion={() => onIsCompletedChange(taskList.id, !taskList.isCompleted)}
+                                                    disabled={!canComplete}
+                                                    disabledReason={disabledReason}
+                                                />
+                                            </div>
                                         </div>
 
                                         {taskList.tasks && taskList.tasks.length > 0 ? (

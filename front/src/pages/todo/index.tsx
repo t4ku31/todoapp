@@ -145,6 +145,21 @@ export default function Todo() {
         }
     };
 
+    const handleDeleteTaskList = async (taskListId: number) => {
+        try {
+            console.log("Deleting task list:", taskListId);
+            await apiClient.delete(`/api/tasklists/${taskListId}`);
+            setTaskLists(prevLists => prevLists.filter(list => list.id !== taskListId));
+            toast.success("タスクリストを削除しました");
+        } catch (err: any) {
+            console.error('Failed to delete task list:', err);
+            const errorMessage = err.response?.data?.message || err.response?.data?.error || 'タスクリストの削除に失敗しました';
+            toast.error('削除失敗', {
+                description: errorMessage,
+            });
+        }
+    };
+
     const activeTaskLists = taskLists.filter(list => !list.isCompleted);
     const completedTaskLists = taskLists.filter(list => list.isCompleted);
 
@@ -172,6 +187,7 @@ export default function Todo() {
                             onTaskListTitleChange={handleTaskListTitleChange}
                             onTaskListDateChange={handleTaskListDateChange}
                             onIsCompletedChange={handleIsCompletedChange}
+                            onDeleteTaskList={handleDeleteTaskList}
                         />
                     </TabsContent>
 
@@ -185,6 +201,7 @@ export default function Todo() {
                             onTaskListTitleChange={handleTaskListTitleChange}
                             onTaskListDateChange={handleTaskListDateChange}
                             onIsCompletedChange={handleIsCompletedChange}
+                            onDeleteTaskList={handleDeleteTaskList}
                         />
                     </TabsContent>
                 </Tabs>
