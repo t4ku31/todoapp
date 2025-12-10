@@ -18,9 +18,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestClientResponseException;
 
+import io.reflectoring.bff.dto.TaskCreateRequest;
 import io.reflectoring.bff.dto.TaskResponse;
 import io.reflectoring.bff.dto.TaskUpdateRequest;
-import io.reflectoring.bff.model.Task;
 import io.reflectoring.bff.service.BffTaskService;
 
 @RestController
@@ -62,13 +62,14 @@ public class BffTaskController {
         }
     }
 
+    //
     @PostMapping("/tasks")
     public ResponseEntity<TaskResponse> createTask(
-            @RequestBody Task task,
+            @RequestBody TaskCreateRequest request,
             @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
         log.info("[POST /api/tasks] Request by user: {}", client.getPrincipalName());
-        log.info("[POST /api/tasks] Creating task: {}", task);
-        TaskResponse created = taskService.createTask(task, client.getAccessToken().getTokenValue());
+        log.info("[POST /api/tasks] Creating task: {}", request);
+        TaskResponse created = taskService.createTask(request, client.getAccessToken().getTokenValue());
         log.info("[POST /api/tasks] Successfully created task with id: {}", created.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }

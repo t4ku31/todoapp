@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusChangeButton } from "@/pages/todo/StatusChangeButton";
 import type { TaskList, TaskStatus } from "@/types/types";
 import { ClearButton } from "./ClearButton";
+import { CreateTaskForm } from "./CreateTaskForm";
 import { DeleteButton } from "./DeleteButton";
 import { EditableDate } from "./EditableDate";
 import { EditableTitle } from "./EditableTitle";
@@ -17,9 +18,10 @@ interface TaskCardProps {
     onIsCompletedChange: (taskListId: number, isCompleted: boolean) => Promise<void>;
     onDeleteTaskList: (taskListId: number) => Promise<void>;
     onDeleteTask: (taskId: number) => Promise<void>;
+    onCreateTask: (taskListId: number, title: string) => Promise<void>;
 }
 
-export default function TaskCard({ taskLists, loading, error, onStatusChange, onTaskTitleChange, onTaskListTitleChange, onTaskListDateChange, onIsCompletedChange, onDeleteTaskList, onDeleteTask }: TaskCardProps) {
+export default function TaskCard({ taskLists, loading, error, onStatusChange, onTaskTitleChange, onTaskListTitleChange, onTaskListDateChange, onIsCompletedChange, onDeleteTaskList, onDeleteTask, onCreateTask }: TaskCardProps) {
 
     return (
         <>
@@ -116,6 +118,10 @@ export default function TaskCard({ taskLists, loading, error, onStatusChange, on
                                         ) : (
                                             <p className="text-gray-400 text-sm">No tasks in this list</p>
                                         )}
+                                        <CreateTaskForm
+                                            taskListId={taskList.id}
+                                            onCreateTask={onCreateTask}
+                                        />
                                     </div>
                                 );
                             })}

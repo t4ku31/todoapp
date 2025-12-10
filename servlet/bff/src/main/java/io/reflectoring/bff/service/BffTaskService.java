@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import io.reflectoring.bff.config.AppProperties;
+import io.reflectoring.bff.dto.TaskCreateRequest;
 import io.reflectoring.bff.dto.TaskResponse;
 import io.reflectoring.bff.dto.TaskUpdateRequest;
 import io.reflectoring.bff.model.Task;
@@ -53,13 +54,13 @@ public class BffTaskService {
         return toTaskResponse(task);
     }
 
-    public TaskResponse createTask(Task task, String token) {
-        log.info("Creating task: {} via Resource Server", task);
+    public TaskResponse createTask(TaskCreateRequest request, String token) {
+        log.info("Creating task: {} via Resource Server", request);
         Task created = restClient.post()
                 .uri(resourceUrl + "/tasks")
                 .headers(h -> h.setBearerAuth(token))
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(task)
+                .body(request)
                 .retrieve()
                 .body(Task.class);
         log.info("Successfully created task: {}", created);
@@ -113,6 +114,7 @@ public class BffTaskService {
                 .id(task.id())
                 .title(task.title())
                 .status(task.status() != null ? task.status().toString() : null)
+                .taskListId(task.taskListId())
                 .build();
     }
 }
