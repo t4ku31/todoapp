@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import type { TaskList } from '@/types/types';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
-import CreateTaskListForm from './createTaskListForm';
+import CreateTaskListForm from "./CreateTaskListForm";
 
 interface CreateTaskListButtonProps {
     onTaskListCreated: (newTaskList: TaskList) => void;

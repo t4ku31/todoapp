@@ -1,11 +1,9 @@
-import { AppSidebar } from '@/components/app-sidebar'
-import { SidebarProvider } from '@/components/ui/sidebar'
+import AppLayout from '@/components/layout/AppLayout'
 import { Toaster } from '@/components/ui/sonner'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 import './index.css'
-import Debug from './pages/debug/index'
 import Login from './pages/login/index'
 
 import Todo from './pages/todo/index'
@@ -16,30 +14,11 @@ function App() {
       <Routes>
 
         <Route path="/auth" element={<Login />} />
-        <Route path="/todo" element={
-          <SidebarProvider>
-            <div className="flex w-screen h-screen">
-              <aside className='w-80 flex-shrink'>
-                <AppSidebar />
-              </aside>
-              <main className="flex-1 ">
-                <Todo />
-              </main>
-            </div>
-          </SidebarProvider>
-        } />
-        <Route path="/debug" element={
-          <SidebarProvider>
-            <div className="flex w-screen h-screen">
-              <aside className='w-80 flex-shrink'>
-                <AppSidebar />
-              </aside>
-              <main className="flex-1 overflow-auto">
-                <Debug />
-              </main>
-            </div>
-          </SidebarProvider>
-        } />
+
+        <Route element={<AppLayout />}>
+          <Route path="/todo" element={<Todo />} />
+        </Route>
+
         <Route path="/" element={<Navigate to="/auth" replace />} />
       </Routes>
     </Router >

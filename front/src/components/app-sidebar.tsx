@@ -9,7 +9,7 @@ import { env } from "@/config/env";
 type AppSidebarProps = React.HTMLAttributes<HTMLDivElement>;
 export function AppSidebar({ className, ...props }: AppSidebarProps) {
     return (
-        <Sidebar className={cn("w-80 bg-sidebar text-sidebar-foreground", className)}  {...props}>
+        <Sidebar collapsible="none" className={cn("bg-sidebar text-sidebar-foreground", className)}  {...props}>
             <SidebarHeader>
                 <div className="flex items-center gap-2 px-2 py-2">
                     <Logo />
@@ -22,14 +22,6 @@ export function AppSidebar({ className, ...props }: AppSidebarProps) {
                             <Link to="/todo">
                                 <CheckSquare className="h-4 w-4" />
                                 <span className="text-base">Tasks</span>
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton asChild>
-                            <Link to="/debug">
-                                <CheckSquare className="h-4 w-4" />
-                                <span className="text-base">Debug</span>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

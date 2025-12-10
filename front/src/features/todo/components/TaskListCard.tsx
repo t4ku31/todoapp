@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatusChangeButton } from "@/pages/todo/StatusChangeButton";
 import type { TaskList, TaskStatus } from "@/types/types";
 import { ClearButton } from "./ClearButton";
 import { CreateTaskForm } from "./CreateTaskForm";
 import { DeleteButton } from "./DeleteButton";
 import { EditableDate } from "./EditableDate";
 import { EditableTitle } from "./EditableTitle";
+import { StatusChangeButton } from "./StatusChangeButton";
 
 interface TaskCardProps {
     taskLists: TaskList[];
