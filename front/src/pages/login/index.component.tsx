@@ -1,7 +1,7 @@
-import Logo from '@/components/common/Logo';
+import Logo from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from "@/components/ui/card";
-import { env } from '@/config/env'; 
+import { env } from '@/config/env';
 
 export default function LoginPage() {
 
