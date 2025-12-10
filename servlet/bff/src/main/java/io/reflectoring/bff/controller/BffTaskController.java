@@ -94,6 +94,7 @@ public class BffTaskController {
         }
     }
 
+    // done to test
     @DeleteMapping("/tasks/{id}")
     public ResponseEntity<Void> deleteTask(
             @PathVariable Long id,
@@ -113,6 +114,7 @@ public class BffTaskController {
         }
     }
 
+    // not yet implemented
     @GetMapping("/tasklists/{taskListId}/tasks")
     public ResponseEntity<List<TaskResponse>> getTasksByTaskListId(
             @PathVariable Long taskListId,
