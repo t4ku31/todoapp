@@ -1,11 +1,11 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiClient } from "@/config/env";
-import { sortTasks } from "@/lib/taskUtils";
+import CreateTaskListButton from "@/features/todo/components/CreateTaskListButton";
+import TaskListCard from "@/features/todo/components/TaskListCard";
+import { sortTasks } from "@/features/todo/utils/taskSorter";
 import type { TaskList, TaskStatus } from "@/types/types";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import CreateTaskListButton from "./createButton";
-import TaskListCard from "./taskListCard";
 
 export default function Todo() {
     const [taskLists, setTaskLists] = useState<TaskList[]>([]);
