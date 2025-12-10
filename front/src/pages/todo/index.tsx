@@ -160,6 +160,29 @@ export default function Todo() {
         }
     };
 
+    const handleDeleteTask = async (taskId: number) => {
+        try {
+            console.log("Deleting task:", taskId);
+
+            // Wait for backend validation/processing
+            await apiClient.delete(`/api/tasks/${taskId}`);
+
+            // Update UI only after success
+            setTaskLists(prevLists => prevLists.map(list => ({
+                ...list,
+                tasks: list.tasks ? list.tasks.filter(task => task.id !== taskId) : []
+            })));
+
+            toast.success("タスクを削除しました");
+        } catch (err: any) {
+            console.error('Failed to delete task:', err);
+            const errorMessage = err.response?.data?.message || err.response?.data?.error || 'タスクの削除に失敗しました';
+            toast.error('削除失敗', {
+                description: errorMessage,
+            });
+        }
+    };
+
     const activeTaskLists = taskLists.filter(list => !list.isCompleted);
     const completedTaskLists = taskLists.filter(list => list.isCompleted);
 
@@ -188,6 +211,7 @@ export default function Todo() {
                             onTaskListDateChange={handleTaskListDateChange}
                             onIsCompletedChange={handleIsCompletedChange}
                             onDeleteTaskList={handleDeleteTaskList}
+                            onDeleteTask={handleDeleteTask}
                         />
                     </TabsContent>
 
@@ -202,6 +226,7 @@ export default function Todo() {
                             onTaskListDateChange={handleTaskListDateChange}
                             onIsCompletedChange={handleIsCompletedChange}
                             onDeleteTaskList={handleDeleteTaskList}
+                            onDeleteTask={handleDeleteTask}
                         />
                     </TabsContent>
                 </Tabs>
