@@ -183,6 +183,38 @@ export default function Todo() {
         }
     };
 
+    const handleCreateTask = async (taskListId: number, title: string) => {
+        try {
+            console.log("Creating task:", taskListId, title);
+            const response = await apiClient.post<any>('/api/tasks', { title, taskListId });
+            const newTask = response.data;
+            console.log("Created task:", newTask);
+            setTaskLists(prevLists => prevLists.map(list => {
+                if (list.id === taskListId) {
+                    return {
+                        ...list,
+                        tasks: [...(list.tasks || []), {
+                            id: newTask.id,
+                            title: newTask.title,
+                            status: newTask.status || 'PENDING',
+                            taskListId: taskListId
+                        }]
+                    };
+                }
+                return list;
+            }));
+
+            toast.success("タスクを追加しました");
+        } catch (err: any) {
+            console.error('Failed to create task:', err);
+            const errorMessage = err.response?.data?.message || err.response?.data?.error || 'タスクの作成に失敗しました';
+            toast.error('作成失敗', {
+                description: errorMessage,
+            });
+            throw err;
+        }
+    };
+
     const activeTaskLists = taskLists.filter(list => !list.isCompleted);
     const completedTaskLists = taskLists.filter(list => list.isCompleted);
 
@@ -212,6 +244,7 @@ export default function Todo() {
                             onIsCompletedChange={handleIsCompletedChange}
                             onDeleteTaskList={handleDeleteTaskList}
                             onDeleteTask={handleDeleteTask}
+                            onCreateTask={handleCreateTask}
                         />
                     </TabsContent>
 
@@ -227,6 +260,7 @@ export default function Todo() {
                             onIsCompletedChange={handleIsCompletedChange}
                             onDeleteTaskList={handleDeleteTaskList}
                             onDeleteTask={handleDeleteTask}
+                            onCreateTask={handleCreateTask}
                         />
                     </TabsContent>
                 </Tabs>
