@@ -1,5 +1,5 @@
+import type { TaskStatus } from "@/types/types";
 import React from "react";
-import type { TaskStatus } from "../../types/types";
 
 /**
  * Order of status transition:
