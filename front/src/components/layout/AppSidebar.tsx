@@ -1,4 +1,4 @@
-import Logo from "@/components/common/Logo";
+import Logo from "@/components/Logo";
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { CheckSquare, LogOut, } from "lucide-react";
