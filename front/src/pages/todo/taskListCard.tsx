@@ -67,7 +67,6 @@ export default function TaskCard({ taskLists, loading, error, onStatusChange, on
                                             </div>
                                             <div className="flex items-center gap-1">
                                                 <DeleteButton
-                                                    id={taskList.id}
                                                     onDelete={() => onDeleteTaskList(taskList.id)}
                                                     title="タスクリストを削除しますか？"
                                                     description="この操作は取り消せません。リストに含まれるすべてのタスクも削除されます。"
@@ -101,7 +100,6 @@ export default function TaskCard({ taskLists, loading, error, onStatusChange, on
                                                                         onChange={(newStatus) => onStatusChange(task.id, newStatus)}
                                                                     />
                                                                     <DeleteButton
-                                                                        id={task.id}
                                                                         onDelete={() => onDeleteTask(task.id)}
                                                                         title="タスクを削除しますか？"
                                                                         description="この操作は取り消せません。"

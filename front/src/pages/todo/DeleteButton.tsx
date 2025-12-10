@@ -3,13 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 
 interface DeleteButtonProps {
-    id: number;
     onDelete: () => void;
     title?: string;
     description?: string;
 }
 
-export function DeleteButton({ id, onDelete, title = "タスクを削除しますか？", description = "この操作は取り消せません。" }: DeleteButtonProps) {
+export function DeleteButton({ onDelete, title = "タスクを削除しますか？", description = "この操作は取り消せません。" }: DeleteButtonProps) {
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
