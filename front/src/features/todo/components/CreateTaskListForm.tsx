@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import type { TaskList } from '@/types/types';
 import { format } from 'date-fns';
 import { CalendarIcon, Check, Plus, Trash2, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export interface TaskInput {
     title: string;
@@ -23,6 +23,17 @@ export default function CreateTaskListForm({ onTaskListCreated, onCancel, classN
     const [title, setTitle] = useState('');
     const [tasks, setTasks] = useState<TaskInput[]>([]);
     const [date, setDate] = useState<Date | undefined>(new Date());
+
+    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+    const prevTasksLengthRef = useRef(tasks.length);
+
+    useEffect(() => {
+        if (tasks.length > prevTasksLengthRef.current) {
+            // Added a task
+            inputRefs.current[tasks.length - 1]?.focus();
+        }
+        prevTasksLengthRef.current = tasks.length;
+    }, [tasks.length]);
 
     // Add new task
     const handleAddTask = () => {
@@ -118,6 +129,7 @@ export default function CreateTaskListForm({ onTaskListCreated, onCancel, classN
                 {tasks.map((task, index) => (
                     <div key={index} className="flex items-center gap-2">
                         <Input
+                            ref={(el) => { inputRefs.current[index] = el }}
                             value={task.title}
                             onChange={(e) => handleTaskChange(index, e.target.value)}
                             placeholder={`タスク ${index + 1}`}

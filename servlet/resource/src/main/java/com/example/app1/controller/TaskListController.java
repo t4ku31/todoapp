@@ -15,8 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.app1.dto.TaskListCreateRequest;
-import com.example.app1.dto.TaskListUpdateRequest;
+import com.example.app1.dto.TaskListDto;
 import com.example.app1.model.TaskList;
 import com.example.app1.service.TaskListService;
 
@@ -66,7 +65,7 @@ public class TaskListController {
      */
     @PostMapping
     public ResponseEntity<TaskList> createTaskList(
-            @RequestBody TaskListCreateRequest taskListCreateRequest,
+            @RequestBody TaskListDto.Create taskListCreateRequest,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
         log.info("Received request to create task list for user: {}", userId);
@@ -87,7 +86,7 @@ public class TaskListController {
     @PatchMapping("/{id}")
     public ResponseEntity<Void> updateTaskList(
             @PathVariable Long id,
-            @RequestBody TaskListUpdateRequest taskListUpdateRequest,
+            @RequestBody TaskListDto.Update taskListUpdateRequest,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
         log.info("Received request to update task list {} for user: {}", id, userId);

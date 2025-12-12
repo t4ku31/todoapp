@@ -1,10 +1,11 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiClient } from "@/config/env";
+import CreateTaskListButton from "@/features/todo/components/CreateTaskListButton";
+import TaskListCard from "@/features/todo/components/TaskListCard";
+import { sortTasks } from "@/features/todo/utils/taskSorter";
 import type { TaskList, TaskStatus } from "@/types/types";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import CreateTaskListButton from "./createButton";
-import TaskListCard from "./taskListCard";
 
 export default function Todo() {
     const [taskLists, setTaskLists] = useState<TaskList[]>([]);
@@ -17,8 +18,12 @@ export default function Todo() {
             try {
                 setLoading(true);
                 const response = await apiClient.get<TaskList[]>('/api/tasklists');
-                console.log(response.data);
-                setTaskLists(response.data);
+                // Sort tasks in each list
+                const sortedLists = response.data.map(list => ({
+                    ...list,
+                    tasks: sortTasks(list.tasks || [])
+                }));
+                setTaskLists(sortedLists);
                 setError(null);
             } catch (err) {
                 console.error('Failed to fetch tasklists:', err);
@@ -29,33 +34,38 @@ export default function Todo() {
         };
 
         fetchTaskLists();
-        console.log("taskLists", taskLists);
     }, []);
 
     // Add new task list to state
     const handleAddTaskList = (newTaskList: TaskList) => {
-        setTaskLists(prev => [...prev, newTaskList]);
+        // Sort tasks for the new list (though initially empty or pre-filled)
+        const sortedList = {
+            ...newTaskList,
+            tasks: sortTasks(newTaskList.tasks || [])
+        };
+        setTaskLists(prev => [...prev, sortedList]);
     };
 
     // Handle task status change
     const handleStatusChange = async (taskId: number, newStatus: TaskStatus) => {
         try {
-            // Optimistic update
-            setTaskLists(prevLists => prevLists.map(list => ({
-                ...list,
-                tasks: list.tasks ? list.tasks.map(task =>
-                    task.id === taskId ? { ...task, status: newStatus } : task
-                ) : []
-            })));
-
-            console.log("Updated task status:", taskId, newStatus);
+            // Optimistic update with sorting
+            setTaskLists(prevLists => prevLists.map(list => {
+                if (list.tasks && list.tasks.some(t => t.id === taskId)) {
+                    const updatedTasks = list.tasks.map(task =>
+                        task.id === taskId ? { ...task, status: newStatus } : task
+                    );
+                    return {
+                        ...list,
+                        tasks: sortTasks(updatedTasks)
+                    };
+                }
+                return list;
+            }));
 
             await apiClient.patch(`/api/tasks/${taskId}`, { status: newStatus });
         } catch (err) {
             console.error('Failed to update task status:', err);
-            // Revert optimistic update (optional, but good practice)
-            // For simplicity, we might just re-fetch or show error. 
-            // Here we just log it. Ideally we should revert state.
         }
     };
 
@@ -70,12 +80,9 @@ export default function Todo() {
                 ) : []
             })));
 
-            console.log("Updated task title:", taskId, newTitle);
-
             await apiClient.patch(`/api/tasks/${taskId}`, { title: newTitle });
         } catch (err) {
             console.error('Failed to update task title:', err);
-            // Re-throw to let component handle the error
             throw err;
         }
     };
@@ -87,12 +94,9 @@ export default function Todo() {
                 list.id === taskListId ? { ...list, title: newTitle } : list
             ));
 
-            console.log("Updated task list title:", taskListId, newTitle);
-
             await apiClient.patch(`/api/tasklists/${taskListId}`, { title: newTitle });
         } catch (err) {
             console.error('Failed to update task list title:', err);
-            // Re-throw to let component handle the error
             throw err;
         }
     };
@@ -104,12 +108,9 @@ export default function Todo() {
                 list.id === taskListId ? { ...list, dueDate: newDate } : list
             ));
 
-            console.log("Updated task list date:", taskListId, newDate);
-
             await apiClient.patch(`/api/tasklists/${taskListId}`, { dueDate: newDate });
         } catch (err) {
             console.error('Failed to update task list date:', err);
-            // Re-throw to let component handle the error
             throw err;
         }
     };
@@ -123,8 +124,6 @@ export default function Todo() {
             setTaskLists(prevLists => prevLists.map(list =>
                 list.id === taskListId ? { ...list, isCompleted: isCompleted } : list
             ));
-
-            console.log("Updated task list completion:", taskListId, isCompleted);
 
             await apiClient.patch(`/api/tasklists/${taskListId}`, { isCompleted: isCompleted });
         } catch (err: any) {
@@ -140,14 +139,12 @@ export default function Todo() {
                 description: errorMessage,
             });
 
-            // Re-throw to let component handle the error
             throw err;
         }
     };
 
     const handleDeleteTaskList = async (taskListId: number) => {
         try {
-            console.log("Deleting task list:", taskListId);
             await apiClient.delete(`/api/tasklists/${taskListId}`);
             setTaskLists(prevLists => prevLists.filter(list => list.id !== taskListId));
             toast.success("タスクリストを削除しました");
@@ -157,6 +154,59 @@ export default function Todo() {
             toast.error('削除失敗', {
                 description: errorMessage,
             });
+        }
+    };
+
+    const handleDeleteTask = async (taskId: number) => {
+        try {
+            // Wait for backend validation/processing
+            await apiClient.delete(`/api/tasks/${taskId}`);
+
+            // Update UI only after success
+            setTaskLists(prevLists => prevLists.map(list => ({
+                ...list,
+                tasks: list.tasks ? list.tasks.filter(task => task.id !== taskId) : []
+            })));
+
+            toast.success("タスクを削除しました");
+        } catch (err: any) {
+            console.error('Failed to delete task:', err);
+            const errorMessage = err.response?.data?.message || err.response?.data?.error || 'タスクの削除に失敗しました';
+            toast.error('削除失敗', {
+                description: errorMessage,
+            });
+        }
+    };
+
+    const handleCreateTask = async (taskListId: number, title: string) => {
+        try {
+            const response = await apiClient.post<any>('/api/tasks', { title, taskListId });
+            const newTask = response.data;
+
+            setTaskLists(prevLists => prevLists.map(list => {
+                if (list.id === taskListId) {
+                    const updatedTasks = [...(list.tasks || []), {
+                        id: newTask.id,
+                        title: newTask.title,
+                        status: newTask.status || 'PENDING',
+                        taskListId: taskListId
+                    }];
+                    return {
+                        ...list,
+                        tasks: sortTasks(updatedTasks)
+                    };
+                }
+                return list;
+            }));
+
+            toast.success("タスクを追加しました");
+        } catch (err: any) {
+            console.error('Failed to create task:', err);
+            const errorMessage = err.response?.data?.message || err.response?.data?.error || 'タスクの作成に失敗しました';
+            toast.error('作成失敗', {
+                description: errorMessage,
+            });
+            throw err;
         }
     };
 
@@ -188,6 +238,8 @@ export default function Todo() {
                             onTaskListDateChange={handleTaskListDateChange}
                             onIsCompletedChange={handleIsCompletedChange}
                             onDeleteTaskList={handleDeleteTaskList}
+                            onDeleteTask={handleDeleteTask}
+                            onCreateTask={handleCreateTask}
                         />
                     </TabsContent>
 
@@ -202,6 +254,8 @@ export default function Todo() {
                             onTaskListDateChange={handleTaskListDateChange}
                             onIsCompletedChange={handleIsCompletedChange}
                             onDeleteTaskList={handleDeleteTaskList}
+                            onDeleteTask={handleDeleteTask}
+                            onCreateTask={handleCreateTask}
                         />
                     </TabsContent>
                 </Tabs>

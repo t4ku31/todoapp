@@ -1,4 +1,4 @@
-package io.reflectoring.bff.model;
+package io.reflectoring.bff.dto;
 
 public enum TaskStatus {
     PENDING,

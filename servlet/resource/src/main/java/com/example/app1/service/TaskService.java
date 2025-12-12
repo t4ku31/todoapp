@@ -5,8 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.app1.dto.TaskCreateRequest;
-import com.example.app1.dto.TaskUpdateRequest;
+import com.example.app1.dto.TaskDto;
 import com.example.app1.model.Task;
 import com.example.app1.model.TaskList;
 import com.example.app1.model.TaskStatus;
@@ -95,28 +94,26 @@ public class TaskService {
      * @throws IllegalArgumentException if task list doesn't belong to user
      */
     @Transactional
-    public Task createTask(TaskCreateRequest taskCreateRequest) {
-        log.info("Creating task for user: {}", taskCreateRequest.getUserId());
+    public Task createTask(TaskDto.Create taskCreateRequest, String userId) {
+        log.info("Creating task for user: {}", userId);
 
         // Verify user owns the task list
-        if (!taskListRepository.existsByIdAndUserId(taskCreateRequest.getTaskListId(), taskCreateRequest.getUserId())) {
-            log.warn("Task list {} not found for user: {}", taskCreateRequest.getTaskListId(),
-                    taskCreateRequest.getUserId());
+        if (!taskListRepository.existsByIdAndUserId(taskCreateRequest.taskListId(), userId)) {
+            log.warn("Task list {} not found for user: {}", taskCreateRequest.taskListId(),
+                    userId);
             throw new IllegalArgumentException("Task list not found or access denied");
         }
 
-        // Set default status if not provided
-        if (taskCreateRequest.getStatus() == null) {
-            taskCreateRequest.setStatus(TaskStatus.PENDING);
-        }
+        // Set default status
+        TaskStatus status = TaskStatus.PENDING;
 
         // Fetch TaskList reference
-        TaskList taskList = taskListRepository.getReferenceById(taskCreateRequest.getTaskListId());
+        TaskList taskList = taskListRepository.getReferenceById(taskCreateRequest.taskListId());
 
         Task task = Task.builder()
-                .title(taskCreateRequest.getTitle())
-                .status(taskCreateRequest.getStatus())
-                .userId(taskCreateRequest.getUserId())
+                .title(taskCreateRequest.title())
+                .status(status)
+                .userId(userId)
                 .taskList(taskList)
                 .build();
 
@@ -158,12 +155,13 @@ public class TaskService {
      * @throws IllegalArgumentException if task not found or doesn't belong to user
      */
     @Transactional
-    public Task updateTask(Long id, TaskUpdateRequest request, String userId) {
+    public Task updateTask(Long id, TaskDto.Update request, String userId) {
         log.info("Updating task {} for user: {}", id, userId);
         if (request == null) {
             throw new IllegalArgumentException("Update request cannot be null");
         }
-        Task existing = getTask(id, userId);
+        Task existing = taskRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found"));
 
         if (request.title() != null) {
             existing.setTitle(request.title());

@@ -15,8 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.app1.dto.TaskCreateRequest;
-import com.example.app1.dto.TaskUpdateRequest;
+import com.example.app1.dto.TaskDto;
 import com.example.app1.model.Task;
 import com.example.app1.service.TaskService;
 
@@ -108,16 +107,13 @@ public class TaskController {
      */
     @PostMapping("/tasks")
     public ResponseEntity<Task> createTask(
-            @RequestBody TaskCreateRequest taskCreateRequest,
+            @RequestBody TaskDto.Create taskCreateRequest,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
         log.info("Received request to create task for user: {}", userId);
 
-        // Ensure userId in request matches authenticated user
-        taskCreateRequest.setUserId(userId);
-
         try {
-            Task created = taskService.createTask(taskCreateRequest);
+            Task created = taskService.createTask(taskCreateRequest, userId);
             log.info("Successfully created task {} for user: {}", created.getId(), userId);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (IllegalArgumentException e) {
@@ -138,7 +134,7 @@ public class TaskController {
     @PatchMapping("/tasks/{id}")
     public ResponseEntity<Void> updateTask(
             @PathVariable Long id,
-            @RequestBody TaskUpdateRequest request,
+            @RequestBody TaskDto.Update request,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
         log.info("Received request to update task {} for user: {}", id, userId);
