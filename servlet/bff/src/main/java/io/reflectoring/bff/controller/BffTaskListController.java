@@ -18,9 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestClientResponseException;
 
-import io.reflectoring.bff.dto.TaskListCreateRequest;
-import io.reflectoring.bff.dto.TaskListResponse;
-import io.reflectoring.bff.dto.TaskListUpdateRequest;
+import io.reflectoring.bff.dto.TaskListDto;
 import io.reflectoring.bff.service.BffTaskListService;
 
 @RestController
@@ -36,23 +34,24 @@ public class BffTaskListController {
 
     // done to test
     @GetMapping
-    public ResponseEntity<List<TaskListResponse>> getUserTaskLists(
+    public ResponseEntity<List<TaskListDto.Summary>> getUserTaskLists(
             @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
         log.info("[GET /api/tasklists] Request by user: {}", client.getPrincipalName());
-        List<TaskListResponse> taskLists = taskListService.getUserTaskLists(client.getAccessToken().getTokenValue());
+        List<TaskListDto.Summary> taskLists = taskListService
+                .getUserTaskLists(client.getAccessToken().getTokenValue());
         return ResponseEntity.ok(taskLists);
     }
 
     // done to test
     @PostMapping
-    public ResponseEntity<TaskListResponse> createTaskList(
-            @RequestBody TaskListCreateRequest taskListCreateRequest,
+    public ResponseEntity<TaskListDto.Summary> createTaskList(
+            @RequestBody TaskListDto.Create taskListCreateRequest,
             @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
         log.info("[POST /api/tasklists] Request by user: {}", client.getPrincipalName());
         log.info("[POST /api/tasklists] Request new list: {}", taskListCreateRequest);
-        TaskListResponse created = taskListService.createTaskList(taskListCreateRequest,
+        TaskListDto.Summary created = taskListService.createTaskList(taskListCreateRequest,
                 client.getAccessToken().getTokenValue());
-        log.info("[POST /api/tasklists] Created TaskListResponse: {}", created);
+        log.info("[POST /api/tasklists] Created TaskList: {}", created);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
@@ -60,7 +59,7 @@ public class BffTaskListController {
     @PatchMapping("/{id}")
     public ResponseEntity<Void> updateTaskList(
             @PathVariable Long id,
-            @RequestBody TaskListUpdateRequest taskListUpdateRequest,
+            @RequestBody TaskListDto.Update taskListUpdateRequest,
             @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
         log.info("[PATCH /api/tasklists/{id}] Request by user: {}", client.getPrincipalName());
         log.info("[PATCH /api/tasklists/{id}] Updating task list {} with request: {}", id, taskListUpdateRequest);

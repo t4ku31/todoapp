@@ -11,11 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import io.reflectoring.bff.config.AppProperties;
-import io.reflectoring.bff.dto.TaskListCreateRequest;
-import io.reflectoring.bff.dto.TaskListResponse;
-import io.reflectoring.bff.dto.TaskListUpdateRequest;
-import io.reflectoring.bff.dto.TaskResponse;
-import io.reflectoring.bff.model.TaskList;
+import io.reflectoring.bff.dto.TaskListDto;
 
 @Service
 public class BffTaskListService {
@@ -27,61 +23,38 @@ public class BffTaskListService {
                 this.restClient = builder.baseUrl(appProperties.getResourceServerUrl() + "/api").build();
         }
 
-        public List<TaskListResponse> getUserTaskLists(String token) {
+        public List<TaskListDto.Summary> getUserTaskLists(String token) {
                 log.info("Fetching user task lists from Resource Server");
-                List<TaskList> taskLists = restClient.get()
+                List<TaskListDto.Summary> taskLists = restClient.get()
                                 .uri("/tasklists") // Changed to relative URI
-                                .headers(h -> h.setBearerAuth(token))
+                                .header("Authorization", "Bearer " + token)
                                 .retrieve()
-                                .body(new ParameterizedTypeReference<List<TaskList>>() {
+                                .body(new ParameterizedTypeReference<List<TaskListDto.Summary>>() {
                                 });
 
                 if (taskLists == null) {
                         return List.of();
                 }
 
-                return taskLists.stream()
-                                .map(this::toTaskListResponse)
-                                .toList();
+                return taskLists;
         }
 
-        public TaskListResponse createTaskList(TaskListCreateRequest taskListCreateRequest, String token) {
+        public TaskListDto.Summary createTaskList(TaskListDto.Create taskListCreateRequest, String token) {
                 log.info("Creating task list: {}", taskListCreateRequest);
                 Objects.requireNonNull(taskListCreateRequest);
                 Objects.requireNonNull(token);
-                TaskList created = restClient.post()
+                TaskListDto.Summary created = restClient.post()
                                 .uri("/tasklists")
                                 .headers(h -> h.setBearerAuth(token))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .body(taskListCreateRequest)
                                 .retrieve()
-                                .body(TaskList.class);
+                                .body(TaskListDto.Summary.class);
                 log.info("Created task list: {} from Resource Server", created);
-                return toTaskListResponse(created);
+                return created;
         }
 
-        private TaskListResponse toTaskListResponse(TaskList taskList) {
-                if (taskList == null) {
-                        return null;
-                }
-                return TaskListResponse.builder()
-                                .id(taskList.id())
-                                .title(taskList.title())
-                                .dueDate(taskList.dueDate())
-                                .isCompleted(taskList.isCompleted())
-                                .tasks(taskList.tasks() != null ? taskList.tasks().stream()
-                                                .map(task -> TaskResponse.builder()
-                                                                .id(task.id())
-                                                                .title(task.title())
-                                                                .status(task.status() != null ? task.status().toString()
-                                                                                : null)
-                                                                .taskListId(task.taskListId())
-                                                                .build())
-                                                .toList() : null)
-                                .build();
-        }
-
-        public void updateTaskList(Long id, TaskListUpdateRequest taskListUpdateRequest, String token) {
+        public void updateTaskList(Long id, TaskListDto.Update taskListUpdateRequest, String token) {
                 log.info("Updating task list {} with request: {}", id, taskListUpdateRequest);
                 restClient.patch()
                                 .uri("/tasklists/{id}", id)

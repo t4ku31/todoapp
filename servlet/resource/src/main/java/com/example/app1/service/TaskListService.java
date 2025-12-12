@@ -7,14 +7,12 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.app1.dto.TaskListCreateRequest;
-import com.example.app1.dto.TaskListUpdateRequest;
+import com.example.app1.dto.TaskListDto;
 import com.example.app1.exception.TaskListValidationException;
 import com.example.app1.model.Task;
 import com.example.app1.model.TaskList;
 import com.example.app1.model.TaskStatus;
 import com.example.app1.repository.TaskListRepository;
-import com.example.app1.repository.TaskRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +27,6 @@ import lombok.extern.slf4j.Slf4j;
 public class TaskListService {
 
     private final TaskListRepository taskListRepository;
-    private final TaskRepository taskRepository;
 
     /**
      * Get all task lists for a specific user.
@@ -68,24 +65,24 @@ public class TaskListService {
     /**
      * Create a new task list.
      * 
-     * @param taskList Task list to create (userId will be set)
-     * @param userId   Auth0 sub claim identifying the user
+     * @param request Task list creation request
+     * @param userId  Auth0 sub claim identifying the user
      * @return The created task list
      */
     @Transactional
-    public TaskList createTaskList(TaskListCreateRequest request, String userId) {
+    public TaskList createTaskList(TaskListDto.Create request, String userId) {
         log.info("Creating task list for user: {}", userId);
 
         // Ensure userId is set correctly
         TaskList taskList = TaskList.builder()
-                .title(request.getTitle())
-                .dueDate(request.getDueDate())
+                .title(request.title())
+                .dueDate(request.dueDate())
                 .userId(userId)
                 .build();
 
-        List<Task> tasks = request.getTasks().stream()
+        List<Task> tasks = request.tasks().stream()
                 .map(req -> Task.builder()
-                        .title(req.getTitle())
+                        .title(req.title())
                         .status(TaskStatus.PENDING)
                         .userId(userId)
                         .taskList(taskList)
@@ -108,31 +105,31 @@ public class TaskListService {
 
     /**
      * Update an existing task list.
-     * Ensures the task list belongs to the user.
+     * Only updates fields that are non-null in the request.
      * 
      * @param id      Task list ID
-     * @param updates Task list with updated fieldsapi
+     * @param request Task list update request
      * @param userId  Auth0 sub claim identifying the user
-     * @return The updated task list
      * @throws IllegalArgumentException if task list not found or doesn't belong to
      *                                  user
      */
     @Transactional
-    public void updateTaskList(Long id, TaskListUpdateRequest request, String userId) {
+    public void updateTaskList(Long id, TaskListDto.Update request, String userId) {
         log.info("Updating task list {} for user: {}", id, userId);
 
-        TaskList existing = getTaskList(id, userId);
+        TaskList existing = taskListRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Task list not found"));
 
         // Update fields
-        if (request.getTitle() != null) {
-            existing.setTitle(request.getTitle());
+        if (request.title() != null) {
+            existing.setTitle(request.title());
         }
-        if (request.getDueDate() != null) {
-            existing.setDueDate(request.getDueDate());
+        if (request.dueDate() != null) {
+            existing.setDueDate(request.dueDate());
         }
-        if (request.getIsCompleted() != null) {
+        if (request.isCompleted() != null) {
             // Validation: All tasks must be COMPLETED before marking list as completed
-            if (request.getIsCompleted() && existing.getTasks() != null && !existing.getTasks().isEmpty()) {
+            if (request.isCompleted() && existing.getTasks() != null && !existing.getTasks().isEmpty()) {
                 boolean allTasksCompleted = existing.getTasks().stream()
                         .allMatch(task -> task.getStatus() == TaskStatus.COMPLETED);
 
@@ -141,22 +138,21 @@ public class TaskListService {
                 }
             }
 
-            existing.setIsCompleted(request.getIsCompleted());
-            if (request.getIsCompleted()) {
+            existing.setIsCompleted(request.isCompleted());
+            if (request.isCompleted()) {
                 existing.setCompletedAt(LocalDateTime.now());
             } else {
                 existing.setCompletedAt(null);
             }
         }
 
-        TaskList updated = taskListRepository.save(existing);
-        log.info("Updated task list {} for user: {}", updated, userId);
+        taskListRepository.save(existing);
+        log.info("Updated task list {} for user: {}", id, userId);
     }
 
     /**
      * Delete a task list.
      * Ensures the task list belongs to the user.
-     * Cascades to delete all tasks in the list.
      * 
      * @param id     Task list ID
      * @param userId Auth0 sub claim identifying the user
@@ -167,18 +163,8 @@ public class TaskListService {
     public void deleteTaskList(Long id, String userId) {
         log.info("Deleting task list {} for user: {}", id, userId);
 
-        // Verify ownership and get entity before deleting
-        TaskList taskList = taskListRepository.findByIdAndUserId(id, userId)
-                .orElseThrow(() -> {
-                    log.warn("Task list {} not found for user: {}", id, userId);
-                    return new IllegalArgumentException("Task list not found or access denied");
-                });
-
-        // Use delete(entity) to trigger JPA cascades (deleting children tasks)
-        // Direct JPQL delete (deleteByIdAndUserId) bypasses cascades and causes FK
-        // constraint violations
-        // Explicitly delete tasks first to avoid FK violations
-        taskRepository.deleteByTaskListId(id);
+        // Verify ownership
+        TaskList taskList = getTaskList(id, userId);
 
         taskListRepository.delete(taskList);
         log.info("Deleted task list {} for user: {}", id, userId);

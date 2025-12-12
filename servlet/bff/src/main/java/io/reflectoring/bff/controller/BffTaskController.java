@@ -18,9 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestClientResponseException;
 
-import io.reflectoring.bff.dto.TaskCreateRequest;
-import io.reflectoring.bff.dto.TaskResponse;
-import io.reflectoring.bff.dto.TaskUpdateRequest;
+import io.reflectoring.bff.dto.TaskDto;
 import io.reflectoring.bff.service.BffTaskService;
 
 @RestController
@@ -35,22 +33,22 @@ public class BffTaskController {
     }
 
     @GetMapping("/tasks")
-    public ResponseEntity<List<TaskResponse>> getUserTasks(
+    public ResponseEntity<List<TaskDto.Summary>> getUserTasks(
             @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
         log.info("[GET /api/tasks] Request by user: {}", client.getPrincipalName());
-        List<TaskResponse> tasks = taskService.getUserTasks(client.getAccessToken().getTokenValue());
+        List<TaskDto.Summary> tasks = taskService.getUserTasks(client.getAccessToken().getTokenValue());
         log.info("[GET /api/tasks] Returning {} tasks", tasks.size());
         return ResponseEntity.ok(tasks);
     }
 
     @GetMapping("/tasks/{id}")
-    public ResponseEntity<TaskResponse> getTask(
+    public ResponseEntity<TaskDto.Summary> getTask(
             @PathVariable Long id,
             @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
         log.info("[GET /api/tasks/{id}] Request by user: {}", client.getPrincipalName());
         log.info("[GET /api/tasks/{id}] Fetching task {}", id);
         try {
-            TaskResponse task = taskService.getTask(id, client.getAccessToken().getTokenValue());
+            TaskDto.Summary task = taskService.getTask(id, client.getAccessToken().getTokenValue());
             log.info("[GET /api/tasks/{id}] Successfully fetched task {}", id);
             return ResponseEntity.ok(task);
         } catch (RestClientResponseException e) {
@@ -64,13 +62,13 @@ public class BffTaskController {
 
     //
     @PostMapping("/tasks")
-    public ResponseEntity<TaskResponse> createTask(
-            @RequestBody TaskCreateRequest request,
+    public ResponseEntity<TaskDto.Summary> createTask(
+            @RequestBody TaskDto.Create request,
             @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
         log.info("[POST /api/tasks] Request by user: {}", client.getPrincipalName());
         log.info("[POST /api/tasks] Creating task: {}", request);
-        TaskResponse created = taskService.createTask(request, client.getAccessToken().getTokenValue());
-        log.info("[POST /api/tasks] Successfully created task with id: {}", created.getId());
+        TaskDto.Summary created = taskService.createTask(request, client.getAccessToken().getTokenValue());
+        log.info("[POST /api/tasks] Successfully created task with id: {}", created.id());
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
@@ -78,7 +76,7 @@ public class BffTaskController {
     @PatchMapping("/tasks/{id}")
     public ResponseEntity<Void> updateTask(
             @PathVariable Long id,
-            @RequestBody TaskUpdateRequest request,
+            @RequestBody TaskDto.Update request,
             @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
         log.info("[PATCH /api/tasks/{id}] Request by user: {}", client.getPrincipalName());
         log.info("[PATCH /api/tasks/{id}] Updating task {} with request: {}", id, request);
@@ -117,14 +115,14 @@ public class BffTaskController {
 
     // not yet implemented
     @GetMapping("/tasklists/{taskListId}/tasks")
-    public ResponseEntity<List<TaskResponse>> getTasksByTaskListId(
+    public ResponseEntity<List<TaskDto.Summary>> getTasksByTaskListId(
             @PathVariable Long taskListId,
             @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
         log.info("[GET /api/tasklists/{taskListId}/tasks] Request by user: {}", client.getPrincipalName());
         log.info("[GET /api/tasklists/{taskListId}/tasks] Fetching tasks for task list {} from Resource Server",
                 taskListId);
         try {
-            List<TaskResponse> tasks = taskService.getTasksByTaskListId(taskListId,
+            List<TaskDto.Summary> tasks = taskService.getTasksByTaskListId(taskListId,
                     client.getAccessToken().getTokenValue());
             log.info("[GET /api/tasklists/{taskListId}/tasks] Returning {} tasks for task list {}", tasks.size(),
                     taskListId);
