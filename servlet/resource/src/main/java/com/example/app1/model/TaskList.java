@@ -8,8 +8,6 @@ import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -54,7 +52,6 @@ public class TaskList {
     /**
      * Optional due date for the task list
      */
-    @JsonProperty("due_date")
     @Column(name = "due_date")
     private LocalDate dueDate;
 
