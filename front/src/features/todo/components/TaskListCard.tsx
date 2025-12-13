@@ -5,130 +5,137 @@ import { CreateTaskForm } from "./CreateTaskForm";
 import { DeleteButton } from "./DeleteButton";
 import { EditableDate } from "./EditableDate";
 import { EditableTitle } from "./EditableTitle";
-import { StatusChangeButton } from "./StatusChangeButton";
+import { TaskItem } from "./TaskItem";
 
 interface TaskCardProps {
-    taskLists: TaskList[];
-    loading: boolean;
-    error: string | null;
-    onStatusChange: (taskId: number, newStatus: TaskStatus) => void;
-    onTaskTitleChange: (taskId: number, newTitle: string) => Promise<void>;
-    onTaskListTitleChange: (taskListId: number, newTitle: string) => Promise<void>;
-    onTaskListDateChange: (taskListId: number, newDate: string) => Promise<void>;
-    onIsCompletedChange: (taskListId: number, isCompleted: boolean) => Promise<void>;
-    onDeleteTaskList: (taskListId: number) => Promise<void>;
-    onDeleteTask: (taskId: number) => Promise<void>;
-    onCreateTask: (taskListId: number, title: string) => Promise<void>;
+	taskLists: TaskList[];
+	loading: boolean;
+	error: string | null;
+	onStatusChange: (taskId: number, newStatus: TaskStatus) => void;
+	onTaskTitleChange: (taskId: number, newTitle: string) => Promise<void>;
+	onTaskListTitleChange: (
+		taskListId: number,
+		newTitle: string,
+	) => Promise<void>;
+	onTaskListDateChange: (taskListId: number, newDate: string) => Promise<void>;
+	onIsCompletedChange: (
+		taskListId: number,
+		isCompleted: boolean,
+	) => Promise<void>;
+	onDeleteTaskList: (taskListId: number) => Promise<void>;
+	onDeleteTask: (taskId: number) => Promise<void>;
+	onCreateTask: (taskListId: number, title: string) => Promise<void>;
 }
 
-export default function TaskCard({ taskLists, loading, error, onStatusChange, onTaskTitleChange, onTaskListTitleChange, onTaskListDateChange, onIsCompletedChange, onDeleteTaskList, onDeleteTask, onCreateTask }: TaskCardProps) {
+export default function TaskCard({
+	taskLists,
+	loading,
+	error,
+	onStatusChange,
+	onTaskTitleChange,
+	onTaskListTitleChange,
+	onTaskListDateChange,
+	onIsCompletedChange,
+	onDeleteTaskList,
+	onDeleteTask,
+	onCreateTask,
+}: TaskCardProps) {
+	return (
+		<Card className="h-full rounded-lg overflow-hidden flex flex-col border-none">
+			<CardHeader>
+				<CardTitle>Task Lists</CardTitle>
+			</CardHeader>
+			<CardContent className="flex-1 overflow-y-auto">
+				{loading && (
+					<p className="text-gray-500 text-center py-4">
+						Loading task lists...
+					</p>
+				)}
 
-    return (
-        <>
-            <Card className="flex-[0.7] h-[70%] overflow-x-auto">
-                <CardHeader>
-                    <CardTitle>Task Lists</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {loading && (
-                        <p className="text-gray-500 text-center py-4">Loading task lists...</p>
-                    )}
+				{error && (
+					<div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+						<p className="font-bold">Error</p>
+						<p>{error}</p>
+					</div>
+				)}
 
-                    {error && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-                            <p className="font-bold">Error</p>
-                            <p>{error}</p>
-                        </div>
-                    )}
+				{!loading && !error && taskLists.length === 0 && (
+					<p className="text-gray-500 text-center py-4">No task lists found.</p>
+				)}
 
-                    {!loading && !error && taskLists.length === 0 && (
-                        <p className="text-gray-500 text-center py-4">No task lists found.</p>
-                    )}
+				{!loading && !error && taskLists.length > 0 && (
+					<div className="space-y-6">
+						{taskLists.map((taskList) => {
+							// Validation: Check if all tasks are completed
+							const canComplete =
+								taskList.tasks?.every((task) => task.status === "COMPLETED") ??
+								true;
+							const disabledReason = !canComplete
+								? "すべてのタスクを完了してください"
+								: undefined;
 
-                    {!loading && !error && taskLists.length > 0 && (
-                        <div className="space-y-6">
-                            {taskLists.map(taskList => {
-                                // Validation: Check if all tasks are completed
-                                const canComplete = taskList.tasks?.every(task => task.status === 'COMPLETED') ?? true;
-                                const disabledReason = !canComplete ? "すべてのタスクを完了してください" : undefined;
+							return (
+								<div key={taskList.id} className="border rounded-lg p-4">
+									<div className="flex justify-between items-start mb-4">
+										<div className="flex-1">
+											<EditableTitle
+												id={taskList.id}
+												title={taskList.title}
+												onTitleChange={onTaskListTitleChange}
+											/>
+											<EditableDate
+												id={taskList.id}
+												date={taskList.dueDate}
+												onDateChange={onTaskListDateChange}
+											/>
+										</div>
+										<div className="flex items-center gap-1">
+											<DeleteButton
+												onDelete={() => onDeleteTaskList(taskList.id)}
+												title="タスクリストを削除しますか？"
+												description="この操作は取り消せません。リストに含まれるすべてのタスクも削除されます。"
+											/>
+											<ClearButton
+												isCompleted={taskList.isCompleted}
+												onToggleCompletion={() =>
+													onIsCompletedChange(
+														taskList.id,
+														!taskList.isCompleted,
+													)
+												}
+												disabled={!canComplete}
+												disabledReason={disabledReason}
+											/>
+										</div>
+									</div>
 
-                                return (
-                                    <div key={taskList.id} className="border rounded-lg p-4">
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div className="flex-1">
-                                                <EditableTitle
-                                                    id={taskList.id}
-                                                    title={taskList.title}
-                                                    onTitleChange={onTaskListTitleChange}
-                                                />
-                                                <EditableDate
-                                                    id={taskList.id}
-                                                    date={taskList.dueDate}
-                                                    onDateChange={onTaskListDateChange}
-                                                />
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <DeleteButton
-                                                    onDelete={() => onDeleteTaskList(taskList.id)}
-                                                    title="タスクリストを削除しますか？"
-                                                    description="この操作は取り消せません。リストに含まれるすべてのタスクも削除されます。"
-                                                />
-                                                <ClearButton
-                                                    isCompleted={taskList.isCompleted}
-                                                    onToggleCompletion={() => onIsCompletedChange(taskList.id, !taskList.isCompleted)}
-                                                    disabled={!canComplete}
-                                                    disabledReason={disabledReason}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        {taskList.tasks && taskList.tasks.length > 0 ? (
-                                            <div className="space-y-2">
-                                                {taskList.tasks.map(task => (
-                                                    <div key={task.id} className="flex items-start gap-2 p-3 bg-gray-50 rounded border">
-                                                        <div className="flex-1">
-                                                            <div className="flex justify-between items-start">
-                                                                <div>
-                                                                    <EditableTitle
-                                                                        id={task.id}
-                                                                        title={task.title}
-                                                                        onTitleChange={onTaskTitleChange}
-                                                                    />
-
-                                                                </div>
-                                                                <div >
-                                                                    <StatusChangeButton
-                                                                        status={task.status}
-                                                                        onChange={(newStatus) => onStatusChange(task.id, newStatus)}
-                                                                    />
-                                                                    <DeleteButton
-                                                                        onDelete={() => onDeleteTask(task.id)}
-                                                                        title="タスクを削除しますか？"
-                                                                        description="この操作は取り消せません。"
-                                                                    />
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex gap-3 mt-2 text-xs text-gray-500">
-
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <p className="text-gray-400 text-sm">No tasks in this list</p>
-                                        )}
-                                        <CreateTaskForm
-                                            taskListId={taskList.id}
-                                            onCreateTask={onCreateTask}
-                                        />
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-        </>
-    )
+									{taskList.tasks && taskList.tasks.length > 0 ? (
+										<div className="space-y-3">
+											{taskList.tasks.map((task) => (
+												<TaskItem
+													key={task.id}
+													task={task}
+													onStatusChange={onStatusChange}
+													onTaskTitleChange={onTaskTitleChange}
+													onDeleteTask={onDeleteTask}
+												/>
+											))}
+										</div>
+									) : (
+										<p className="text-gray-400 text-sm">
+											No tasks in this list
+										</p>
+									)}
+									<CreateTaskForm
+										taskListId={taskList.id}
+										onCreateTask={onCreateTask}
+									/>
+								</div>
+							);
+						})}
+					</div>
+				)}
+			</CardContent>
+		</Card>
+	);
 }
