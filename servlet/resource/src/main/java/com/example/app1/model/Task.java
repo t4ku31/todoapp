@@ -1,5 +1,6 @@
 package com.example.app1.model;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -56,6 +57,18 @@ public class Task {
      */
     @Column(nullable = false)
     private String title;
+
+    /**
+     * Optional due date for the task
+     */
+    @Column(name = "due_date")
+    private LocalDate dueDate;
+
+    /**
+     * Optional execution date for the task
+     */
+    @Column(name = "execution_date")
+    private LocalDate executionDate;
 
     /**
      * Current status of the task

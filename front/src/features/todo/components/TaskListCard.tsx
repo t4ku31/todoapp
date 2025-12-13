@@ -85,7 +85,7 @@ export default function TaskCard({
 											/>
 											<EditableDate
 												id={taskList.id}
-												date={taskList.dueDate}
+												date={taskList.dueDate ?? null}
 												onDateChange={onTaskListDateChange}
 											/>
 										</div>

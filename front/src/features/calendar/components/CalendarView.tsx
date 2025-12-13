@@ -47,7 +47,7 @@ export default function CalendarView() {
 	// Calculate dates that have tasks for indicators
 	const daysWithTasks = taskLists
 		.filter((list) => list.dueDate)
-		.map((list) => parseISO(list.dueDate));
+		.map((list) => parseISO(list.dueDate as string));
 
 	const isDayWithTask = (day: Date) => {
 		return daysWithTasks.some((d) => isSameDay(d, day));

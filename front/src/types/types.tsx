@@ -10,12 +10,14 @@ export interface Task {
 	title: string;
 	status: TaskStatus;
 	taskListId: number;
+	dueDate?: string;
+	executionDate?: string;
 }
 
 export interface TaskList {
 	id: number;
 	title: string;
-	dueDate: string; // ISO 8601 date string (e.g., "2025-11-28")
+	dueDate?: string; // ISO 8601 date string (e.g., "2025-11-28")
 	isCompleted: boolean;
-	tasks: Task[];
+	tasks?: Task[];
 }

@@ -1,5 +1,7 @@
 package io.reflectoring.bff.dto;
 
+import java.time.LocalDate;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -13,7 +15,8 @@ public class TaskDto {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Summary(Long id, String title, TaskStatus status, Long taskListId) {
+    public record Summary(Long id, String title, TaskStatus status, LocalDate dueDate, LocalDate executionDate,
+            Long taskListId) {
     }
 
 }
