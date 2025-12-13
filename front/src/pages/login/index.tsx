@@ -1,6 +1,5 @@
-import Login from './index.component'
+import Login from "./index.component";
 
 export default function login() {
-    return <Login />
+	return <Login />;
 }
-
