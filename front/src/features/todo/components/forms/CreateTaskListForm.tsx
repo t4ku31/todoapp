@@ -1,0 +1,209 @@
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { apiClient } from "@/config/env";
+import { cn } from "@/lib/utils";
+import type { TaskList } from "@/types/types";
+import { format } from "date-fns";
+import { CalendarIcon, Check, Plus, Trash2, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { TaskInput, type TaskInputState } from "./TaskInput";
+
+interface CreateTaskListFormProps {
+	onTaskListCreated: (newTaskList: TaskList) => void;
+	onCancel: () => void;
+	className?: string;
+}
+
+export default function CreateTaskListForm({
+	onTaskListCreated,
+	onCancel,
+	className,
+}: CreateTaskListFormProps) {
+	const [title, setTitle] = useState("");
+	const [tasks, setTasks] = useState<TaskInputState[]>([]);
+	const [date, setDate] = useState<Date | undefined>(new Date());
+
+	const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+	const prevTasksLengthRef = useRef(tasks.length);
+
+	useEffect(() => {
+		if (tasks.length > prevTasksLengthRef.current) {
+			// Added a task
+			inputRefs.current[tasks.length - 1]?.focus();
+		}
+		prevTasksLengthRef.current = tasks.length;
+	}, [tasks]);
+
+	// Add new task
+	const handleAddTask = () => {
+		setTasks([
+			...tasks,
+			{
+				title: "",
+				dueDate: new Date(),
+				executionDate: new Date(),
+			},
+		]);
+	};
+
+	// Remove task
+	const handleRemoveTask = (index: number) => {
+		const newTasks = [...tasks];
+		newTasks.splice(index, 1);
+		setTasks(newTasks);
+	};
+
+	// Update task value
+	const handleTaskChange = (
+		index: number,
+		newValue: TaskInputState,
+	) => {
+		const newTasks = [...tasks];
+		newTasks[index] = newValue;
+		setTasks(newTasks);
+	};
+
+
+	// Save task list
+	const handleSave = async () => {
+		if (title.trim()) {
+			const validTasks = tasks.map((t) => ({
+				title: t.title,
+				dueDate: t.dueDate ? format(t.dueDate, "yyyy-MM-dd") : null,
+				executionDate: t.executionDate
+					? format(t.executionDate, "yyyy-MM-dd")
+					: null,
+			})).filter((t) => t.title.trim() !== "");
+			const tasklist = {
+				title: title,
+				tasks: validTasks,
+				dueDate: date ? format(date, "yyyy-MM-dd") : null,
+			};
+			try {
+				console.log("Request new list:", tasklist);
+				const response = await apiClient.post<TaskList>(
+					"/api/tasklists",
+					tasklist,
+				);
+				console.log("Response new list:", response.data);
+				onTaskListCreated(response.data);
+			} catch (error) {
+				console.error("Failed to create task list:", error);
+			}
+		}
+	};
+
+	const handleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === "Enter" && !e.shiftKey) {
+			e.preventDefault();
+			handleSave();
+		} else if (e.key === "Escape") {
+			onCancel();
+		}
+	};
+
+	return (
+		<div
+			className={`flex flex-col gap-3 p-4 border rounded-lg bg-card shadow-sm ${className}`}
+		>
+			<div className="flex items-center gap-2">
+				<Input
+					autoFocus
+					value={title}
+					onChange={(e) => setTitle(e.target.value)}
+					onKeyDown={handleKeyDown}
+					placeholder="リスト名を入力..."
+					className="font-semibold"
+				/>
+				<Popover>
+					<PopoverTrigger asChild>
+						<Button
+							variant={"outline"}
+							className={cn(
+								"w-[240px] justify-start text-left font-normal",
+								!date && "text-muted-foreground",
+							)}
+						>
+							<CalendarIcon className="mr-2 h-4 w-4" />
+							{date ? format(date, "PPP") : <span>Pick a date</span>}
+						</Button>
+					</PopoverTrigger>
+					<PopoverContent className="w-auto p-0" align="start">
+						<Calendar
+							mode="single"
+							selected={date}
+							onSelect={setDate}
+							initialFocus
+							className="p-4 [&_td]:w-10 [&_td]:h-10 [&_th]:w-10 [&_th]:h-10 [&_button]:w-10 [&_button]:h-10"
+						/>
+					</PopoverContent>
+				</Popover>
+				<Button
+					onClick={handleSave}
+					size="sm"
+					variant="outline"
+					className="h-9 w-9 p-0 shrink-0"
+				>
+					<Check className="size-4" />
+				</Button>
+				<Button
+					onClick={onCancel}
+					size="sm"
+					variant="ghost"
+					className="h-9 w-9 p-0 shrink-0"
+				>
+					<X className="size-4" />
+				</Button>
+			</div>
+
+			<div className="space-y-2 pl-4 border-l-2 border-muted ml-2">
+				{tasks.map((task, index) => (
+					// biome-ignore lint/suspicious/noArrayIndexKey: Draft tasks do not have stable IDs yet
+					<div key={index} className="flex items-center gap-2">
+						<TaskInput
+							ref={(el) => {
+								inputRefs.current[index] = el;
+							}}
+							value={task}
+							onChange={(newValue) => handleTaskChange(index, newValue)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									e.preventDefault();
+									handleAddTask();
+								}
+							}}
+							placeholder={`タスク ${index + 1}`}
+							className="flex-1"
+							endAdornment={
+								<Button
+									onClick={() => handleRemoveTask(index)}
+									size="sm"
+									variant="ghost"
+									className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+								>
+									<Trash2 className="size-4" />
+								</Button>
+							}
+						/>
+					</div>
+
+				))}
+				<Button
+					onClick={handleAddTask}
+					variant="ghost"
+					size="sm"
+					className="text-muted-foreground hover:text-foreground h-8 px-2"
+				>
+					<Plus className="size-3 mr-1" />
+					タスクを追加
+				</Button>
+			</div>
+		</div>
+	);
+}

@@ -1,22 +1,20 @@
-import { Calendar as CalendarIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { Task, TaskStatus } from "@/types/types";
-import { DeleteButton } from "./DeleteButton";
-import { EditableTitle } from "./EditableTitle";
-import { StatusChangeButton } from "./StatusChangeButton";
+import type { Task } from "@/types/types";
+import { DeleteButton } from "./ui/DeleteButton";
+import { EditableDate } from "./ui/EditableDate";
+import { EditableTitle } from "./ui/EditableTitle";
+import { StatusChangeButton } from "./ui/StatusChangeButton";
 
 interface TaskItemProps {
 	task: Task;
-	onStatusChange: (taskId: number, newStatus: TaskStatus) => void;
-	onTaskTitleChange: (taskId: number, newTitle: string) => Promise<void>;
+	onUpdateTask: (taskId: number, updates: Partial<Task>) => Promise<void>;
 	onDeleteTask: (taskId: number) => Promise<void>;
 }
 
 export function TaskItem({
 	task,
-	onStatusChange,
-	onTaskTitleChange,
+	onUpdateTask,
 	onDeleteTask,
 }: TaskItemProps) {
 	return (
@@ -25,7 +23,7 @@ export function TaskItem({
 				<Checkbox
 					checked={task.status === "COMPLETED"}
 					onCheckedChange={(checked) =>
-						onStatusChange(task.id, checked ? "COMPLETED" : "PENDING")
+						onUpdateTask(task.id, { status: checked ? "COMPLETED" : "PENDING" })
 					}
 					className="h-5 w-5 rounded-md border-gray-300 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500 transition-colors"
 				/>
@@ -34,29 +32,37 @@ export function TaskItem({
 					<EditableTitle
 						id={task.id}
 						title={task.title}
-						onTitleChange={onTaskTitleChange}
+						onTitleChange={(id, title) => onUpdateTask(id, { title })}
 						className={`text-base font-medium text-gray-700 truncate ${task.status === "COMPLETED" ? "line-through text-gray-400" : ""}`}
 					/>
 					<div className="flex items-center gap-2 mt-1">
+						{/* category placeholder */}
 						<Badge
 							variant="secondary"
 							className="text-xs font-normal bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors px-2 py-0.5 rounded-full"
 						>
 							Work
 						</Badge>
-						{/* Placeholder for Due Date if we add it to Task entity later */}
-						<div className="flex items-center gap-1 text-xs text-gray-400">
-							<CalendarIcon className="w-3 h-3" />
-							<span>Due 24</span>
-						</div>
+						<EditableDate
+							id={task.id}
+							date={task.dueDate ?? null}
+							type="dueDate"
+							onDateChange={(id, date) => onUpdateTask(id, { dueDate: date })}
+						/>
+						<EditableDate
+							id={task.id}
+							date={task.executionDate ?? null}
+							type="executionDate"
+							onDateChange={(id, date) => onUpdateTask(id, { executionDate: date })}
+						/>
 					</div>
 				</div>
 			</div>
 
-			<div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+			<div className="flex items-center gap-2">
 				<StatusChangeButton
 					status={task.status}
-					onChange={(newStatus) => onStatusChange(task.id, newStatus)}
+					onChange={(newStatus) => onUpdateTask(task.id, { status: newStatus })}
 				/>
 				<DeleteButton
 					onDelete={() => onDeleteTask(task.id)}
