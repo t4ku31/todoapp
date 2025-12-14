@@ -1,9 +1,9 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiClient } from "@/config/env";
-import CreateTaskListButton from "@/features/todo/components/CreateTaskListButton";
 import TaskListCard from "@/features/todo/components/TaskListCard";
+import CreateTaskListButton from "@/features/todo/components/ui/CreateTaskListButton";
 import { sortTasks } from "@/features/todo/utils/taskSorter";
-import type { Task, TaskList, TaskStatus } from "@/types/types";
+import type { Task, TaskList } from "@/types/types";
 import { normalizeError } from "@/utils/error";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -150,11 +150,18 @@ export default function Todo() {
 
 	// --- Task Handlers ---
 
-	const handleCreateTask = async (taskListId: number, title: string) => {
+	const handleCreateTask = async (
+		taskListId: number,
+		title: string,
+		dueDate?: string | null,
+		executionDate?: string | null,
+	) => {
 		try {
 			const response = await apiClient.post<Task>("/api/tasks", {
 				title,
 				taskListId,
+				dueDate,
+				executionDate,
 			});
 			const newTask = response.data;
 
@@ -168,8 +175,11 @@ export default function Todo() {
 								title: newTask.title,
 								status: newTask.status || "PENDING",
 								taskListId: taskListId,
+								dueDate: newTask.dueDate,
+								executionDate: newTask.executionDate,
 							},
 						];
+
 						return {
 							...list,
 							tasks: sortTasks(updatedTasks),
@@ -190,51 +200,29 @@ export default function Todo() {
 		}
 	};
 
-	// Handle task status change
-	const handleStatusChange = async (taskId: number, newStatus: TaskStatus) => {
+	// Handle task update (Generic)
+	const handleUpdateTask = async (taskId: number, updates: Partial<Task>) => {
 		try {
-			// Optimistic update with sorting
-			setTaskLists((prevLists) =>
-				prevLists.map((list) => {
-					if (list.tasks?.some((t) => t.id === taskId)) {
-						const updatedTasks = list.tasks.map((task) =>
-							task.id === taskId ? { ...task, status: newStatus } : task,
-						);
-						return {
-							...list,
-							tasks: sortTasks(updatedTasks),
-						};
-					}
-					return list;
-				}),
-			);
+			// Call API first (Pessimistic UI)
+			await apiClient.patch(`/api/tasks/${taskId}`, updates);
 
-			await apiClient.patch(`/api/tasks/${taskId}`, { status: newStatus });
-		} catch (err) {
-			console.error("Failed to update task status:", err);
-		}
-	};
-
-	// Handle task title change
-	const handleTaskTitleChange = async (taskId: number, newTitle: string) => {
-		try {
-			// Optimistic update
+			// Update State on success
 			setTaskLists((prevLists) =>
 				prevLists.map((list) => ({
 					...list,
 					tasks: list.tasks
 						? list.tasks.map((task) =>
-								task.id === taskId ? { ...task, title: newTitle } : task,
+								task.id === taskId ? { ...task, ...updates } : task,
 							)
 						: [],
+					// Resort might be needed if status changes, but minimal update for now.
+					// Ideally re-fetch or careful splice needed for status change moving lists.
 				})),
 			);
-
-			await apiClient.patch(`/api/tasks/${taskId}`, { title: newTitle });
 		} catch (err) {
-			console.error("Failed to update task title:", err);
+			console.error("Failed to update task:", err);
 			const appError = normalizeError(err);
-			toast.error("タイトル更新失敗", {
+			toast.error("更新失敗", {
 				description: appError.message,
 			});
 			throw err;
@@ -291,8 +279,7 @@ export default function Todo() {
 							taskLists={activeTaskLists}
 							loading={loading}
 							error={error}
-							onStatusChange={handleStatusChange}
-							onTaskTitleChange={handleTaskTitleChange}
+							onUpdateTask={handleUpdateTask}
 							onTaskListTitleChange={handleTaskListTitleChange}
 							onTaskListDateChange={handleTaskListDateChange}
 							onIsCompletedChange={handleIsCompletedChange}
@@ -310,8 +297,7 @@ export default function Todo() {
 							taskLists={completedTaskLists}
 							loading={loading}
 							error={error}
-							onStatusChange={handleStatusChange}
-							onTaskTitleChange={handleTaskTitleChange}
+							onUpdateTask={handleUpdateTask}
 							onTaskListTitleChange={handleTaskListTitleChange}
 							onTaskListDateChange={handleTaskListDateChange}
 							onIsCompletedChange={handleIsCompletedChange}

@@ -1,18 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { TaskList, TaskStatus } from "@/types/types";
-import { ClearButton } from "./ClearButton";
-import { CreateTaskForm } from "./CreateTaskForm";
-import { DeleteButton } from "./DeleteButton";
-import { EditableDate } from "./EditableDate";
-import { EditableTitle } from "./EditableTitle";
+import type { Task, TaskList } from "@/types/types";
+import { CreateTaskForm } from "./forms/CreateTaskForm";
 import { TaskItem } from "./TaskItem";
+import { ClearButton } from "./ui/ClearButton";
+import { DeleteButton } from "./ui/DeleteButton";
+import { EditableDate } from "./ui/EditableDate";
+import { EditableTitle } from "./ui/EditableTitle";
+
 
 interface TaskCardProps {
 	taskLists: TaskList[];
 	loading: boolean;
 	error: string | null;
-	onStatusChange: (taskId: number, newStatus: TaskStatus) => void;
-	onTaskTitleChange: (taskId: number, newTitle: string) => Promise<void>;
+	onUpdateTask: (taskId: number, updates: Partial<Task>) => Promise<void>;
 	onTaskListTitleChange: (
 		taskListId: number,
 		newTitle: string,
@@ -24,15 +24,20 @@ interface TaskCardProps {
 	) => Promise<void>;
 	onDeleteTaskList: (taskListId: number) => Promise<void>;
 	onDeleteTask: (taskId: number) => Promise<void>;
-	onCreateTask: (taskListId: number, title: string) => Promise<void>;
+	onCreateTask: (
+		taskListId: number,
+		title: string,
+		dueDate?: string | null,
+		executionDate?: string | null,
+	) => Promise<void>;
+
 }
 
 export default function TaskCard({
 	taskLists,
 	loading,
 	error,
-	onStatusChange,
-	onTaskTitleChange,
+	onUpdateTask,
 	onTaskListTitleChange,
 	onTaskListDateChange,
 	onIsCompletedChange,
@@ -86,6 +91,7 @@ export default function TaskCard({
 											<EditableDate
 												id={taskList.id}
 												date={taskList.dueDate ?? null}
+												type="dueDate"
 												onDateChange={onTaskListDateChange}
 											/>
 										</div>
@@ -115,8 +121,7 @@ export default function TaskCard({
 												<TaskItem
 													key={task.id}
 													task={task}
-													onStatusChange={onStatusChange}
-													onTaskTitleChange={onTaskTitleChange}
+													onUpdateTask={onUpdateTask}
 													onDeleteTask={onDeleteTask}
 												/>
 											))}
@@ -130,6 +135,8 @@ export default function TaskCard({
 										taskListId={taskList.id}
 										onCreateTask={onCreateTask}
 									/>
+
+
 								</div>
 							);
 						})}

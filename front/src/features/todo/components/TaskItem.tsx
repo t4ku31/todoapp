@@ -1,22 +1,20 @@
-import { Calendar as CalendarIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { Task, TaskStatus } from "@/types/types";
-import { DeleteButton } from "./DeleteButton";
-import { EditableTitle } from "./EditableTitle";
-import { StatusChangeButton } from "./StatusChangeButton";
+import type { Task } from "@/types/types";
+import { DeleteButton } from "./ui/DeleteButton";
+import { EditableDate } from "./ui/EditableDate";
+import { EditableTitle } from "./ui/EditableTitle";
+import { StatusChangeButton } from "./ui/StatusChangeButton";
 
 interface TaskItemProps {
 	task: Task;
-	onStatusChange: (taskId: number, newStatus: TaskStatus) => void;
-	onTaskTitleChange: (taskId: number, newTitle: string) => Promise<void>;
+	onUpdateTask: (taskId: number, updates: Partial<Task>) => Promise<void>;
 	onDeleteTask: (taskId: number) => Promise<void>;
 }
 
 export function TaskItem({
 	task,
-	onStatusChange,
-	onTaskTitleChange,
+	onUpdateTask,
 	onDeleteTask,
 }: TaskItemProps) {
 	return (
