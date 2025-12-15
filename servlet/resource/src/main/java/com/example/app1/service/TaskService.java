@@ -113,6 +113,8 @@ public class TaskService {
         Task task = Task.builder()
                 .title(taskCreateRequest.title())
                 .status(status)
+                .dueDate(taskCreateRequest.dueDate())
+                .executionDate(taskCreateRequest.executionDate())
                 .userId(userId)
                 .taskList(taskList)
                 .build();
@@ -168,6 +170,12 @@ public class TaskService {
         }
         if (request.status() != null) {
             existing.setStatus(request.status());
+        }
+        if (request.dueDate() != null) {
+            existing.setDueDate(request.dueDate());
+        }
+        if (request.executionDate() != null) {
+            existing.setExecutionDate(request.executionDate());
         }
         Task saved = taskRepository.save(existing);
         log.info("Updated task {} for user: {}", saved, userId);

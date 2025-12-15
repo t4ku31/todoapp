@@ -1,17 +1,15 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { apiClient } from "@/config/env";
-import type { TaskList } from "@/types/types";
-import { addMonths, format, isSameDay, parseISO, subMonths } from "date-fns";
+import type { Task, TaskList } from "@/types/types";
+import { format, isSameDay, parseISO } from "date-fns";
 import {
-    Check,
-    ChevronLeft,
-    ChevronRight,
-    MoreHorizontal,
-    Plus,
+	Check,
+	MoreHorizontal,
+	Plus
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -19,9 +17,37 @@ import { toast } from "sonner";
 export default function CalendarView() {
 	const [date, setDate] = useState<Date | undefined>(new Date());
 	const [taskLists, setTaskLists] = useState<TaskList[]>([]);
+	const [taskForDate, setTaskForDate] = useState<Task[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [month, setMonth] = useState<Date>(new Date());
 
+	// Map tasks by date for calendar display
+	const getTasksByDate = (): Map<string, Task[]> => {
+		
+		const taskMap = new Map<string, Task[]>();
+		
+		taskLists.forEach((taskList) => {
+			taskList.tasks?.forEach((task) => {
+				if (task.executionDate) {
+					const dateKey = format(parseISO(task.executionDate), 'yyyy-MM-dd');
+					if (!taskMap.has(dateKey)) {
+						taskMap.set(dateKey, []);
+					}
+					// Check for duplicates
+					const existing = taskMap.get(dateKey);
+					
+					if (!existing?.some(item => item.id === task.id)) {
+						taskMap.get(dateKey)?.push(task);
+					}
+				}
+			});
+		});
+		return taskMap;
+	};
+
+	const tasksByDate = getTasksByDate();
+
+	// Fetch tasklists
 	useEffect(() => {
 		const fetchTaskLists = async () => {
 			try {
@@ -39,27 +65,28 @@ export default function CalendarView() {
 		fetchTaskLists();
 	}, []);
 
-	const getTaskListsForDate = (day: Date) => {
-		const dateStr = format(day, "yyyy-MM-dd");
-		return taskLists.filter((list) => list.dueDate === dateStr);
-	};
+	// Filter tasks based on selected date (executionDate only for calendar)
+	useEffect(() => {
+		if (!date) {
+			setTaskForDate([]);
+			return;
+		}
 
-	// Calculate dates that have tasks for indicators
-	const daysWithTasks = taskLists
-		.filter((list) => list.dueDate)
-		.map((list) => parseISO(list.dueDate as string));
+		const tasksForSelectedDate: Task[] = [];
 
-	const isDayWithTask = (day: Date) => {
-		return daysWithTasks.some((d) => isSameDay(d, day));
-	};
-
-	const handlePreviousMonth = () => {
-		setMonth((prev) => subMonths(prev, 1));
-	};
-
-	const handleNextMonth = () => {
-		setMonth((prev) => addMonths(prev, 1));
-	};
+		taskLists.forEach((taskList) => {
+			if (taskList.tasks) {
+				const filtered = taskList.tasks.filter((task) => {
+					// Show tasks scheduled for execution on this date
+					const hasExecutionDate = task.executionDate && isSameDay(parseISO(task.executionDate), date);
+					const hasDueDate = false; // Due dates shown in task list only
+					return hasExecutionDate || hasDueDate;
+				});
+				tasksForSelectedDate.push(...filtered);
+			}
+		});
+		setTaskForDate(tasksForSelectedDate);
+	}, [date, taskLists]);
 
 	if (loading) {
 		return (
@@ -73,16 +100,17 @@ export default function CalendarView() {
 
 			<div className="flex flex-col lg:flex-row gap-6 h-full overflow-hidden">
 				{/* Left Column: My Tasks */}
-				<Card className="flex-1 h-full overflow-hidden flex flex-col border-none shadow-xl bg-white">
+				<Card className="lg:flex-[1] h-full overflow-hidden flex flex-col border-none shadow-xl bg-white">
 					<div className="p-6 pb-2 shrink-0 flex items-center justify-between">
 						<div>
-							<h2 className="text-xl font-bold">My Tasks</h2>
+							<h2 className="text-xl font-bold">{date ? format(date, "yyyy-MM-dd") : "No Date Selected"} Tasks</h2>
 							<div className="flex items-center gap-2 text-muted-foreground mt-1">
 								<span className="font-semibold text-primary">Priority</span>
 							</div>
 						</div>
 						<Button
 							size="sm"
+							disabled={true}
 							className="bg-primary text-primary-foreground hover:bg-primary/90"
 						>
 							<Plus className="h-4 w-4 mr-1" /> Add Task
@@ -91,24 +119,24 @@ export default function CalendarView() {
 
 					<ScrollArea className="flex-1 p-6 pt-0">
 						<div className="space-y-4">
-							{taskLists.map((list) => (
+							{taskForDate.map((task) => (
 								<div
-									key={list.id}
+									key={task.id}
 									className="group flex items-start gap-3 p-3 rounded-xl border bg-white hover:shadow-md transition-shadow"
 								>
 									<div
-										className={`mt-1 h-5 w-5 rounded border-2 flex items-center justify-center ${list.isCompleted ? "bg-primary border-primary" : "border-muted-foreground/30"}`}
+										className={`mt-1 h-5 w-5 rounded border-2 flex items-center justify-center ${task.status === "COMPLETED" ? "bg-primary border-primary" : "border-muted-foreground/30"}`}
 									>
-										{list.isCompleted && (
+										{task.status === "COMPLETED" && (
 											<Check className="h-3 w-3 text-primary-foreground" />
 										)}
 									</div>
 									<div className="flex-1 min-w-0">
 										<div className="flex items-start justify-between gap-2">
 											<h3
-												className={`font-medium truncate ${list.isCompleted ? "text-muted-foreground line-through" : "text-foreground"}`}
+												className={`font-medium truncate ${task.status === "COMPLETED" ? "text-muted-foreground line-through" : "text-foreground"}`}
 											>
-												{list.title}
+												{task.title}
 											</h3>
 											<Button
 												variant="ghost"
@@ -123,129 +151,88 @@ export default function CalendarView() {
 												variant="secondary"
 												className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none font-normal"
 											>
-												Work
+												{task.status}
 											</Badge>
-											{list.dueDate && (
+											{task.executionDate && (
 												<Badge
 													variant="outline"
-													className={`ml-auto border-none bg-orange-100 text-orange-700 font-normal ${isSameDay(parseISO(list.dueDate), new Date()) ? "bg-red-100 text-red-700" : ""}`}
+													className="border-none bg-blue-100 text-blue-700 font-normal"
 												>
-													Due {format(parseISO(list.dueDate), "d")}
+													📅 {format(parseISO(task.executionDate), "M/d")}
+												</Badge>
+											)}
+											{task.dueDate && (
+												<Badge
+													variant="outline"
+													className={`border-none bg-red-100 text-red-700 font-normal ${isSameDay(parseISO(task.dueDate), new Date()) ? "bg-red-500 text-white" : ""}`}
+												>
+													⚠️ {format(parseISO(task.dueDate), "M/d")}
 												</Badge>
 											)}
 										</div>
 									</div>
 								</div>
 							))}
-							{taskLists.length === 0 && (
+							{taskForDate.length === 0 && (
 								<div className="text-center py-8 text-muted-foreground">
-									No tasks found.
+									No tasks for this date.
 								</div>
 							)}
 						</div>
 					</ScrollArea>
 				</Card>
 
-				{/* Right Column: Calendar */}
-				<Card className="flex-1 h-full overflow-hidden flex flex-col border-none shadow-xl bg-white">
-					<div className="p-6 shrink-0 flex items-center justify-between">
-						<h2 className="text-xl font-bold">Calendar</h2>
-						<div className="flex items-center gap-2">
-							<div className="flex items-center border rounded-md bg-white">
-								<Button
-									variant="ghost"
-									size="icon"
-									className="h-8 w-8 rounded-none rounded-l-md"
-									onClick={handlePreviousMonth}
-								>
-									<ChevronLeft className="h-4 w-4" />
-								</Button>
-								<div className="w-[1px] h-4 bg-border" />
-								<Button
-									variant="ghost"
-									size="icon"
-									className="h-8 w-8 rounded-none rounded-r-md"
-									onClick={handleNextMonth}
-								>
-									<ChevronRight className="h-4 w-4" />
-								</Button>
-							</div>
-							<Button variant="outline" size="sm">
-								Month
-							</Button>
-							<Button variant="ghost" size="icon" className="h-8 w-8">
-								<MoreHorizontal className="h-4 w-4" />
-							</Button>
-						</div>
-					</div>
-					<CardContent className="flex-1 p-0 flex justify-center overflow-auto">
-						<Calendar
-							mode="single"
-							selected={date}
-							onSelect={setDate}
-							month={month}
-							onMonthChange={setMonth}
-							className="w-full max-w-none p-4"
-							classNames={{
-								nav: "hidden",
-								root: "w-full h-full",
-								months: "w-full h-full flex flex-col md:flex-row",
-								month: "w-full h-full space-y-4 flex flex-col",
-								table: "w-full h-full border-collapse flex-1",
-								head_row: "flex w-full mb-2",
-								head_cell:
-									"text-muted-foreground w-full font-normal text-[0.8rem] h-10 flex items-center justify-center border-b border-gray-100",
-								row: "flex w-full mt-2 h-20 lg:h-32 xl:h-40",
-								cell: "h-full w-full relative p-0 text-center text-sm focus-within:relative focus-within:z-20 border-r border-b border-gray-100 first:border-l [&:has([aria-selected])]:bg-accent",
-								day: "h-full w-full bg-transparent hover:bg-slate-50 transition-all flex flex-col items-center gap-1 rounded-none lg:h-20 lg:w-full",
-								day_selected:
-									"bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary focus:bg-primary/5 focus:text-primary border-2 border-primary",
-								day_today: "bg-accent text-accent-foreground font-bold",
-								day_outside: "text-muted-foreground opacity-50",
-								day_disabled: "text-muted-foreground opacity-50",
-								day_range_middle:
-									"aria-selected:bg-accent aria-selected:text-accent-foreground",
-								day_hidden: "invisible",
-							}}
-							modifiers={{
-								hasTask: (day) => isDayWithTask(day),
-							}}
-							components={{
-								DayButton: (props) => {
-									const { day, ...rest } = props;
-									return (
-										<div className="h-full w-full relative flex flex-col items-center">
-											<Button
-												variant="ghost"
-												{...rest}
-												className="h-full w-full p-2 font-normal hover:bg-transparent data-[selected=true]:bg-transparent aspect-auto"
-											>
-												<div className="flex flex-col items-center justify-start h-full w-full">
-													<span className="text-sm font-medium">
-														{format(day.date, "d")}
-													</span>
-													{isDayWithTask(day.date) && (
-														<div className="flex gap-1 mt-auto pb-1">
-															{getTaskListsForDate(day.date)
-																.slice(0, 3)
-																.map((_, i) => (
-																	<div
-																		// biome-ignore lint/suspicious/noArrayIndexKey: visual indicator only, no stable id needed
-																		key={i}
-																		className={`h-1.5 w-1.5 rounded-full ${i === 0 ? "bg-orange-400" : i === 1 ? "bg-blue-400" : "bg-green-400"}`}
-																	/>
-																))}
-														</div>
-													)}
+				<div className="flex-1 rounded-xl border bg-white p-15">
+					<Calendar
+						mode="single"
+						selected={date}
+						onSelect={setDate}
+						month={month}
+						onMonthChange={setMonth}
+						className="w-full h-full p-0 [--cell-size:2.5rem]"
+						classNames={{
+							day_button: "h-22 w-30 p-0 font-normal",
+							day: "h-22 w-30 p-0 font-normal text-center",
+							cell: "border border-gray-200 relative",
+							day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+						}}						modifiers={{}}
+						components={{
+							DayButton: (props) => {
+								const dayDate = props.day.date;
+								const dateKey = format(dayDate, 'yyyy-MM-dd');
+								const tasksForDay = tasksByDate.get(dateKey) || [];
+								const displayTasks = tasksForDay.slice(0, 3);
+								const remainingCount = tasksForDay.length - displayTasks.length;
+
+								return (
+									<Button
+										{...props}
+										variant="ghost"
+										className={`h-22 w-30 p-1 text-left align-top font-normal hover:bg-accent/50 rounded-md transition-colors flex flex-col items-start justify-start ${props.modifiers.selected ? 'bg-primary/10 border-2 border-primary' : ''} ${props.modifiers.today ? 'bg-accent' : ''}`}
+									>
+										<div className="font-semibold text-sm mb-1 w-full">{format(dayDate, 'd')}</div>
+										<div className="flex flex-col gap-0.5 w-full overflow-hidden">
+											{displayTasks.map((task, idx) => (
+												<div
+													key={`${task.id}-${idx}`}
+													className="text-[10px] px-1.5 py-0.5 rounded truncate bg-blue-500 text-white w-full"
+													title={task.title}
+												>
+													{task.title}
 												</div>
-											</Button>
+											))}
+											{remainingCount > 0 && (
+												<div className="text-[9px] text-muted-foreground px-1">
+													+{remainingCount} more
+												</div>
+											)}
 										</div>
-									);
-								},
-							}}
-						/>
-					</CardContent>
-				</Card>
+									</Button>
+								);
+							},
+						}}
+					/>
+				</div>
 			</div>
 		</div>
 	);
