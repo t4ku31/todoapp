@@ -182,19 +182,29 @@ export default function CalendarView() {
 					</ScrollArea>
 				</Card>
 
-				<div className="flex-1 rounded-xl border bg-white p-15">
+				<div className="flex-1 rounded-xl border bg-white p-4 overflow-hidden flex flex-col">
 					<Calendar
 						mode="single"
 						selected={date}
 						onSelect={setDate}
 						month={month}
 						onMonthChange={setMonth}
-						className="w-full h-full p-0 [--cell-size:2.5rem]"
+						className="w-full h-full p-0"
 						classNames={{
-							day_button: "h-22 w-30 p-0 font-normal",
-							day: "h-22 w-30 p-0 font-normal text-center",
-							cell: "border border-gray-200 relative",
-							day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+							month: "w-full h-full flex flex-col",
+							table: "w-full h-full border-separate border-spacing-2 mt-0",
+							head_row: "flex w-full mb-1",
+							head_cell: "text-muted-foreground w-full font-normal text-[0.8rem]",
+							row: "flex w-full",
+							day_button: "h-full w-full p-2 font-normal text-left align-top hover:bg-transparent",
+							day: "h-32 w-full p-0 font-normal aspect-auto rounded-xl border border-gray-200 align-top transition-all hover:shadow-md hover:border-gray-300 bg-card/50",
+							cell: "p-0 relative h-full w-full focus-within:relative focus-within:z-20",
+							day_selected: "bg-transparent text-foreground hover:bg-transparent",
+							day_today: "bg-accent/20 border-accent",
+							day_outside: "text-muted-foreground opacity-50 bg-gray-50/50",
+							day_disabled: "text-muted-foreground opacity-50",
+							day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
+							day_hidden: "invisible",
 						}}						modifiers={{}}
 						components={{
 							DayButton: (props) => {
@@ -203,26 +213,34 @@ export default function CalendarView() {
 								const tasksForDay = tasksByDate.get(dateKey) || [];
 								const displayTasks = tasksForDay.slice(0, 3);
 								const remainingCount = tasksForDay.length - displayTasks.length;
+								const isSelected = isSameDay(dayDate, date || new Date());
 
 								return (
 									<Button
 										{...props}
 										variant="ghost"
-										className={`h-22 w-30 p-1 text-left align-top font-normal hover:bg-accent/50 rounded-md transition-colors flex flex-col items-start justify-start ${props.modifiers.selected ? 'bg-primary/10 border-2 border-primary' : ''} ${props.modifiers.today ? 'bg-accent' : ''}`}
+										onClick={() => setDate(dayDate)}
+										className={`h-full w-full p-2 text-left align-top font-normal hover:bg-transparent rounded-xl flex flex-col items-start justify-start gap-1 ${isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}`}
 									>
-										<div className="font-semibold text-sm mb-1 w-full">{format(dayDate, 'd')}</div>
-										<div className="flex flex-col gap-0.5 w-full overflow-hidden">
+										<div className={`text-sm font-medium w-6 h-6 flex items-center justify-center rounded-full mb-1 ${isSameDay(dayDate, new Date()) ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
+											{format(dayDate, 'd')}
+										</div>
+										<div className="flex flex-col gap-1 w-full overflow-hidden">
 											{displayTasks.map((task, idx) => (
 												<div
 													key={`${task.id}-${idx}`}
-													className="text-[10px] px-1.5 py-0.5 rounded truncate bg-blue-500 text-white w-full"
+													className={`text-[11px] px-2 py-1 rounded-md truncate w-full font-medium ${
+														task.status === "COMPLETED" 
+															? "bg-gray-100 text-gray-500 line-through" 
+															: "bg-blue-100 text-blue-700 hover:bg-blue-200"
+													}`}
 													title={task.title}
 												>
 													{task.title}
 												</div>
 											))}
 											{remainingCount > 0 && (
-												<div className="text-[9px] text-muted-foreground px-1">
+												<div className="text-[10px] text-muted-foreground pl-1 font-medium">
 													+{remainingCount} more
 												</div>
 											)}
