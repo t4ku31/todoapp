@@ -84,6 +84,8 @@ public class TaskListService {
                 .map(req -> Task.builder()
                         .title(req.title())
                         .status(TaskStatus.PENDING)
+                        .dueDate(req.dueDate())
+                        .executionDate(req.executionDate())
                         .userId(userId)
                         .taskList(taskList)
                         .build())
