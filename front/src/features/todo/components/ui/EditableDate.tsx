@@ -1,6 +1,4 @@
-import { format } from "date-fns";
-import { CalendarIcon, Pencil } from "lucide-react";
-import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import {
 	Popover,
@@ -8,6 +6,9 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { format, parseISO } from "date-fns";
+import { CalendarIcon, Flag, Pencil } from "lucide-react";
+import { useState } from "react";
 
 interface EditableDateProps {
 	id: number;
@@ -33,22 +34,30 @@ export function EditableDate({ id, type, date, onDateChange }: EditableDateProps
 	return (
 		<Popover open={isOpen} onOpenChange={setIsOpen}>
 			<PopoverTrigger asChild>
-				<button
-					type="button"
-					className="flex items-center gap-2 group cursor-pointer w-fit text-left hover:bg-muted/50 rounded-md p-1 transition-colors"
+				<Badge
+					variant="outline"
+					className={cn(
+						"border-none font-normal cursor-pointer",
+						type === "dueDate"
+							? "bg-red-100 text-red-700 hover:bg-red-200"
+							: "bg-blue-100 text-blue-700 hover:bg-blue-200"
+					)}
 				>
 					<div className="flex items-center text-sm text-gray-600">
-						<CalendarIcon className="mr-2 h-4 w-4" />
-						{date ? <span>{type === "dueDate" ? "Due Date" : "Execution Date"}: {date}</span> : <span>Set {type === "dueDate" ? "Due Date" : "Execution Date"}</span>}
+						{type === "dueDate" ? (
+							<Flag className="mr-2 h-4 w-4" />
+						) : (
+							<CalendarIcon className="mr-2 h-4 w-4" />
+						)}
+						{date ? <span>{format(parseISO(date), "M/d")}</span> : <span>Set {type === "dueDate" ? "Due Date" : "Execution Date"}</span>}
 					</div>
 					<Pencil
 						className={cn(
-							"w-4 h-4 text-gray-400 transition-opacity",
-							// Show on hover or when open, using CSS group-hover
+							"ml-2 w-4 h-4 text-gray-400 transition-opacity",
 							isOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100",
 						)}
 					/>
-				</button>
+				</Badge>
 			</PopoverTrigger>
 			<PopoverContent className="w-auto p-0" align="start">
 				<Calendar
