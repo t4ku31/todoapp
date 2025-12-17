@@ -1,6 +1,5 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Popover,
   PopoverContent,
@@ -39,6 +38,7 @@ export function CategorySelect({
         <Button
           variant="ghost"
           size="sm"
+          onPointerDown={(e) => e.stopPropagation()}
           className={cn(
             "h-8 px-2 text-xs font-normal hover:bg-muted",
             className
@@ -64,7 +64,11 @@ export function CategorySelect({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0" align="start">
+      <PopoverContent 
+        className="w-[200px] p-0" 
+        align="start"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         <ScrollArea className="h-48 p-2">
             <div className="space-y-1">
                 {categories.length === 0 && (
@@ -73,26 +77,25 @@ export function CategorySelect({
                     </div>
                 )}
                 {categories.map((category) => (
-                    <div
+                    <button
                         key={category.id}
-                        className="flex items-center space-x-2 p-2 hover:bg-accent rounded-sm cursor-pointer"
+                        type="button"
+                        className={cn(
+                            "w-full flex items-center gap-2 p-2 rounded-sm cursor-pointer text-left text-sm transition-colors",
+                            selectedCategoryId === category.id 
+                                ? "bg-accent text-accent-foreground" 
+                                : "hover:bg-accent hover:text-accent-foreground"
+                        )}
                         onClick={() => handleSelectCategory(category.id)}
                     >
-                        <Checkbox 
-                            checked={selectedCategoryId === category.id}
-                            onCheckedChange={() => handleSelectCategory(category.id)}
-                            className="rounded-full" 
-                        />
-                        <div className="flex items-center gap-2">
-                            {category.color && (
-                                <div 
-                                    className="w-3 h-3 rounded-full" 
-                                    style={{ backgroundColor: category.color }}
-                                />
-                            )}
-                            <span className="text-sm">{category.name}</span>
-                        </div>
-                    </div>
+                        {category.color && (
+                            <div 
+                                className="w-3 h-3 rounded-full shrink-0" 
+                                style={{ backgroundColor: category.color }}
+                            />
+                        )}
+                        <span className="truncate">{category.name}</span>
+                    </button>
                 ))}
             </div>
         </ScrollArea>
