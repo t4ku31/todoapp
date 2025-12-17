@@ -1,9 +1,11 @@
-
 import { Button } from "@/components/ui/button";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { Plus } from "lucide-react";
-import { forwardRef, useState } from "react";
-import { TaskInput, type TaskInputState } from "./TaskInput";
+import { forwardRef } from "react";
+import { useForm } from "react-hook-form";
+import { TaskInput } from "./TaskInput";
+import { type TaskFormValues, taskSchema } from "./schema";
 
 interface CreateTaskFormProps {
 	taskListId: number;
@@ -12,6 +14,7 @@ interface CreateTaskFormProps {
 		title: string,
 		dueDate?: string | null,
 		executionDate?: string | null,
+		categoryId?: number,
 	) => Promise<void>;
 	className?: string;
 	placeholder?: string;
@@ -25,58 +28,58 @@ interface CreateTaskFormProps {
 export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 	(
 		{ taskListId, onCreateTask, className, placeholder, autoFocus, disabled },
-		ref,
+		_ref,
 	) => {
-		const [state, setState] = useState<TaskInputState>({
-			title: "",
-			dueDate: new Date(),
-			executionDate: new Date(),
+		const form = useForm<TaskFormValues>({
+			resolver: zodResolver(taskSchema),
+			defaultValues: {
+				title: "",
+				dueDate: undefined,
+				executionDate: undefined,
+				categoryId: undefined,
+			},
 		});
-		const [isSubmitting, setIsSubmitting] = useState(false);
 
-		const handleSubmit = async () => {
-			if (!state.title.trim() || isSubmitting) return;
-
+		const onSubmit = async (data: TaskFormValues) => {
 			try {
-				setIsSubmitting(true);
 				await onCreateTask(
 					taskListId,
-					state.title,
-					state.dueDate ? format(state.dueDate, "yyyy-MM-dd") : null,
-					state.executionDate ? format(state.executionDate, "yyyy-MM-dd") : null,
+					data.title,
+					data.dueDate ? format(data.dueDate, "yyyy-MM-dd") : null,
+					data.executionDate ? format(data.executionDate, "yyyy-MM-dd") : null,
+					data.categoryId,
 				);
-				setState({
+				form.reset({
 					title: "",
-					dueDate: new Date(),
-					executionDate: new Date(),
+					dueDate: undefined, 
+					executionDate: undefined,
+					categoryId: undefined,
 				});
-			} finally {
-				setIsSubmitting(false);
+			} catch (error) {
+				console.error(error);
 			}
 		};
 
 		const handleKeyDown = (e: React.KeyboardEvent) => {
 			if (e.key === "Enter") {
 				e.preventDefault();
-				handleSubmit();
+				form.handleSubmit(onSubmit)();
 			}
 		};
 
 		return (
 			<TaskInput
-				ref={ref}
-				value={state}
-				onChange={setState}
+				control={form.control}
 				onKeyDown={handleKeyDown}
 				className={className}
 				placeholder={placeholder || "新しいタスクを追加..."}
 				autoFocus={autoFocus}
-				disabled={disabled || isSubmitting}
+				disabled={disabled || form.formState.isSubmitting}
 				endAdornment={
 					<Button
-						onClick={() => handleSubmit()}
+						onClick={form.handleSubmit(onSubmit)}
 						size="icon"
-						disabled={disabled || isSubmitting || !state.title.trim()}
+						disabled={disabled || form.formState.isSubmitting || !form.formState.isValid}
 						className="h-8 w-8"
 					>
 						<Plus className="h-4 w-4" />
