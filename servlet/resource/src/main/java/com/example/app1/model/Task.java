@@ -102,6 +102,10 @@ public class Task {
     @NonNull
     private TaskList taskList;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "category_id")
+    private Category category;
+
     @Column(name = "task_list_id", insertable = false, updatable = false)
     private Long taskListId;
 
