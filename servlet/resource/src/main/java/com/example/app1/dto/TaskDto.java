@@ -15,7 +15,8 @@ public class TaskDto {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
+        @Schema(name = "TaskUpdate")
         public record Update(String title, TaskStatus status, LocalDate dueDate, LocalDate executionDate,
-                        Long categoryId) {
+                        Long categoryId, Long taskListId) {
         }
 }
