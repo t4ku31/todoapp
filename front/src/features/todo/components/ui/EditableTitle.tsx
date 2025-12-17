@@ -93,6 +93,7 @@ export function EditableTitle({
 			type="button"
 			className="flex items-center gap-2 group cursor-pointer w-full text-left hover:bg-muted/50 rounded-md p-1 transition-colors"
 			onClick={() => setIsEditing(true)}
+			onPointerDown={(e) => e.stopPropagation()}
 		>
 			<p className={`font-medium ${className || ""}`}>{title}</p>
 			<Pencil className="w-4 h-4 text-gray-400 transition-opacity opacity-0 group-hover:opacity-100" />

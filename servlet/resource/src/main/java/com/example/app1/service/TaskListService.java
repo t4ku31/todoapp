@@ -44,12 +44,35 @@ public class TaskListService {
      * @param userId Auth0 sub claim identifying the user
      * @return List of task lists owned by the user
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<TaskList> getUserTaskLists(String userId) {
         log.info("Getting task lists for user: {}", userId);
         List<TaskList> taskLists = taskListRepository.findByUserId(userId);
+
+        if (taskLists.isEmpty()) {
+            log.info("No task lists found for user: {}. Creating default Inbox.", userId);
+            TaskList inbox = createInbox(userId);
+            return List.of(inbox);
+        }
+
         log.info("Found {} task lists for user: {}", taskLists.size(), userId);
         return taskLists;
+    }
+
+    private TaskList createInbox(String userId) {
+        TaskList inbox = TaskList.builder()
+                .title("Inbox")
+                .userId(userId)
+                .build();
+
+        try {
+            TaskList saved = taskListRepository.save(inbox);
+            log.info("Created Inbox task list {} for user: {}", saved.getId(), userId);
+            return saved;
+        } catch (DataAccessException e) {
+            log.error("Failed to create Inbox for user: {}", userId, e);
+            throw e;
+        }
     }
 
     /**

@@ -6,7 +6,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { CalendarIcon, Flag, Pencil } from "lucide-react";
 import { useState } from "react";
 
@@ -42,6 +42,7 @@ export function EditableDate({ id, type, date, onDateChange }: EditableDateProps
 							? "bg-red-100 text-red-700 hover:bg-red-200"
 							: "bg-blue-100 text-blue-700 hover:bg-blue-200"
 					)}
+					onPointerDown={(e) => e.stopPropagation()}
 				>
 					<div className="flex items-center text-sm text-gray-600">
 						{type === "dueDate" ? (
@@ -49,7 +50,7 @@ export function EditableDate({ id, type, date, onDateChange }: EditableDateProps
 						) : (
 							<CalendarIcon className="mr-2 h-4 w-4" />
 						)}
-						{date ? <span>{format(parseISO(date), "M/d")}</span> : <span>Set {type === "dueDate" ? "Due Date" : "Execution Date"}</span>}
+						{date ? <span>{format(new Date(date), "M/d")}</span> : <span>{type === "dueDate" ? "期限" : "実行日"}</span>}
 					</div>
 					<Pencil
 						className={cn(
@@ -59,7 +60,11 @@ export function EditableDate({ id, type, date, onDateChange }: EditableDateProps
 					/>
 				</Badge>
 			</PopoverTrigger>
-			<PopoverContent className="w-auto p-0" align="start">
+			<PopoverContent 
+				className="w-auto p-0" 
+				align="start"
+				onPointerDown={(e) => e.stopPropagation()}
+			>
 				<Calendar
 					mode="single"
 					selected={currentDate}

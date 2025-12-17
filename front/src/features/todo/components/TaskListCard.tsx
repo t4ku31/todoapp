@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { Task, TaskList } from "@/types/types";
+import { useDroppable } from "@dnd-kit/core";
 import { CreateTaskForm } from "./forms/CreateTaskForm";
 import { TaskItem } from "./TaskItem";
 import { ClearButton } from "./ui/ClearButton";
@@ -41,6 +42,9 @@ export default function TaskCard({
 	onDeleteTask,
 	onCreateTask,
 }: TaskCardProps) {
+	const { setNodeRef, isOver } = useDroppable({
+		id: `tasklist-${taskList.id}`,
+	});
 
 	// Validation: Check if all tasks are completed
 	const canComplete =
@@ -51,7 +55,12 @@ export default function TaskCard({
 		: undefined;
 
 	return (
-		<Card key={taskList.id} className="flex flex-col h-full border-none shadow-md overflow-x-hidden">
+		<Card 
+			ref={setNodeRef}
+			key={taskList.id} 
+			className={`flex flex-col h-full border-none shadow-md overflow-x-hidden transition-all ${
+				isOver ? "ring-2 ring-blue-400 bg-blue-50" : ""
+			}`}>
 			<CardHeader className="pb-3">
 				<div className="flex justify-between items-start">
 					<div className="flex-1 min-w-0 mr-2">
@@ -93,6 +102,7 @@ export default function TaskCard({
 					<CreateTaskForm
 						taskListId={taskList.id}
 						onCreateTask={onCreateTask}
+						showListSelector={false}
 					/>
 				</div>
 				<div className="flex-1 space-y-3">

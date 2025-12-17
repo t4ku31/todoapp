@@ -191,6 +191,13 @@ public class TaskService {
                     .orElseThrow(() -> new IllegalArgumentException("Category not found"));
             existing.setCategory(category);
         }
+        if (request.taskListId() != null) {
+            // Verify user owns the target task list
+            TaskList targetList = taskListRepository.findByIdAndUserId(request.taskListId(), userId)
+                    .orElseThrow(() -> new IllegalArgumentException("Target task list not found or access denied"));
+            existing.setTaskList(targetList);
+            log.info("Moving task {} to task list {}", id, request.taskListId());
+        }
         Task saved = taskRepository.save(existing);
         log.info("Updated task {} for user: {}", saved, userId);
         return saved;

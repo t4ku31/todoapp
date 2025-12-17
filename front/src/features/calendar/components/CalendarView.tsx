@@ -1,13 +1,12 @@
-import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { CreateTaskForm } from "@/features/todo/components/forms/CreateTaskForm";
 import { TaskItem } from "@/features/todo/components/TaskItem";
 import { useTodoStore } from "@/store/useTodoStore";
 import type { Task } from "@/types/types";
 import { DndContext, DragOverlay, type DragEndEvent, type DragStartEvent } from "@dnd-kit/core";
 import { format, isSameDay, parseISO } from "date-fns";
-import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CalendarContext } from "../context/CalendarContext";
 import { DroppableDayButton } from "./DroppableDayButton";
@@ -17,7 +16,7 @@ export default function CalendarView() {
 	const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 	
 	// Use Zustand store
-	const { taskLists, loading, fetchTaskLists, updateTask, deleteTask } = useTodoStore();
+	const { taskLists, loading, fetchTaskLists, updateTask, deleteTask, createTask } = useTodoStore();
 	
 	const [taskForDate, setTaskForDate] = useState<Task[]>([]);
 	const [month, setMonth] = useState<Date>(new Date());
@@ -91,17 +90,16 @@ export default function CalendarView() {
 					<div className="flex flex-col lg:flex-row gap-6 h-full overflow-hidden">
 						{/* Left Column: My Tasks */}
 						<Card className="lg:flex-[1] h-full overflow-hidden flex flex-col border-none shadow-xl bg-white">
-							<div className="p-6 pb-2 shrink-0 flex items-center justify-center">
+							<div className="p-6 shrink-0 space-y-4">
 								<h2 className="text-xl font-bold">
 									{selectedDate ? format(selectedDate, "yyyy-MM-dd") : "No Date Selected"} Tasks
 								</h2>
-								<Button
-									size="sm"
-									disabled={true}
-									className="bg-primary text-primary-foreground hover:bg-primary/90"
-								>
-									<Plus className="h-4 w-4 mr-1" /> Add Task
-								</Button>
+								<CreateTaskForm 
+									taskListId={taskLists[0]?.id || 0}
+									onCreateTask={createTask}
+									defaultExecutionDate={selectedDate}
+									className="w-full"
+								/>
 							</div>
 
 							<ScrollArea className="flex-1 p-6 pt-0">

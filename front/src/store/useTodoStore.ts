@@ -30,8 +30,9 @@ interface TodoState {
 		executionDate?: string | null,
         categoryId?: number,
 	) => Promise<void>;
-	updateTask: (taskId: number, updates: Partial<Task> & { categoryId?: number }) => Promise<void>;
+	updateTask: (taskId: number, updates: Partial<Task> & { categoryId?: number; taskListId?: number }) => Promise<void>;
 	deleteTask: (taskId: number) => Promise<void>;
+	getInboxList: () => TaskList | undefined;
 }
 
 export const useTodoStore = create<TodoState>((set, get) => ({
@@ -58,6 +59,11 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		}
 	},
 
+	getInboxList: () => {
+		const taskLists = get().taskLists;
+		return taskLists.find(list => list.title === "Inbox");
+	},
+	
     fetchCategories: async () => {
         try {
             const response = await apiClient.get<Category[]>("/api/categories");
@@ -226,6 +232,11 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
 		try {
 			await apiClient.patch(`/api/tasks/${taskId}`, updates);
+			
+			// If taskListId was updated, refetch to get the correct state
+			if (updates.taskListId) {
+				await get().fetchTaskLists();
+			}
 		} catch (err) {
 			console.error("Failed to update task:", err);
 			const appError = normalizeError(err);
@@ -252,4 +263,6 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 			toast.error("削除失敗", { description: appError.message });
 		}
 	},
+
+
 }));
