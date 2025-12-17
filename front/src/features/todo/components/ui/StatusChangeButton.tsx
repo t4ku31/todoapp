@@ -1,5 +1,5 @@
-import type React from "react";
 import type { TaskStatus } from "@/types/types";
+import type React from "react";
 
 /**
  * Order of status transition:
@@ -39,6 +39,7 @@ export const StatusChangeButton: React.FC<Props> = ({ status, onChange }) => {
 		<button
 			type="button"
 			onClick={handleClick}
+			onPointerDown={(e) => e.stopPropagation()}
 			className={`px-3 py-1 rounded text-xs font-medium ${bg} hover:opacity-90 transition-colors`}
 		>
 			{label}

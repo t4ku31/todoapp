@@ -1,4 +1,3 @@
-import { Trash2 } from "lucide-react";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -11,6 +10,7 @@ import {
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 
 interface DeleteButtonProps {
 	onDelete: () => void;
@@ -29,6 +29,7 @@ export function DeleteButton({
 				<Button
 					variant="ghost"
 					size="icon"
+					onPointerDown={(e) => e.stopPropagation()}
 					className="h-8 w-8 text-gray-400 hover:text-red-500"
 				>
 					<Trash2 className="h-4 w-4" />
@@ -40,9 +41,10 @@ export function DeleteButton({
 					<AlertDialogDescription>{description}</AlertDialogDescription>
 				</AlertDialogHeader>
 				<AlertDialogFooter>
-					<AlertDialogCancel>キャンセル</AlertDialogCancel>
+					<AlertDialogCancel onPointerDown={(e) => e.stopPropagation()}>キャンセル</AlertDialogCancel>
 					<AlertDialogAction
 						onClick={onDelete}
+						onPointerDown={(e) => e.stopPropagation()}
 						className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
 					>
 						削除
