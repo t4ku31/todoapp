@@ -1,17 +1,26 @@
 package com.example.app1.service;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.app1.dto.TaskDto;
 import com.example.app1.dto.TaskListDto;
 import com.example.app1.exception.TaskListValidationException;
+import com.example.app1.model.Category;
 import com.example.app1.model.Task;
 import com.example.app1.model.TaskList;
 import com.example.app1.model.TaskStatus;
+import com.example.app1.repository.CategoryRepository;
 import com.example.app1.repository.TaskListRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -27,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TaskListService {
 
     private final TaskListRepository taskListRepository;
+    private final CategoryRepository categoryRepository;
 
     /**
      * Get all task lists for a specific user.
@@ -80,12 +90,27 @@ public class TaskListService {
                 .userId(userId)
                 .build();
 
+        // Ensure categories exist
+        Set<Long> categoryIds = request.tasks().stream()
+                .map(TaskDto.Create::categoryId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<Long, Category> categoryMap;
+        if (categoryIds.isEmpty()) {
+            categoryMap = Collections.emptyMap();
+        } else {
+            categoryMap = categoryRepository.findAllById(categoryIds).stream()
+                    .collect(Collectors.toMap(Category::getId, Function.identity()));
+        }
+
         List<Task> tasks = request.tasks().stream()
                 .map(req -> Task.builder()
                         .title(req.title())
                         .status(TaskStatus.PENDING)
                         .dueDate(req.dueDate())
                         .executionDate(req.executionDate())
+                        .category(req.categoryId() != null ? categoryMap.get(req.categoryId()) : null)
                         .userId(userId)
                         .taskList(taskList)
                         .build())

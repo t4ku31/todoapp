@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.app1.dto.TaskDto;
+import com.example.app1.model.Category;
 import com.example.app1.model.Task;
 import com.example.app1.model.TaskList;
 import com.example.app1.model.TaskStatus;
@@ -26,6 +27,7 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final TaskListRepository taskListRepository;
+    private final com.example.app1.repository.CategoryRepository categoryRepository;
 
     /**
      * Get all tasks for a specific task list.
@@ -110,14 +112,21 @@ public class TaskService {
         // Fetch TaskList reference
         TaskList taskList = taskListRepository.getReferenceById(taskCreateRequest.taskListId());
 
-        Task task = Task.builder()
+        Task.TaskBuilder taskBuilder = Task.builder()
                 .title(taskCreateRequest.title())
                 .status(status)
                 .dueDate(taskCreateRequest.dueDate())
                 .executionDate(taskCreateRequest.executionDate())
                 .userId(userId)
-                .taskList(taskList)
-                .build();
+                .taskList(taskList);
+
+        if (taskCreateRequest.categoryId() != null) {
+            Category category = categoryRepository.findById(taskCreateRequest.categoryId())
+                    .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+            taskBuilder.category(category);
+        }
+
+        Task task = taskBuilder.build();
 
         Task saved = taskRepository.save(task);
         log.info("Created task {} for user: {}", saved.getId(), saved.getUserId());
@@ -176,6 +185,11 @@ public class TaskService {
         }
         if (request.executionDate() != null) {
             existing.setExecutionDate(request.executionDate());
+        }
+        if (request.categoryId() != null) {
+            Category category = categoryRepository.findById(request.categoryId())
+                    .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+            existing.setCategory(category);
         }
         Task saved = taskRepository.save(existing);
         log.info("Updated task {} for user: {}", saved, userId);
