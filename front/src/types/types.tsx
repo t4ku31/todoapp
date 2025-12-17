@@ -5,6 +5,12 @@ export interface auth {
 
 export type TaskStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED";
 
+export interface Category {
+	id: number;
+	name: string;
+	color?: string;
+}
+
 export interface Task {
 	id: number;
 	title: string;
@@ -12,6 +18,7 @@ export interface Task {
 	taskListId: number;
 	dueDate?: string;
 	executionDate?: string;
+	category?: Category;
 }
 
 export interface TaskList {

@@ -11,6 +11,7 @@ export default function Todo() {
 		loading,
 		error,
 		fetchTaskLists,
+        fetchCategories,
 		addTaskList,
 		updateTaskListTitle,
 		updateTaskListDate,
@@ -23,7 +24,8 @@ export default function Todo() {
 
 	useEffect(() => {
 		fetchTaskLists();
-	}, [fetchTaskLists]);
+        fetchCategories();
+	}, [fetchTaskLists, fetchCategories]);
 
 	const activeTaskLists = taskLists.filter((list) => !list.isCompleted);
 	const completedTaskLists = taskLists.filter((list) => list.isCompleted);

@@ -8,11 +8,14 @@ import {
 } from "@/components/ui/popover";
 import { apiClient } from "@/config/env";
 import { cn } from "@/lib/utils";
+import { useTodoStore } from "@/store/useTodoStore";
 import type { TaskList } from "@/types/types";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { CalendarIcon, Check, Plus, Trash2, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { TaskInput, type TaskInputState } from "./TaskInput";
+import { useFieldArray, useForm } from "react-hook-form";
+import { TaskInput } from "./TaskInput";
+import { type TaskListFormValues, taskListSchema } from "./schema";
 
 interface CreateTaskListFormProps {
 	onTaskListCreated: (newTaskList: TaskList) => void;
@@ -25,84 +28,70 @@ export default function CreateTaskListForm({
 	onCancel,
 	className,
 }: CreateTaskListFormProps) {
-	const [title, setTitle] = useState("");
-	const [tasks, setTasks] = useState<TaskInputState[]>([]);
-	const [date, setDate] = useState<Date | undefined>(new Date());
+	const defaultCategoryId = useTodoStore((state) => state.categories[0]?.id);
+	
+	const form = useForm<TaskListFormValues>({
+		resolver: zodResolver(taskListSchema),
+		defaultValues: {
+			title: "",
+			date: new Date(),
+			tasks: [],
+		},
+	});
 
-	const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-	const prevTasksLengthRef = useRef(tasks.length);
-
-	useEffect(() => {
-		if (tasks.length > prevTasksLengthRef.current) {
-			// Added a task
-			inputRefs.current[tasks.length - 1]?.focus();
-		}
-		prevTasksLengthRef.current = tasks.length;
-	}, [tasks]);
+	const { fields, append, remove } = useFieldArray({
+		control: form.control,
+		name: "tasks",
+	});
 
 	// Add new task
 	const handleAddTask = () => {
-		setTasks([
-			...tasks,
-			{
-				title: "",
-				dueDate: new Date(),
-				executionDate: new Date(),
-			},
-		]);
+		append({
+			title: "",
+			dueDate: new Date(),
+			executionDate: new Date(),
+			categoryId: defaultCategoryId,
+		});
 	};
-
-	// Remove task
-	const handleRemoveTask = (index: number) => {
-		const newTasks = [...tasks];
-		newTasks.splice(index, 1);
-		setTasks(newTasks);
-	};
-
-	// Update task value
-	const handleTaskChange = (
-		index: number,
-		newValue: TaskInputState,
-	) => {
-		const newTasks = [...tasks];
-		newTasks[index] = newValue;
-		setTasks(newTasks);
-	};
-
 
 	// Save task list
-	const handleSave = async () => {
-		if (title.trim()) {
-			const validTasks = tasks.map((t) => ({
-				title: t.title,
-				dueDate: t.dueDate ? format(t.dueDate, "yyyy-MM-dd") : null,
-				executionDate: t.executionDate
-					? format(t.executionDate, "yyyy-MM-dd")
-					: null,
-			})).filter((t) => t.title.trim() !== "");
-			const tasklist = {
-				title: title,
-				tasks: validTasks,
-				dueDate: date ? format(date, "yyyy-MM-dd") : null,
-			};
-			try {
-				console.log("Request new list:", tasklist);
-				const response = await apiClient.post<TaskList>(
-					"/api/tasklists",
-					tasklist,
-				);
-				console.log("Response new list:", response.data);
-				onTaskListCreated(response.data);
-			} catch (error) {
-				console.error("Failed to create task list:", error);
-			}
+	const onSubmit = async (data: TaskListFormValues) => {
+		console.log("arg from onSubmit:", data);
+
+		const validTasks = data.tasks.filter((t) => t.title && t.title.trim() !== "").map((t) => ({
+			title: t.title,
+			dueDate: t.dueDate ? format(t.dueDate, "yyyy-MM-dd") : null,
+			executionDate: t.executionDate
+				? format(t.executionDate, "yyyy-MM-dd")
+				: null,
+			categoryId: t.categoryId,
+		}));
+		console.log("validTasks from onSubmit:", validTasks);
+		if (validTasks.length === 0 && !data.title) return; // Should be handled by validation but extra safety
+
+		const tasklist = {
+			title: data.title,
+			tasks: validTasks,
+			dueDate: data.date ? format(data.date, "yyyy-MM-dd") : null,
+		};
+
+		try {
+			console.log("Request new list:", tasklist);
+			const response = await apiClient.post<TaskList>(
+				"/api/tasklists",
+				tasklist,
+			);
+			console.log("Response new list:", response.data);
+			onTaskListCreated(response.data);
+		} catch (error) {
+			console.error("Failed to create task list:", error);
 		}
 	};
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === "Enter" && !e.shiftKey) {
 			e.preventDefault();
-			handleSave();
+			form.handleSubmit(onSubmit)();
 		} else if (e.key === "Escape") {
 			onCancel();
 		}
@@ -115,8 +104,7 @@ export default function CreateTaskListForm({
 			<div className="flex items-center gap-2">
 				<Input
 					autoFocus
-					value={title}
-					onChange={(e) => setTitle(e.target.value)}
+					{...form.register("title")}
 					onKeyDown={handleKeyDown}
 					placeholder="リスト名を入力..."
 					className="font-semibold"
@@ -127,25 +115,29 @@ export default function CreateTaskListForm({
 							variant={"outline"}
 							className={cn(
 								"w-[240px] justify-start text-left font-normal",
-								!date && "text-muted-foreground",
+								!form.watch("date") && "text-muted-foreground",
 							)}
 						>
 							<CalendarIcon className="mr-2 h-4 w-4" />
-							{date ? format(date, "PPP") : <span>Pick a date</span>}
+							{form.watch("date") ? (
+								format(form.getValues("date")!, "PPP")
+							) : (
+								<span>Pick a date</span>
+							)}
 						</Button>
 					</PopoverTrigger>
 					<PopoverContent className="w-auto p-0" align="start">
 						<Calendar
 							mode="single"
-							selected={date}
-							onSelect={setDate}
+							selected={form.watch("date")}
+							onSelect={(date) => form.setValue("date", date)}
 							initialFocus
 							className="p-4 [&_td]:w-10 [&_td]:h-10 [&_th]:w-10 [&_th]:h-10 [&_button]:w-10 [&_button]:h-10"
 						/>
 					</PopoverContent>
 				</Popover>
 				<Button
-					onClick={handleSave}
+					onClick={form.handleSubmit(onSubmit)}
 					size="sm"
 					variant="outline"
 					className="h-9 w-9 p-0 shrink-0"
@@ -163,15 +155,11 @@ export default function CreateTaskListForm({
 			</div>
 
 			<div className="space-y-2 pl-4 border-l-2 border-muted ml-2">
-				{tasks.map((task, index) => (
-					// biome-ignore lint/suspicious/noArrayIndexKey: Draft tasks do not have stable IDs yet
-					<div key={index} className="flex items-center gap-2">
+				{fields.map((field, index) => (
+					<div key={field.id} className="flex items-center gap-2">
 						<TaskInput
-							ref={(el) => {
-								inputRefs.current[index] = el;
-							}}
-							value={task}
-							onChange={(newValue) => handleTaskChange(index, newValue)}
+							control={form.control}
+							namePrefix={`tasks.${index}`}
 							onKeyDown={(e) => {
 								if (e.key === "Enter") {
 									e.preventDefault();
@@ -182,7 +170,7 @@ export default function CreateTaskListForm({
 							className="flex-1"
 							endAdornment={
 								<Button
-									onClick={() => handleRemoveTask(index)}
+									onClick={() => remove(index)}
 									size="sm"
 									variant="ghost"
 									className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
@@ -192,7 +180,6 @@ export default function CreateTaskListForm({
 							}
 						/>
 					</div>
-
 				))}
 				<Button
 					onClick={handleAddTask}

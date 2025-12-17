@@ -1,6 +1,6 @@
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { Task } from "@/types/types";
+import { CategorySelect } from "./ui/CategorySelect";
 import { DeleteButton } from "./ui/DeleteButton";
 import { EditableDate } from "./ui/EditableDate";
 import { EditableTitle } from "./ui/EditableTitle";
@@ -36,13 +36,13 @@ export function TaskItem({
 						className={`text-base font-medium text-gray-700 truncate ${task.status === "COMPLETED" ? "line-through text-gray-400" : ""}`}
 					/>
 					<div className="flex items-center gap-2 mt-1">
-						{/* category placeholder */}
-						<Badge
-							variant="secondary"
-							className="text-xs font-normal bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors px-2 py-0.5 rounded-full"
-						>
-							Work
-						</Badge>
+						<CategorySelect
+							selectedCategoryId={task.category?.id}
+							onCategoryChange={(categoryId) =>
+								// @ts-ignore - categoryId is handled by the store
+								onUpdateTask(task.id, { categoryId })
+							}
+						/>
 						<EditableDate
 							id={task.id}
 							date={task.dueDate ?? null}
