@@ -22,7 +22,6 @@ export function TaskItem({
 		id: `task-${task.id}`,
 		data: { task },
 	});
-
 	const style = {
 		opacity: isDragging ? 0.3 : 1,
 	};

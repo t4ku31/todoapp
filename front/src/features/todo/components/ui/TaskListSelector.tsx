@@ -1,9 +1,9 @@
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useTodoStore } from "@/store/useTodoStore";
@@ -25,7 +25,7 @@ export function TaskListSelector({
 	return (
 		<Select
 			value={currentTaskListId.toString()}
-			onValueChange={(value) => onTaskListChange(Number(value))}
+			onValueChange={(value: string) => onTaskListChange(Number(value))}
 		>
 			<SelectTrigger className={cn("h-7 w-[140px] text-xs border-none bg-transparent hover:bg-gray-100 transition-colors", className)}>
 				<FolderInput className="w-3 h-3 mr-1" />
