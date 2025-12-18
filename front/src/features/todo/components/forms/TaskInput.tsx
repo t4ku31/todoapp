@@ -76,15 +76,15 @@ export const TaskInput = ({
 			/>
 
 			{showExecutionDate && (
-				<TooltipProvider>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Popover>
-								<PopoverTrigger asChild>
-									<Controller
-										control={control}
-										name={getFieldName("executionDate")}
-										render={({ field }) => (
+				<Controller
+					control={control}
+					name={getFieldName("executionDate")}
+					render={({ field }) => (
+						<Popover>
+							<TooltipProvider>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<PopoverTrigger asChild>
 											<Button
 												variant="outline"
 												size="sm"
@@ -97,34 +97,28 @@ export const TaskInput = ({
 												<CalendarCheck2 className="h-4 w-4" />
 												<span className="sr-only">Execution Date</span>
 											</Button>
-										)}
-									/>
-								</PopoverTrigger>
-								<PopoverContent className="w-auto p-0" align="start">
-									<div className="p-2 border-b text-xs font-semibold text-center text-blue-600">
-										実行日 (Execution Date)
-									</div>
-									<Controller
-										control={control}
-										name={getFieldName("executionDate")}
-										render={({ field }) => (
-											<Calendar
-												mode="single"
-												selected={field.value}
-												onSelect={field.onChange}
-												className="p-4 [&_td]:w-10 [&_td]:h-10 [&_th]:w-10 [&_th]:h-10 [&_button]:w-10 [&_button]:h-10"
-												initialFocus
-											/>
-										)}
-									/>
-								</PopoverContent>
-							</Popover>
-						</TooltipTrigger>
-						<TooltipContent>
-							<p>実行日 (Execution Date)</p>
-						</TooltipContent>
-					</Tooltip>
-				</TooltipProvider>
+										</PopoverTrigger>
+									</TooltipTrigger>
+									<TooltipContent>
+										<p>実行日 (Execution Date)</p>
+									</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
+							<PopoverContent className="w-auto p-0" align="start">
+								<div className="p-2 border-b text-xs font-semibold text-center text-blue-600">
+									実行日 (Execution Date)
+								</div>
+								<Calendar
+									mode="single"
+									selected={field.value}
+									onSelect={field.onChange}
+									className="p-4 [&_td]:w-10 [&_td]:h-10 [&_th]:w-10 [&_th]:h-10 [&_button]:w-10 [&_button]:h-10"
+									initialFocus
+								/>
+							</PopoverContent>
+						</Popover>
+					)}
+				/>
 			)}
 			{endAdornment}
 		</div>
