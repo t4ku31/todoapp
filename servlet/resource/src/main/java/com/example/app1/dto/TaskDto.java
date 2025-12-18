@@ -10,13 +10,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class TaskDto {
 
         @Schema(name = "TaskCreate")
-        public record Create(String title, Long taskListId, LocalDate dueDate, LocalDate executionDate,
+        public record Create(String title, Long taskListId, LocalDate executionDate,
                         Long categoryId) {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @Schema(name = "TaskUpdate")
-        public record Update(String title, TaskStatus status, LocalDate dueDate, LocalDate executionDate,
+        public record Update(String title, TaskStatus status, LocalDate executionDate,
                         Long categoryId, Long taskListId) {
         }
 }

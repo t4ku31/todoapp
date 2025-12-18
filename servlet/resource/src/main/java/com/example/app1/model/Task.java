@@ -59,12 +59,6 @@ public class Task {
     private String title;
 
     /**
-     * Optional due date for the task
-     */
-    @Column(name = "due_date")
-    private LocalDate dueDate;
-
-    /**
      * Optional execution date for the task
      */
     @Column(name = "execution_date")

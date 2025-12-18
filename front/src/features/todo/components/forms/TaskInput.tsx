@@ -13,7 +13,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { CalendarCheck2, CalendarIcon } from "lucide-react";
+import { CalendarCheck2 } from "lucide-react";
 import { type Control, Controller } from "react-hook-form";
 import { CategorySelect } from "../ui/CategorySelect";
 
@@ -39,7 +39,8 @@ export const TaskInput = ({
 	autoFocus,
 	className,
 	endAdornment,
-}: TaskInputProps) => {
+	showExecutionDate = true,
+}: TaskInputProps & { showExecutionDate?: boolean }) => {
 	const getFieldName = (field: string) =>
 		namePrefix ? `${namePrefix}.${field}` : field;
 
@@ -61,105 +62,7 @@ export const TaskInput = ({
 				)}
 			/>
 
-			<TooltipProvider>
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Popover>
-							<PopoverTrigger asChild>
-								<Controller
-									control={control}
-									name={getFieldName("dueDate")}
-									render={({ field }) => (
-										<Button
-											variant="outline"
-											size="sm"
-											disabled={disabled}
-											className={cn(
-												"h-8 w-8 p-0 text-muted-foreground",
-												field.value && "text-foreground border-primary",
-											)}
-										>
-											<CalendarIcon className="h-4 w-4" />
-											<span className="sr-only">Due Date</span>
-										</Button>
-									)}
-								/>
-							</PopoverTrigger>
-							<PopoverContent className="w-auto p-0" align="start">
-								<div className="p-2 border-b text-xs font-semibold text-center">
-									期限 (Due Date)
-								</div>
-								<Controller
-									control={control}
-									name={getFieldName("dueDate")}
-									render={({ field }) => (
-										<Calendar
-											mode="single"
-											selected={field.value}
-											onSelect={field.onChange}
-											className="p-4 [&_td]:w-10 [&_td]:h-10 [&_th]:w-10 [&_th]:h-10 [&_button]:w-10 [&_button]:h-10"
-											initialFocus
-										/>
-									)}
-								/>
-							</PopoverContent>
-						</Popover>
-					</TooltipTrigger>
-					<TooltipContent>
-						<p>期限 (Due Date)</p>
-					</TooltipContent>
-				</Tooltip>
-			</TooltipProvider>
 
-			<TooltipProvider>
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Popover>
-							<PopoverTrigger asChild>
-								<Controller
-									control={control}
-									name={getFieldName("executionDate")}
-									render={({ field }) => (
-										<Button
-											variant="outline"
-											size="sm"
-											disabled={disabled}
-											className={cn(
-												"h-8 w-8 p-0 text-muted-foreground",
-												field.value && "text-foreground border-blue-500",
-											)}
-										>
-											<CalendarCheck2 className="h-4 w-4" />
-											<span className="sr-only">Execution Date</span>
-										</Button>
-									)}
-								/>
-							</PopoverTrigger>
-							<PopoverContent className="w-auto p-0" align="start">
-								<div className="p-2 border-b text-xs font-semibold text-center text-blue-600">
-									実行日 (Execution Date)
-								</div>
-								<Controller
-									control={control}
-									name={getFieldName("executionDate")}
-									render={({ field }) => (
-										<Calendar
-											mode="single"
-											selected={field.value}
-											onSelect={field.onChange}
-											className="p-4 [&_td]:w-10 [&_td]:h-10 [&_th]:w-10 [&_th]:h-10 [&_button]:w-10 [&_button]:h-10"
-											initialFocus
-										/>
-									)}
-								/>
-							</PopoverContent>
-						</Popover>
-					</TooltipTrigger>
-					<TooltipContent>
-						<p>実行日 (Execution Date)</p>
-					</TooltipContent>
-				</Tooltip>
-			</TooltipProvider>
 
 			<Controller
 				control={control}
@@ -172,6 +75,57 @@ export const TaskInput = ({
 				)}
 			/>
 
+			{showExecutionDate && (
+				<TooltipProvider>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Popover>
+								<PopoverTrigger asChild>
+									<Controller
+										control={control}
+										name={getFieldName("executionDate")}
+										render={({ field }) => (
+											<Button
+												variant="outline"
+												size="sm"
+												disabled={disabled}
+												className={cn(
+													"h-8 w-8 p-0 text-muted-foreground",
+													field.value && "text-foreground border-blue-500",
+												)}
+											>
+												<CalendarCheck2 className="h-4 w-4" />
+												<span className="sr-only">Execution Date</span>
+											</Button>
+										)}
+									/>
+								</PopoverTrigger>
+								<PopoverContent className="w-auto p-0" align="start">
+									<div className="p-2 border-b text-xs font-semibold text-center text-blue-600">
+										実行日 (Execution Date)
+									</div>
+									<Controller
+										control={control}
+										name={getFieldName("executionDate")}
+										render={({ field }) => (
+											<Calendar
+												mode="single"
+												selected={field.value}
+												onSelect={field.onChange}
+												className="p-4 [&_td]:w-10 [&_td]:h-10 [&_th]:w-10 [&_th]:h-10 [&_button]:w-10 [&_button]:h-10"
+												initialFocus
+											/>
+										)}
+									/>
+								</PopoverContent>
+							</Popover>
+						</TooltipTrigger>
+						<TooltipContent>
+							<p>実行日 (Execution Date)</p>
+						</TooltipContent>
+					</Tooltip>
+				</TooltipProvider>
+			)}
 			{endAdornment}
 		</div>
 	);

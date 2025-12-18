@@ -115,7 +115,6 @@ public class TaskService {
         Task.TaskBuilder taskBuilder = Task.builder()
                 .title(taskCreateRequest.title())
                 .status(status)
-                .dueDate(taskCreateRequest.dueDate())
                 .executionDate(taskCreateRequest.executionDate())
                 .userId(userId)
                 .taskList(taskList);
@@ -180,9 +179,7 @@ public class TaskService {
         if (request.status() != null) {
             existing.setStatus(request.status());
         }
-        if (request.dueDate() != null) {
-            existing.setDueDate(request.dueDate());
-        }
+
         if (request.executionDate() != null) {
             existing.setExecutionDate(request.executionDate());
         }

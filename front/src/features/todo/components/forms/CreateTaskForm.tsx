@@ -23,6 +23,7 @@ interface CreateTaskFormProps {
 	disabled?: boolean;
 	defaultExecutionDate?: Date;
     showListSelector?: boolean;
+    showExecutionDate?: boolean;
 }
 
 /**
@@ -39,6 +40,7 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 			disabled,
 			defaultExecutionDate,
             showListSelector = true,
+            showExecutionDate = true,
 		},
 		_ref,
 	) => {
@@ -53,7 +55,7 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 			resolver: zodResolver(taskSchema),
 			defaultValues: {
 				title: "",
-				dueDate: undefined,
+				
 				executionDate: defaultExecutionDate,
 				categoryId: undefined,
 			},
@@ -71,7 +73,7 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 				await onCreateTask(
 					selectedTaskListId,
 					data.title,
-					data.dueDate ? format(data.dueDate, "yyyy-MM-dd") : null,
+					null,
 					data.executionDate
 						? format(data.executionDate, "yyyy-MM-dd")
 						: null,
@@ -79,7 +81,7 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 				);
 				form.reset({
 					title: "",
-					dueDate: undefined,
+					
 					executionDate: defaultExecutionDate, // Reset to current default
 					categoryId: undefined,
 				});
@@ -100,6 +102,7 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 				control={form.control}
 				onKeyDown={handleKeyDown}
 				className={className}
+				showExecutionDate={showExecutionDate}
 				placeholder={placeholder || "新しいタスクを追加..."}
 				autoFocus={autoFocus}
 				disabled={disabled || form.formState.isSubmitting}
