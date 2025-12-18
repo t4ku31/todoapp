@@ -65,12 +65,7 @@ export function TaskItem({
 								onUpdateTask(task.id, { taskListId })
 							}
 						/> */}
-						<EditableDate
-							id={task.id}
-							date={task.dueDate ?? null}
-							type="dueDate"
-							onDateChange={(id, date) => onUpdateTask(id, { dueDate: date })}
-						/>
+
 						<EditableDate
 							id={task.id}
 							date={task.executionDate ?? null}

@@ -99,6 +99,7 @@ export default function CalendarView() {
 									onCreateTask={createTask}
 									defaultExecutionDate={selectedDate}
 									className="w-full"
+									showExecutionDate={false}
 								/>
 							</div>
 

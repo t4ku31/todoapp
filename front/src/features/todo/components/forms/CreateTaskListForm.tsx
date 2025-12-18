@@ -48,7 +48,6 @@ export default function CreateTaskListForm({
 	const handleAddTask = () => {
 		append({
 			title: "",
-			dueDate: new Date(),
 			executionDate: new Date(),
 			categoryId: defaultCategoryId,
 		});
@@ -60,7 +59,6 @@ export default function CreateTaskListForm({
 
 		const validTasks = data.tasks.filter((t) => t.title && t.title.trim() !== "").map((t) => ({
 			title: t.title,
-			dueDate: t.dueDate ? format(t.dueDate, "yyyy-MM-dd") : null,
 			executionDate: t.executionDate
 				? format(t.executionDate, "yyyy-MM-dd")
 				: null,

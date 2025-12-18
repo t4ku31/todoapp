@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export const taskSchema = z.object({
 	title: z.string().min(1, "タイトルを入力してください"),
-	dueDate: z.date().optional(),
+
 	executionDate: z.date().optional(),
 	categoryId: z.number().optional(),
 });
