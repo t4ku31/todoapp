@@ -60,8 +60,7 @@ export default function CreateTaskListForm({
 		const validTasks = data.tasks.filter((t) => t.title && t.title.trim() !== "").map((t) => ({
 			title: t.title,
 			executionDate: t.executionDate
-				? format(t.executionDate, "yyyy-MM-dd")
-				: null,
+				? format(t.executionDate, "yyyy-MM-dd")				: null,
 			categoryId: t.categoryId,
 		}));
 		console.log("validTasks from onSubmit:", validTasks);

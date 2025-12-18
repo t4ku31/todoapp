@@ -1,5 +1,5 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { InboxSection } from "@/features/todo/components/InboxSection";
+import { InboxMobile } from "@/features/todo/components/InboxMobile";
+import { InboxPanel } from "@/features/todo/components/InboxPanel";
 import TaskListCard from "@/features/todo/components/TaskListCard";
 import CreateTaskListButton from "@/features/todo/components/ui/CreateTaskListButton";
 // import { useTaskLists } from "@/features/todo/hooks/useTaskLists"; // Deprecated
@@ -26,14 +26,12 @@ export default function Todo() {
 	} = useTodoStore();
 
 	const [activeTask, setActiveTask] = useState<Task | null>(null);
+	const [isInboxOpen, setIsInboxOpen] = useState(false);
 
 	useEffect(() => {
 		fetchTaskLists();
         fetchCategories();
 	}, [fetchTaskLists, fetchCategories]);
-
-	const activeTaskLists = taskLists.filter((list) => !list.isCompleted);
-	const completedTaskLists = taskLists.filter((list) => list.isCompleted);
 
 	const handleDragStart = (event: DragStartEvent) => {
 		if (event.active.data.current?.task) {
@@ -66,51 +64,51 @@ export default function Todo() {
 
 	return (
 		<DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-			<div className="flex flex-col gap-6 h-full w-full p-8 overflow-hidden bg-gradient-to-r from-blue-200 to-indigo-200">
+			<div className={`flex flex-col gap-6 h-full p-8 overflow-hidden bg-gradient-to-r from-blue-200 to-indigo-200 transition-all duration-300 ${
+				isInboxOpen ? "w-full lg:w-[calc(100%-35vw)] xl:w-[calc(100%-28vw)]" : "w-full"
+			}`}>
 				<div className="flex justify-between items-center shrink-0">
 					<h1 className="text-2xl font-bold">タスクリスト</h1>
 					<CreateTaskListButton onTaskListCreated={addTaskList} />
 				</div>
 
+				{/* Mobile Inbox - Top section (md and below) */}
+				<div className="lg:hidden">
+					<InboxMobile
+						onUpdateTask={updateTask}
+						onDeleteTask={deleteTask}
+						onCreateTask={createTask}
+					/>
+				</div>
+
 				<div className="flex-1 min-h-0">
-			<InboxSection
-				onUpdateTask={updateTask}
-				onDeleteTask={deleteTask}
-				onCreateTask={createTask}
-			/>
+				<div className="flex-1 overflow-y-auto min-h-0 pr-2 h-full">
+					{loading && (
+						<p className="text-gray-500 text-center py-4">
+							Loading task lists...
+						</p>
+					)}
 
-			<Tabs defaultValue="active" className="flex flex-col h-full">
-					<TabsList className="grid w-full grid-cols-2 mb-4 rounded-full">
-						<TabsTrigger value="active" className="rounded-full">Active Tasks</TabsTrigger>
-						<TabsTrigger value="completed" className="rounded-full">Completed Tasks</TabsTrigger>
-					</TabsList>
+					{error && (
+						<div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+							<p className="font-bold">Error</p>
+							<p>{error}</p>
+						</div>
+					)}
 
-					<TabsContent
-						value="active"
-						className="flex-1 overflow-y-auto min-h-0 pr-2 mt-0"
-					>
-						{loading && (
-							<p className="text-gray-500 text-center py-4">
-								Loading task lists...
-							</p>
-						)}
+					{!loading && !error && taskLists.length === 0 && (
+						<p className="text-gray-500 text-center py-4">
+							No task lists found.
+						</p>
+					)}
 
-						{error && (
-							<div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-								<p className="font-bold">Error</p>
-								<p>{error}</p>
-							</div>
-						)}
-
-						{!loading && !error && activeTaskLists.length === 0 && (
-							<p className="text-gray-500 text-center py-4">
-								No active task lists found.
-							</p>
-						)}
-
-						{!loading && !error && activeTaskLists.length > 0 && (
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
-							{activeTaskLists
+					{!loading && !error && taskLists.length > 0 && (
+						<div className={`grid gap-6 pb-20 ${
+							isInboxOpen 
+								? "grid-cols-1 xl:grid-cols-2" 
+								: "grid-cols-1 lg:grid-cols-2 xl:grid-cols-3"
+						}`}>
+							{taskLists
 								.filter((list) => list.title !== "Inbox")
 								.map((list) => (
 									<TaskListCard
@@ -127,52 +125,7 @@ export default function Todo() {
 								))}
 						</div>
 					)}
-					</TabsContent>
-
-					<TabsContent
-						value="completed"
-						className="flex-1 overflow-y-auto min-h-0 pr-2 mt-0"
-					>
-						{loading && (
-							<p className="text-gray-500 text-center py-4">
-								Loading task lists...
-							</p>
-						)}
-
-						{error && (
-							<div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-								<p className="font-bold">Error</p>
-								<p>{error}</p>
-							</div>
-						)}
-
-						{!loading && !error && completedTaskLists.length === 0 && (
-							<p className="text-gray-500 text-center py-4">
-								No completed task lists found.
-							</p>
-						)}
-
-						{!loading && !error && completedTaskLists.length > 0 && (
-							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
-								{completedTaskLists
-									.filter((list) => list.title !== "Inbox")
-									.map((list) => (
-										<TaskListCard
-											key={list.id}
-											taskList={list}
-											onUpdateTask={updateTask}
-											onTaskListTitleChange={updateTaskListTitle}
-											onTaskListDateChange={updateTaskListDate}
-											onIsCompletedChange={updateTaskListCompletion}
-											onDeleteTaskList={deleteTaskList}
-											onDeleteTask={deleteTask}
-											onCreateTask={createTask}
-										/>
-									))}
-							</div>
-						)}
-					</TabsContent>
-			</Tabs>
+				</div>
 			</div>
 
 			<DragOverlay>
@@ -188,6 +141,17 @@ export default function Todo() {
 					</div>
 				) : null}
 			</DragOverlay>
+		</div>
+
+		{/* Inbox Panel - Fixed overlay (lg and above) */}
+		<div className="hidden lg:block">
+			<InboxPanel
+				onUpdateTask={updateTask}
+				onDeleteTask={deleteTask}
+				onCreateTask={createTask}
+				isOpen={isInboxOpen}
+				onOpenChange={setIsInboxOpen}
+			/>
 		</div>
 		</DndContext>
 	);

@@ -60,27 +60,26 @@ export function InboxSection({
 						</p>
 					</div>
 				</div>
-				<div className="w-72">
+				<div className="">
 					<CreateTaskForm
 						taskListId={inboxList.id}
 						onCreateTask={onCreateTask}
+						showListSelector={false}
 					/>
 				</div>
 			</div>
 
 			{tasks.length > 0 ? (
-				<div className="overflow-x-auto pb-2">
-					<div className="flex gap-4 min-w-min">
-						{tasks.map((task) => (
-							<div key={task.id} className="w-[600px] shrink-0">
-								<TaskItem
-									task={task}
-									onUpdateTask={onUpdateTask}
-									onDeleteTask={onDeleteTask}
-								/>
-							</div>
-						))}
-					</div>
+				<div className="space-y-4">
+					{tasks.map((task) => (
+						<div className="w-[400px]" key={task.id}>
+							<TaskItem
+								task={task}
+								onUpdateTask={onUpdateTask}
+								onDeleteTask={onDeleteTask}
+							/>
+						</div>
+					))}
 				</div>
 			) : (
 				<div className="text-center py-8 text-gray-400">
