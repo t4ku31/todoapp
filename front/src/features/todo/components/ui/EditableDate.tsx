@@ -15,9 +15,10 @@ interface EditableDateProps {
 	type: "dueDate" | "executionDate";
 	date: string | null; // ISO 8601 date string
 	onDateChange: (id: number, newDate: string) => Promise<void>;
+	onOpenChange?: (open: boolean) => void;
 }
 
-export function EditableDate({ id, type, date, onDateChange }: EditableDateProps) {
+export function EditableDate({ id, type, date, onDateChange, onOpenChange }: EditableDateProps) {
 	// const [isHovered, setIsHovered] = useState(false); // Removed unused state
 	const [isOpen, setIsOpen] = useState(false);
 
@@ -29,10 +30,14 @@ export function EditableDate({ id, type, date, onDateChange }: EditableDateProps
 			setIsOpen(false); // Close popover immediately on selection
 			await onDateChange(id, formattedDate);
 		}
+		onOpenChange?.(false);
 	};
 
 	return (
-		<Popover open={isOpen} onOpenChange={setIsOpen}>
+		<Popover open={isOpen} onOpenChange={(newOpen) => {
+			setIsOpen(newOpen);
+			onOpenChange?.(newOpen);
+		}}>
 			<PopoverTrigger asChild>
 				<Badge
 					variant="outline"

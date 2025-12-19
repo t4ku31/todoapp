@@ -14,12 +14,14 @@ import { useState } from "react";
 interface CategorySelectProps {
   selectedCategoryId?: number;
   onCategoryChange: (categoryId: number) => void;
+  onOpenChange?: (open: boolean) => void;
   className?: string;
 }
 
 export function CategorySelect({
   selectedCategoryId,
   onCategoryChange,
+  onOpenChange,
   className,
 }: CategorySelectProps) {
   const categories = useTodoStore((state) => state.categories);
@@ -28,12 +30,16 @@ export function CategorySelect({
   const handleSelectCategory = (categoryId: number) => {
     onCategoryChange(categoryId);
     setOpen(false);
+    onOpenChange?.(false);
   };
 
   const selectedCategory = categories.find((c) => c.id === selectedCategoryId);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(newOpen) => {
+      setOpen(newOpen);
+      onOpenChange?.(newOpen);
+    }}>
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
@@ -59,7 +65,7 @@ export function CategorySelect({
           ) : (
             <div className="flex items-center text-muted-foreground">
               <Tag className="mr-1 h-3 w-3" />
-              <span>Add Category</span>
+              <span>Category</span>
             </div>
           )}
         </Button>
