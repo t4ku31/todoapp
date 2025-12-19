@@ -49,7 +49,7 @@ function Calendar({
 				),
 				month: cn("flex w-full flex-col gap-4", defaultClassNames.month),
 				nav: cn(
-					"absolute inset-x-0 top-0 flex w-full items-center justify-between gap-1",
+					"absolute inset-x-0 top-0 flex w-full items-center justify-end gap-1",
 					defaultClassNames.nav,
 				),
 				button_previous: cn(
@@ -63,7 +63,7 @@ function Calendar({
 					defaultClassNames.button_next,
 				),
 				month_caption: cn(
-					"flex h-[calc(var(--cell-size)*1.5)] w-full items-center justify-center px-[--cell-size]",
+					"flex h-[calc(var(--cell-size)*1.5)] items-center justify-start",
 					defaultClassNames.month_caption,
 				),
 				dropdowns: cn(

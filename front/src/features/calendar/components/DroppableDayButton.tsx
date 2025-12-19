@@ -1,11 +1,11 @@
-import { useDroppable } from "@dnd-kit/core";
-import { format, isSameDay, parseISO } from "date-fns";
-import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { useTodoStore } from "@/store/useTodoStore";
 import type { Task } from "@/types/types";
+import { useDroppable } from "@dnd-kit/core";
+import { format, isSameDay, parseISO } from "date-fns";
+import { useShallow } from "zustand/react/shallow";
 import { useCalendarContext } from "../context/CalendarContext";
-import { DraggableTaskItem } from "./DraggableTaskItem";
+import { TaskBadge } from "./TaskBadge";
 
 // Selector function to extract tasks for a specific date
 const selectTasksForDate = (tasks: Task[], date: Date) => {
@@ -48,9 +48,9 @@ export function DroppableDayButton(props: any) {
 			{...buttonProps} // Pass through default props to keep calendar functionality working
 			variant="ghost"
 			onClick={() => setSelectedDate(dayDate)}
-			className={`h-full w-full p-2 text-left align-top font-normal hover:bg-transparent rounded-xl flex flex-col items-start justify-start gap-1 
-				${isSelected ? "ring-2 ring-primary ring-offset-2" : ""} 
-				${isOver ? "bg-blue-50 ring-2 ring-blue-400" : ""} 
+			className={`h-full w-full p-2 text-left align-top font-normal hover:bg-transparent rounded-xl flex flex-col items-start justify-start gap-2
+				${isSelected ? "ring-3 ring-gray-400 ring-offset-1" : ""} 
+				${isOver ? "bg-blue-50 ring-1 ring-blue-400" : ""} 
 			`}
 		>
 			{/* Date number display (e.g., "15") */}
@@ -64,17 +64,36 @@ export function DroppableDayButton(props: any) {
 				{format(dayDate, "d")}
 			</div>
 
-			{/* Task list for this day */}
+			{/* Task badges for this day (display only, not draggable) */}
+			{/* Show dots until xl, show full badges on 2xl and above */}
 			<div className="flex flex-col gap-1 w-full overflow-hidden">
-				{displayTasks.map((task) => (
-					<DraggableTaskItem key={task.id} task={task} />
-				))}
-				{/* Show "+N more" if there are too many tasks */}
-				{remainingCount > 0 && (
-					<div className="text-[10px] text-muted-foreground pl-1 font-medium">
-						+{remainingCount} more
-					</div>
-				)}
+				{/* Dots for xl and below */}
+				<div className="flex flex-wrap gap-1 2xl:hidden">
+					{displayTasks.map((task) => (
+						<div
+							key={task.id}
+							className="w-2 h-2 rounded-full"
+							style={{ backgroundColor: task.category?.color || '#6b7280' }}
+							title={task.title}
+						/>
+					))}
+					{remainingCount > 0 && (
+						<div className="w-2 h-2 rounded-full bg-gray-300 flex items-center justify-center text-[6px]">
+							+
+						</div>
+					)}
+				</div>
+				{/* Full badges for 2xl and above */}
+				<div className="hidden 2xl:flex 2xl:flex-col 2xl:gap-1 w-full max-w-full overflow-hidden">
+					{displayTasks.map((task) => (
+						<TaskBadge key={task.id} task={task} />
+					))}
+					{remainingCount > 0 && (
+						<div className="text-[10px] text-muted-foreground pl-1 font-medium">
+							+{remainingCount} more
+						</div>
+					)}
+				</div>
 			</div>
 		</Button>
 	);

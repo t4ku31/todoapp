@@ -64,7 +64,7 @@ export default function Todo() {
 
 	return (
 		<DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-			<div className={`flex flex-col gap-6 h-full p-8 overflow-hidden bg-gradient-to-r from-blue-200 to-indigo-200 transition-all duration-300 ${
+			<div className={`flex flex-col gap-6 h-full p-8 overflow-hidden bg-gradient-to-r from-blue-300 to-purple-400 transition-all duration-300 ${
 				isInboxOpen ? "w-full lg:w-[calc(100%-35vw)] xl:w-[calc(100%-28vw)]" : "w-full"
 			}`}>
 				<div className="flex justify-between items-center shrink-0">
