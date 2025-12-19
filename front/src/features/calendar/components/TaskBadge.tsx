@@ -6,7 +6,7 @@ export function TaskBadge({ task, className }: { task: Task; className?: string 
 
 	return (
 		<div
-			className={`text-[11px] px-2 py-1 rounded-md truncate w-full font-medium border ${
+			className={`text-[11px] xl:text-[13px] px-1.5 xl:px-2 py-0.5 xl:py-1 rounded-md truncate w-full font-normal border ${
 				isCompleted ? "bg-gray-100 text-gray-500 line-through border-transparent" : "border-transparent"
 			} ${className}`}
 			style={
