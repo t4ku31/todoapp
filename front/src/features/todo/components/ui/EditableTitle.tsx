@@ -81,7 +81,7 @@ export function EditableTitle({
 					onKeyDown={handleKeyDown}
 					onBlur={handleSave}
 					disabled={isSaving}
-					className="flex-1 px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+					className="flex-1 px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium hover:shadow-xl hover:scale-105 transition-all duration-200"
 				/>
 				{isSaving && <span className="text-xs text-gray-500">保存中...</span>}
 			</div>

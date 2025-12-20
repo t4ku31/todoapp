@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useTodoStore } from "@/store/useTodoStore";
 import { Tag } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface CategorySelectProps {
   selectedCategoryId?: number;
@@ -25,8 +25,13 @@ export function CategorySelect({
   className,
 }: CategorySelectProps) {
   const categories = useTodoStore((state) => state.categories);
+  const fetchCategories = useTodoStore((state) => state.fetchCategories);
   const [open, setOpen] = useState(false);
 
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+  
   const handleSelectCategory = (categoryId: number) => {
     onCategoryChange(categoryId);
     setOpen(false);
@@ -46,26 +51,28 @@ export function CategorySelect({
           size="sm"
           onPointerDown={(e) => e.stopPropagation()}
           className={cn(
-            "h-8 px-2 text-xs font-normal hover:bg-muted",
+            "h-6 min-w-[3.5rem] w-auto px-0 hover:bg-transparent hover:scale-105 transition-all duration-200",
             className
           )}
         >
           {selectedCategory ? (
               <Badge
                 style={{
-                  backgroundColor: selectedCategory.color ? `${selectedCategory.color}20` : undefined,
+                  // @ts-ignore - CSS custom properties
+                  '--bg-color': selectedCategory.color ? `${selectedCategory.color}20` : 'transparent',
+                  '--hover-bg': selectedCategory.color ? `${selectedCategory.color}35` : 'transparent',
                   color: selectedCategory.color,
                   borderColor: selectedCategory.color ? `${selectedCategory.color}40` : undefined,
                 }}
                 variant="outline"
-                className="px-1 py-0 border"
+                className="h-full px-3 flex items-center justify-center border transition-colors duration-200 bg-[var(--bg-color)] hover:bg-[var(--hover-bg)] rounded-full"
               >
-                {selectedCategory.name}
+                <span className="truncate max-w-[100px]">{selectedCategory.name}</span>
               </Badge>
           ) : (
-            <div className="flex items-center text-muted-foreground">
-              <Tag className="mr-1 h-3 w-3" />
-              <span>Category</span>
+            <div className="flex items-center justify-center px-3 h-full w-full rounded-full border border-dashed text-muted-foreground hover:bg-accent/50 transition-colors">
+              <Tag className="mr-1.5 h-3 w-3" />
+              <span className="text-xs">Category</span>
             </div>
           )}
         </Button>

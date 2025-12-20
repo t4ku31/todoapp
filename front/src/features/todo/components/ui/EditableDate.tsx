@@ -42,7 +42,7 @@ export function EditableDate({ id, type, date, onDateChange, onOpenChange }: Edi
 				<Badge
 					variant="outline"
 					className={cn(
-						"border-none font-normal cursor-pointer",
+						"border-none font-normal cursor-pointer hover:scale-105 transition-all duration-200",
 						type === "dueDate"
 							? "bg-red-100 text-red-700 hover:bg-red-200"
 							: "bg-blue-100 text-blue-700 hover:bg-blue-200"
