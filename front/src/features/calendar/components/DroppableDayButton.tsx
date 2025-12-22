@@ -1,12 +1,13 @@
 import { useDroppable } from "@dnd-kit/core";
 import { format, isSameDay } from "date-fns";
+import type { DayButtonProps } from "react-day-picker";
 import { Button } from "@/components/ui/button";
 import { useTodoStore } from "@/store/useTodoStore";
 import { TaskBadge } from "./TaskBadge";
 
 // Calendar day component that supports drag-and-drop
 // This replaces the default DayButton component of react-day-picker
-export function DroppableDayButton(props: any) {
+export function DroppableDayButton(props: DayButtonProps) {
 	const { day, modifiers, ...buttonProps } = props;
 	// Context is removed: const { selectedDate, setSelectedDate } = useCalendarContext();
 
