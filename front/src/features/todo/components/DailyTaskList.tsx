@@ -1,12 +1,12 @@
-import { format, isSameDay, parse } from "date-fns";
-import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CreateTaskForm } from "@/features/todo/components/forms/CreateTaskForm";
 import type { Task } from "@/types/types";
+import { format, isSameDay, parse } from "date-fns";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { TaskItem } from "./TaskItem";
+import { CompletedSection } from "./ui/CompletedSection";
 import { CompletionBadge } from "./ui/CompletionBadge";
 
 interface DailyTaskListProps {
@@ -26,6 +26,7 @@ interface DailyTaskListProps {
 	taskListId: number;
 	emptyMessage?: string;
 	className?: string;
+	taskItemVariant?: 'default' | 'focusSelector';
 }
 
 export function DailyTaskList({
@@ -39,18 +40,14 @@ export function DailyTaskList({
 	taskListId,
 	emptyMessage = "No tasks for this date.",
 	className = "",
+	taskItemVariant = 'default',
 }: DailyTaskListProps) {
-	const [showCompleted, setShowCompleted] = useState(false);
-
 	// Filter tasks by date first
 	const tasksForDate = tasks.filter((task) => task.executionDate === date);
 
-	// Then separate by status
+	// Filter for active tasks
 	const activeTasks = tasksForDate.filter(
 		(task) => task.status !== "COMPLETED",
-	);
-	const completedTasks = tasksForDate.filter(
-		(task) => task.status === "COMPLETED",
 	);
 
 	// Parse date safely
@@ -102,7 +99,7 @@ export function DailyTaskList({
 			</div>
 
 			{/* Active Tasks */}
-			{activeTasks.length === 0 && completedTasks.length === 0 ? (
+			{activeTasks.length === 0 && tasksForDate.filter(t => t.status === 'COMPLETED').length === 0 ? (
 				<Card className="p-4 bg-white/80">
 					<p className="text-gray-500 text-center">{emptyMessage}</p>
 				</Card>
@@ -121,6 +118,7 @@ export function DailyTaskList({
 								task={task}
 								onUpdateTask={onUpdateTask}
 								onDeleteTask={onDeleteTask}
+								variant={taskItemVariant}
 							/>
 						</motion.div>
 					))}
@@ -128,47 +126,11 @@ export function DailyTaskList({
 			)}
 
 			{/* Completed Tasks Section */}
-			{completedTasks.length > 0 && (
-				<div className="pt-4">
-					<Button
-						variant="ghost"
-						onClick={() => setShowCompleted(!showCompleted)}
-						className="text-gray-500 hover:text-gray-700 w-full flex items-center justify-center text-sm py-2 gap-2"
-					>
-						<span>Completed ({completedTasks.length})</span>
-						<span className="text-xs">{showCompleted ? "Hide" : "Show"}</span>
-					</Button>
-
-					{showCompleted && (
-						<motion.div
-							initial={{ opacity: 0, height: 0 }}
-							animate={{ opacity: 0.75, height: "auto" }}
-							exit={{ opacity: 0, height: 0 }}
-							transition={{ duration: 0.3 }}
-							className="space-y-4 mt-2 overflow-hidden"
-						>
-							<AnimatePresence mode="popLayout">
-								{completedTasks.map((task) => (
-									<motion.div
-										key={task.id}
-										layout
-										initial={{ opacity: 0, x: -20 }}
-										animate={{ opacity: 1, x: 0 }}
-										exit={{ opacity: 0, x: -50, scale: 0.9 }}
-										transition={{ duration: 0.25 }}
-									>
-										<TaskItem
-											task={task}
-											onUpdateTask={onUpdateTask}
-											onDeleteTask={onDeleteTask}
-										/>
-									</motion.div>
-								))}
-							</AnimatePresence>
-						</motion.div>
-					)}
-				</div>
-			)}
+			<CompletedSection
+				tasks={tasksForDate}
+				onUpdateTask={onUpdateTask}
+				onDeleteTask={onDeleteTask}
+			/>
 		</div>
 	);
 }

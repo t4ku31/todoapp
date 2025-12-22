@@ -1,13 +1,16 @@
-import { addDays, format, parse, subDays } from "date-fns";
-import { Play } from "lucide-react";
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FocusCircle } from "@/features/home/components/FocusCircle";
 import { DailyTaskList } from "@/features/todo/components/DailyTaskList";
+import { usePomodoroStore } from "@/store/usePomodoroStore";
 import { useTodoStore } from "@/store/useTodoStore";
+import { addDays, format, parse, subDays } from "date-fns";
+import { Play } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function HomeView() {
+	const navigate = useNavigate();
 	const userName = "User";
 
 	const taskLists = useTodoStore((state) => state.taskLists);
@@ -16,6 +19,11 @@ export default function HomeView() {
 	const createTask = useTodoStore((state) => state.createTask);
 	const updateTask = useTodoStore((state) => state.updateTask);
 	const deleteTask = useTodoStore((state) => state.deleteTask);
+	const startTimer = usePomodoroStore((state) => state.startTimer);
+	const currentTaskId = usePomodoroStore((state) => state.currentTaskId);
+
+	// Get current selected task
+	const currentTask = currentTaskId ? allTasks.find(t => t.id === currentTaskId) : null;
 
 	useEffect(() => {
 		fetchTaskLists();
@@ -37,6 +45,11 @@ export default function HomeView() {
 		setSelectedDate(format(addDays(currentDate, 1), "yyyy-MM-dd"));
 	};
 
+	const startFocusSession = () => {
+		startTimer();
+		navigate("/focus");
+	};
+
 	const onCreateTask = async (
 		taskListId: number,
 		title: string,
@@ -47,8 +60,6 @@ export default function HomeView() {
 		await createTask(taskListId, title, dueDate, executionDate, categoryId);
 	};
 
-	const focusTime = { current: "2h 15m", goal: "4h" };
-
 	return (
 		<div className="h-full flex flex-col p-6 md:p-6 gap-6">
 			{/* Hero Section */}
@@ -56,16 +67,19 @@ export default function HomeView() {
 				<div className="flex flex-col md:flex-row items-center justify-between gap-6">
 					<div className="space-y-4">
 						<h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-							Good morning, {userName}! 🚀
-							<br />
-							Ready to crush your goals?
+							{currentTask ? (
+								<>Ready to work on <span className="text-purple-600">{currentTask.title}</span>?</>
+							) : (
+								<>Ready to crush your goals?</>
+							)}
 						</h1>
-						<Button className=" w-full h-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white px-6 py-3 rounded-full shadow-lg">
+						<Button onClick={startFocusSession}
+							className=" w-full h-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white px-6 py-3 rounded-full shadow-lg">
 							<Play className="w-4 h-4 mr-2" />
 							Start Focus Session (25m)
 						</Button>
 					</div>
-					<FocusCircle current={focusTime.current} goal={focusTime.goal} />
+					<FocusCircle />
 				</div>
 			</Card>
 
@@ -82,6 +96,7 @@ export default function HomeView() {
 							onPrevDay={handlePrevDay}
 							onNextDay={handleNextDay}
 							taskListId={inboxList?.id ?? 0}
+							taskItemVariant="focusSelector"
 							emptyMessage={
 								selectedDate === format(new Date(), "yyyy-MM-dd")
 									? "No tasks scheduled for today"

@@ -1,4 +1,5 @@
 import { Checkbox } from "@/components/ui/checkbox";
+import { usePomodoroStore } from "@/store/usePomodoroStore";
 import type { Task } from "@/types/types";
 import { useDraggable } from "@dnd-kit/core";
 import { useEffect, useState } from "react";
@@ -12,15 +13,23 @@ interface TaskItemProps {
 	task: Task;
 	onUpdateTask: (taskId: number, updates: Partial<Task>) => Promise<void>;
 	onDeleteTask: (taskId: number) => Promise<void>;
+	variant?: 'default' | 'focusSelector';
 }
 
-export function TaskItem({ task, onUpdateTask, onDeleteTask }: TaskItemProps) {
+export function TaskItem({ task, onUpdateTask, onDeleteTask, variant = 'default' }: TaskItemProps) {
+	const { setFocusTask, currentTaskId } = usePomodoroStore();
+	
+	const isFocusSelector = variant === 'focusSelector';
+	
 	const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
 		id: `task-${task.id}`,
 		data: { task },
+		disabled: isFocusSelector, // Disable drag in focusSelector mode
 	});
 	const [isExpanded, setIsExpanded] = useState(false);
 	const [isChecked, setIsChecked] = useState(task.status === "COMPLETED");
+
+	const isSelected = isFocusSelector && currentTaskId === task.id;
 
 	useEffect(() => {
 		setIsChecked(task.status === "COMPLETED");
@@ -35,6 +44,13 @@ export function TaskItem({ task, onUpdateTask, onDeleteTask }: TaskItemProps) {
 		: task.status === "COMPLETED"
 			? "PENDING"
 			: task.status;
+			
+	const handleClick = () => {
+		if (isFocusSelector && task.status !== "COMPLETED") {
+			setFocusTask(task.id);
+		}
+	};
+	
 	return (
 		<div
 			ref={setNodeRef}
@@ -43,11 +59,17 @@ export function TaskItem({ task, onUpdateTask, onDeleteTask }: TaskItemProps) {
 				borderLeftWidth: 4,
 				borderLeftColor: task.category?.color ?? "transparent",
 			}}
-			{...listeners}
-			{...attributes}
-			className="relative p-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-200 group cursor-grab active:cursor-grabbing"
+			{...(isFocusSelector ? {} : listeners)}
+			{...(isFocusSelector ? {} : attributes)}
+			onClick={handleClick}
+			className={`relative p-4 bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 group
+				${isFocusSelector ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'}
+				${isSelected 
+					? 'border-2 border-purple-500 ring-2 ring-purple-200 shadow-purple-100' 
+					: 'border border-gray-100'}
+				${isFocusSelector && !isSelected ? 'hover:border-purple-200' : ''}`}
 		>
-			{/* 常に表示: Checkbox + Title */}
+			{/* 常に表示: Checkbox + Title + Focus Button */}
 			<div className="flex items-center gap-4">
 				<Checkbox
 					checked={isChecked}
@@ -65,7 +87,7 @@ export function TaskItem({ task, onUpdateTask, onDeleteTask }: TaskItemProps) {
 					id={task.id}
 					title={task.title}
 					onTitleChange={(id, title) => onUpdateTask(id, { title })}
-					className={`text-base font-medium truncate ${effectiveStatus === "COMPLETED" ? "line-through text-gray-400" : ""}`}
+					className={`text-base font-medium truncate flex-1 ${effectiveStatus === "COMPLETED" ? "line-through text-gray-400" : ""}`}
 				/>
 			</div>
 

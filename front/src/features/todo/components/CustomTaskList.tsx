@@ -1,8 +1,9 @@
-import { useDroppable } from "@dnd-kit/core";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { Task, TaskList } from "@/types/types";
+import { useDroppable } from "@dnd-kit/core";
 import { CreateTaskForm } from "./forms/CreateTaskForm";
 import { TaskItem } from "./TaskItem";
+import { CompletedSection } from "./ui/CompletedSection";
 import { CompletionBadge } from "./ui/CompletionBadge";
 import { DeleteButton } from "./ui/DeleteButton";
 import { EditableDate } from "./ui/EditableDate";
@@ -39,13 +40,10 @@ export default function CustomTaskList({
 		id: `tasklist-${taskList.id}`,
 	});
 
-	// Validation: Check if all tasks are completed
-	// const canComplete =
-	// 	taskList.tasks?.every((task) => task.status === "COMPLETED") ??
-	// 	true;
-	// const disabledReason = !canComplete
-	// 	? "すべてのタスクを完了してください"
-	// 	: undefined;
+	// Filter for active tasks only
+	const activeTasks = (taskList.tasks || []).filter(
+		(task) => task.status !== "COMPLETED",
+	);
 
 	return (
 		<Card
@@ -78,17 +76,6 @@ export default function CustomTaskList({
 							title="タスクリストを削除しますか？"
 							description="この操作は取り消せません。リストに含まれるすべてのタスクも削除されます。"
 						/>
-						{/* <ClearButton
-							isCompleted={taskList.isCompleted}
-							onToggleCompletion={() =>
-								onIsCompletedChange(
-									taskList.id,
-									!taskList.isCompleted,
-								)
-							}
-							disabled={!canComplete}
-							disabledReason={disabledReason}
-						/> */}
 					</div>
 				</div>
 			</CardHeader>
@@ -101,8 +88,8 @@ export default function CustomTaskList({
 					/>
 				</div>
 				<div className="flex-1 space-y-3">
-					{taskList.tasks && taskList.tasks.length > 0 ? (
-						taskList.tasks.map((task) => (
+					{activeTasks.length > 0 ? (
+						activeTasks.map((task) => (
 							<TaskItem
 								key={task.id}
 								task={task}
@@ -110,11 +97,18 @@ export default function CustomTaskList({
 								onDeleteTask={onDeleteTask}
 							/>
 						))
-					) : (
+					) : (taskList.tasks || []).filter(t => t.status === 'COMPLETED').length === 0 ? (
 						<p className="text-gray-400 text-sm text-center py-8">
 							No tasks yet
 						</p>
-					)}
+					) : null}
+					
+					{/* Completed Tasks Section */}
+					<CompletedSection
+						tasks={taskList.tasks || []}
+						onUpdateTask={onUpdateTask}
+						onDeleteTask={onDeleteTask}
+					/>
 				</div>
 			</CardContent>
 		</Card>

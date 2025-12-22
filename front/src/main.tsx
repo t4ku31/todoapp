@@ -1,3 +1,5 @@
+import AppLayout from "@/components/layout/AppLayout";
+import { Toaster } from "@/components/ui/sonner";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import {
@@ -6,12 +8,11 @@ import {
 	BrowserRouter as Router,
 	Routes,
 } from "react-router-dom";
-import AppLayout from "@/components/layout/AppLayout";
-import { Toaster } from "@/components/ui/sonner";
 import "./index.css";
 
 import Analytics from "./pages/analytics/index";
 import CalendarPage from "./pages/calendar/index";
+import FocusPage from "./pages/focus/index";
 import HomePage from "./pages/home/index";
 import Login from "./pages/login/index";
 import Settings from "./pages/settings/index";
@@ -22,6 +23,7 @@ function App() {
 		<Router>
 			<Routes>
 				<Route path="/auth" element={<Login />} />
+				<Route path="/focus" element={<FocusPage />} />
 
 				<Route element={<AppLayout />}>
 					<Route path="/home" element={<HomePage />} />
