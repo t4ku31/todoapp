@@ -16,10 +16,6 @@ interface CustomTaskListProps {
 		newTitle: string,
 	) => Promise<void>;
 	onTaskListDateChange: (taskListId: number, newDate: string) => Promise<void>;
-	onIsCompletedChange: (
-		taskListId: number,
-		isCompleted: boolean,
-	) => Promise<void>;
 	onDeleteTaskList: (taskListId: number) => Promise<void>;
 	onDeleteTask: (taskId: number) => Promise<void>;
 	onCreateTask: (
@@ -35,7 +31,6 @@ export default function CustomTaskList({
 	onUpdateTask,
 	onTaskListTitleChange,
 	onTaskListDateChange,
-	onIsCompletedChange,
 	onDeleteTaskList,
 	onDeleteTask,
 	onCreateTask,

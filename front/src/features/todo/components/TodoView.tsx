@@ -22,7 +22,6 @@ export default function TodoView() {
 		addTaskList,
 		updateTaskListTitle,
 		updateTaskListDate,
-		updateTaskListCompletion,
 		deleteTaskList,
 		createTask,
 		updateTask,
@@ -129,7 +128,6 @@ export default function TodoView() {
 											onUpdateTask={updateTask}
 											onTaskListTitleChange={updateTaskListTitle}
 											onTaskListDateChange={updateTaskListDate}
-											onIsCompletedChange={updateTaskListCompletion}
 											onDeleteTaskList={deleteTaskList}
 											onDeleteTask={deleteTask}
 											onCreateTask={createTask}
