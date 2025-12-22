@@ -1,10 +1,10 @@
-import { useTodoStore } from "@/store/useTodoStore";
-import type { Task } from "@/types/types";
 import { useDroppable } from "@dnd-kit/core";
 import { ChevronDown, ChevronUp, Inbox } from "lucide-react";
 import { useState } from "react";
-import { TaskItem } from "./TaskItem";
+import { useTodoStore } from "@/store/useTodoStore";
+import type { Task } from "@/types/types";
 import { CreateTaskForm } from "./forms/CreateTaskForm";
+import { TaskItem } from "./TaskItem";
 
 interface InboxMobileProps {
 	onUpdateTask: (taskId: number, updates: Partial<Task>) => Promise<void>;
@@ -78,25 +78,26 @@ export function InboxMobile({
 				{/* Expanded Content - Task List */}
 				{isExpanded && (
 					<div ref={setNodeRef} className="px-4 pb-4">
-
 						{tasks.length > 0 ? (
 							<div className="overflow-x-auto pb-2">
 								<div className="flex gap-3">
-								{tasks.map((task) => (
-									<div key={task.id} className="w-[400px] shrink-0">
-										<TaskItem
-											task={task}
-											onUpdateTask={onUpdateTask}
-											onDeleteTask={onDeleteTask}
-										/>
-									</div>
-								))}
+									{tasks.map((task) => (
+										<div key={task.id} className="w-[400px] shrink-0">
+											<TaskItem
+												task={task}
+												onUpdateTask={onUpdateTask}
+												onDeleteTask={onDeleteTask}
+											/>
+										</div>
+									))}
 								</div>
 							</div>
 						) : (
 							<div className="text-center py-6 text-gray-400">
 								<p className="text-sm">タスクがありません</p>
-								<p className="text-xs mt-1">上の入力欄から新しいタスクを追加してください</p>
+								<p className="text-xs mt-1">
+									上の入力欄から新しいタスクを追加してください
+								</p>
 							</div>
 						)}
 					</div>

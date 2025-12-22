@@ -1,3 +1,7 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { format } from "date-fns";
+import { CalendarIcon, Check, Plus, Trash2, X } from "lucide-react";
+import { useFieldArray, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -10,12 +14,8 @@ import { apiClient } from "@/config/env";
 import { cn } from "@/lib/utils";
 import { useTodoStore } from "@/store/useTodoStore";
 import type { TaskList } from "@/types/types";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
-import { CalendarIcon, Check, Plus, Trash2, X } from "lucide-react";
-import { useFieldArray, useForm } from "react-hook-form";
-import { TaskInput } from "./TaskInput";
 import { type TaskListFormValues, taskListSchema } from "./schema";
+import { TaskInput } from "./TaskInput";
 
 interface CreateTaskListFormProps {
 	onTaskListCreated: (newTaskList: TaskList) => void;
@@ -29,7 +29,7 @@ export default function CreateTaskListForm({
 	className,
 }: CreateTaskListFormProps) {
 	const defaultCategoryId = useTodoStore((state) => state.categories[0]?.id);
-	
+
 	const form = useForm<TaskListFormValues>({
 		resolver: zodResolver(taskListSchema),
 		defaultValues: {
@@ -57,12 +57,15 @@ export default function CreateTaskListForm({
 	const onSubmit = async (data: TaskListFormValues) => {
 		console.log("arg from onSubmit:", data);
 
-		const validTasks = data.tasks.filter((t) => t.title && t.title.trim() !== "").map((t) => ({
-			title: t.title,
-			executionDate: t.executionDate
-				? format(t.executionDate, "yyyy-MM-dd")				: null,
-			categoryId: t.categoryId,
-		}));
+		const validTasks = data.tasks
+			.filter((t) => t.title && t.title.trim() !== "")
+			.map((t) => ({
+				title: t.title,
+				executionDate: t.executionDate
+					? format(t.executionDate, "yyyy-MM-dd")
+					: null,
+				categoryId: t.categoryId,
+			}));
 		console.log("validTasks from onSubmit:", validTasks);
 		if (validTasks.length === 0 && !data.title) return; // Should be handled by validation but extra safety
 

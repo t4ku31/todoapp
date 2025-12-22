@@ -1,9 +1,9 @@
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { apiClient } from "@/config/env";
 import { sortTasks } from "@/features/todo/utils/taskSorter";
 import type { Task, TaskList } from "@/types/types";
 import { normalizeError } from "@/utils/error";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
 
 export const useTaskLists = () => {
 	const [taskLists, setTaskLists] = useState<TaskList[]>([]);
@@ -47,87 +47,89 @@ export const useTaskLists = () => {
 		setTaskLists((prev) => [...prev, sortedList]);
 	}, []);
 
-	const updateTaskListTitle = useCallback(async (
-		taskListId: number,
-		newTitle: string,
-	) => {
-		try {
-			// Optimistic update
-			setTaskLists((prevLists) =>
-				prevLists.map((list) =>
-					list.id === taskListId ? { ...list, title: newTitle } : list,
-				),
-			);
+	const updateTaskListTitle = useCallback(
+		async (taskListId: number, newTitle: string) => {
+			try {
+				// Optimistic update
+				setTaskLists((prevLists) =>
+					prevLists.map((list) =>
+						list.id === taskListId ? { ...list, title: newTitle } : list,
+					),
+				);
 
-			await apiClient.patch(`/api/tasklists/${taskListId}`, {
-				title: newTitle,
-			});
-		} catch (err) {
-			console.error("Failed to update task list title:", err);
-			const appError = normalizeError(err);
-			toast.error("リストタイトル更新失敗", {
-				description: appError.message,
-			});
-			throw err;
-		}
-	}, []);
+				await apiClient.patch(`/api/tasklists/${taskListId}`, {
+					title: newTitle,
+				});
+			} catch (err) {
+				console.error("Failed to update task list title:", err);
+				const appError = normalizeError(err);
+				toast.error("リストタイトル更新失敗", {
+					description: appError.message,
+				});
+				throw err;
+			}
+		},
+		[],
+	);
 
-	const updateTaskListDate = useCallback(async (
-		taskListId: number,
-		newDate: string,
-	) => {
-		try {
-			// Optimistic update
-			setTaskLists((prevLists) =>
-				prevLists.map((list) =>
-					list.id === taskListId ? { ...list, dueDate: newDate } : list,
-				),
-			);
+	const updateTaskListDate = useCallback(
+		async (taskListId: number, newDate: string) => {
+			try {
+				// Optimistic update
+				setTaskLists((prevLists) =>
+					prevLists.map((list) =>
+						list.id === taskListId ? { ...list, dueDate: newDate } : list,
+					),
+				);
 
-			await apiClient.patch(`/api/tasklists/${taskListId}`, {
-				dueDate: newDate,
-			});
-		} catch (err) {
-			console.error("Failed to update task list date:", err);
-			const appError = normalizeError(err);
-			toast.error("リスト日付更新失敗", {
-				description: appError.message,
-			});
-			throw err;
-		}
-	}, []);
+				await apiClient.patch(`/api/tasklists/${taskListId}`, {
+					dueDate: newDate,
+				});
+			} catch (err) {
+				console.error("Failed to update task list date:", err);
+				const appError = normalizeError(err);
+				toast.error("リスト日付更新失敗", {
+					description: appError.message,
+				});
+				throw err;
+			}
+		},
+		[],
+	);
 
-	const updateTaskListCompletion = useCallback(async (
-		taskListId: number,
-		isCompleted: boolean,
-	) => {
-		// Store previous state for revert
-		const previousLists = taskLists;
+	const updateTaskListCompletion = useCallback(
+		async (taskListId: number, isCompleted: boolean) => {
+			// Store previous state for revert
+			const previousLists = taskLists;
 
-		try {
-			// Optimistic update
-			setTaskLists((prevLists) =>
-				prevLists.map((list) =>
-					list.id === taskListId ? { ...list, isCompleted: isCompleted } : list,
-				),
-			);
+			try {
+				// Optimistic update
+				setTaskLists((prevLists) =>
+					prevLists.map((list) =>
+						list.id === taskListId
+							? { ...list, isCompleted: isCompleted }
+							: list,
+					),
+				);
 
-			await apiClient.patch(`/api/tasklists/${taskListId}`, {
-				isCompleted: isCompleted,
-			});
-		} catch (err) {
-			console.error("Failed to update task list completion:", err);
-			// Revert optimistic update on error
-			setTaskLists(previousLists);
+				await apiClient.patch(`/api/tasklists/${taskListId}`, {
+					isCompleted: isCompleted,
+				});
+			} catch (err) {
+				console.error("Failed to update task list completion:", err);
+				// Revert optimistic update on error
+				setTaskLists(previousLists);
 
-			const appError = normalizeError(err);
-			toast.error("タスクリストを完了できません", {
-				description: appError.message,
-			});
+				const appError = normalizeError(err);
+				toast.error("タスクリストを完了できません", {
+					description: appError.message,
+				});
 
-			throw err;
-		}
-	}, [taskLists]);
+				throw err;
+			}
+		},
+		[taskLists],
+	);
 
 	const deleteTaskList = useCallback(async (taskListId: number) => {
 		try {
@@ -147,88 +149,94 @@ export const useTaskLists = () => {
 
 	// ----------- Task Handlers -----------
 
-	const createTask = useCallback(async (
-		taskListId: number,
-		title: string,
-		dueDate?: string | null,
-		executionDate?: string | null,
-	) => {
-		try {
-			const response = await apiClient.post<Task>("/api/tasks", {
-				title,
-				taskListId,
-				dueDate,
-				executionDate,
-			});
-			const newTask = response.data;
+	const createTask = useCallback(
+		async (
+			taskListId: number,
+			title: string,
+			dueDate?: string | null,
+			executionDate?: string | null,
+		) => {
+			try {
+				const response = await apiClient.post<Task>("/api/tasks", {
+					title,
+					taskListId,
+					dueDate,
+					executionDate,
+				});
+				const newTask = response.data;
 
-			setTaskLists((prevLists) =>
-				prevLists.map((list) => {
-					if (list.id === taskListId) {
-						const updatedTasks = [
-							...(list.tasks || []),
-							{
-								id: newTask.id,
-								title: newTask.title,
-								status: newTask.status || "PENDING",
-								taskListId: taskListId,
-								dueDate: newTask.dueDate,
-								executionDate: newTask.executionDate,
-							},
-						];
+				setTaskLists((prevLists) =>
+					prevLists.map((list) => {
+						if (list.id === taskListId) {
+							const updatedTasks = [
+								...(list.tasks || []),
+								{
+									id: newTask.id,
+									title: newTask.title,
+									status: newTask.status || "PENDING",
+									taskListId: taskListId,
+									dueDate: newTask.dueDate,
+									executionDate: newTask.executionDate,
+								},
+							];
 
-						return {
-							...list,
-							tasks: sortTasks(updatedTasks),
-						};
-					}
-					return list;
-				}),
-			);
+							return {
+								...list,
+								tasks: sortTasks(updatedTasks),
+							};
+						}
+						return list;
+					}),
+				);
 
-			toast.success("タスクを追加しました");
-		} catch (err) {
-			console.error("Failed to create task:", err);
-			const appError = normalizeError(err);
-			toast.error("作成失敗", {
-				description: appError.message,
-			});
-			throw err;
-		}
-	}, []);
+				toast.success("タスクを追加しました");
+			} catch (err) {
+				console.error("Failed to create task:", err);
+				const appError = normalizeError(err);
+				toast.error("作成失敗", {
+					description: appError.message,
+				});
+				throw err;
+			}
+		},
+		[],
+	);
 
 	// Handle task update (Optimistic)
-	const updateTask = useCallback(async (taskId: number, updates: Partial<Task>) => {
-		// Store previous state for revert
-		const previousLists = taskLists;
+	const updateTask = useCallback(
+		async (taskId: number, updates: Partial<Task>) => {
+			// Store previous state for revert
+			const previousLists = taskLists;
 
-		try {
-			// Optimistic Update: Update State immediately
-			setTaskLists((prevLists) =>
-				prevLists.map((list) => ({
-					...list,
-					tasks: list.tasks
-						? list.tasks.map((task) =>
-								task.id === taskId ? { ...task, ...updates } : task,
-							)
-						: [],
-				})),
-			);
+			try {
+				// Optimistic Update: Update State immediately
+				setTaskLists((prevLists) =>
+					prevLists.map((list) => ({
+						...list,
+						tasks: list.tasks
+							? list.tasks.map((task) =>
+									task.id === taskId ? { ...task, ...updates } : task,
+								)
+							: [],
+					})),
+				);
 
-			// Call API in background
-			await apiClient.patch(`/api/tasks/${taskId}`, updates);
-		} catch (err) {
-			console.error("Failed to update task:", err);
-			// Revert state on error
-			setTaskLists(previousLists);
-			
-			const appError = normalizeError(err);
-			toast.error("更新失敗", {
-				description: appError.message,
-			});
-			throw err;
-		}
-	}, [taskLists]);
+				// Call API in background
+				await apiClient.patch(`/api/tasks/${taskId}`, updates);
+			} catch (err) {
+				console.error("Failed to update task:", err);
+				// Revert state on error
+				setTaskLists(previousLists);
+
+				const appError = normalizeError(err);
+				toast.error("更新失敗", {
+					description: appError.message,
+				});
+				throw err;
+			}
+		},
+		[taskLists],
+	);
 
 	const deleteTask = useCallback(async (taskId: number) => {
 		try {

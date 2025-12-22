@@ -1,10 +1,10 @@
+import { useDroppable } from "@dnd-kit/core";
+import { ChevronRight, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTodoStore } from "@/store/useTodoStore";
 import type { Task } from "@/types/types";
-import { useDroppable } from "@dnd-kit/core";
-import { ChevronRight, Inbox } from "lucide-react";
-import { TaskItem } from "./TaskItem";
 import { CreateTaskForm } from "./forms/CreateTaskForm";
+import { TaskItem } from "./TaskItem";
 
 interface InboxPanelProps {
 	onUpdateTask: (taskId: number, updates: Partial<Task>) => Promise<void>;
@@ -54,7 +54,7 @@ export function InboxPanel({
 						<Inbox className="w-5 h-5" />
 					</div>
 				) : (
-					<div className="flex items-center gap-2">			
+					<div className="flex items-center gap-2">
 						<Inbox className="w-5 h-5" />
 						{tasks.length > 0 && (
 							<span className="absolute -top-1 -left-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -120,7 +120,9 @@ export function InboxPanel({
 						) : (
 							<div className="text-center py-8 text-gray-400">
 								<p className="text-sm">タスクがありません</p>
-								<p className="text-xs mt-1">上の入力欄から新しいタスクを追加してください</p>
+								<p className="text-xs mt-1">
+									上の入力欄から新しいタスクを追加してください
+								</p>
 							</div>
 						)}
 					</div>

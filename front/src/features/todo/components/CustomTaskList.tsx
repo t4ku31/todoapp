@@ -1,15 +1,14 @@
+import { useDroppable } from "@dnd-kit/core";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { Task, TaskList } from "@/types/types";
-import { useDroppable } from "@dnd-kit/core";
 import { CreateTaskForm } from "./forms/CreateTaskForm";
 import { TaskItem } from "./TaskItem";
-import { ClearButton } from "./ui/ClearButton";
+import { CompletionBadge } from "./ui/CompletionBadge";
 import { DeleteButton } from "./ui/DeleteButton";
 import { EditableDate } from "./ui/EditableDate";
 import { EditableTitle } from "./ui/EditableTitle";
 
-
-interface TaskCardProps {
+interface CustomTaskListProps {
 	taskList: TaskList;
 	onUpdateTask: (taskId: number, updates: Partial<Task>) => Promise<void>;
 	onTaskListTitleChange: (
@@ -29,10 +28,9 @@ interface TaskCardProps {
 		dueDate?: string | null,
 		executionDate?: string | null,
 	) => Promise<void>;
-
 }
 
-export default function TaskCard({
+export default function CustomTaskList({
 	taskList,
 	onUpdateTask,
 	onTaskListTitleChange,
@@ -41,26 +39,27 @@ export default function TaskCard({
 	onDeleteTaskList,
 	onDeleteTask,
 	onCreateTask,
-}: TaskCardProps) {
+}: CustomTaskListProps) {
 	const { setNodeRef, isOver } = useDroppable({
 		id: `tasklist-${taskList.id}`,
 	});
 
 	// Validation: Check if all tasks are completed
-	const canComplete =
-		taskList.tasks?.every((task) => task.status === "COMPLETED") ??
-		true;
-	const disabledReason = !canComplete
-		? "すべてのタスクを完了してください"
-		: undefined;
+	// const canComplete =
+	// 	taskList.tasks?.every((task) => task.status === "COMPLETED") ??
+	// 	true;
+	// const disabledReason = !canComplete
+	// 	? "すべてのタスクを完了してください"
+	// 	: undefined;
 
 	return (
-		<Card 
+		<Card
 			ref={setNodeRef}
-			key={taskList.id} 
+			key={taskList.id}
 			className={`flex flex-col h-full border-none shadow-md overflow-x-hidden transition-all ${
 				isOver ? "ring-2 ring-blue-400 bg-blue-50" : ""
-			}`}>
+			}`}
+		>
 			<CardHeader className="pb-3">
 				<div className="flex justify-between items-start">
 					<div className="flex-1 min-w-0 mr-2">
@@ -78,12 +77,13 @@ export default function TaskCard({
 						/>
 					</div>
 					<div className="flex items-center gap-1 shrink-0">
+						<CompletionBadge tasks={taskList.tasks || []} />
 						<DeleteButton
 							onDelete={() => onDeleteTaskList(taskList.id)}
 							title="タスクリストを削除しますか？"
 							description="この操作は取り消せません。リストに含まれるすべてのタスクも削除されます。"
 						/>
-						<ClearButton
+						{/* <ClearButton
 							isCompleted={taskList.isCompleted}
 							onToggleCompletion={() =>
 								onIsCompletedChange(
@@ -93,7 +93,7 @@ export default function TaskCard({
 							}
 							disabled={!canComplete}
 							disabledReason={disabledReason}
-						/>
+						/> */}
 					</div>
 				</div>
 			</CardHeader>

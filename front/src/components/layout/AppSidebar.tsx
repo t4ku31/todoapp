@@ -1,19 +1,23 @@
 import {
-    Sidebar,
-    SidebarContent,
-    SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
+	Calendar,
+	Check,
+	CheckSquare,
+	Home,
+	LogOut,
+	Settings,
+	TrendingUp,
+} from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import {
+	Sidebar,
+	SidebarContent,
+	SidebarHeader,
+	SidebarMenu,
+	SidebarMenuButton,
+	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { env } from "@/config/env";
 import { cn } from "@/lib/utils";
-import {
-    Calendar, Check, CheckSquare, Home, LogOut,
-    Settings,
-    TrendingUp
-} from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
 
 type AppSidebarProps = React.HTMLAttributes<HTMLDivElement>;
 
@@ -41,10 +45,7 @@ export function AppSidebar({ className, ...props }: AppSidebarProps) {
 			<SidebarHeader className="flex items-center justify-center pt-8 pb-8">
 				<div className="relative">
 					<div className="h-12 w-12 bg-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30 transform rotate-12">
-						<Check
-							className="h-8 w-8 text-white"
-							strokeWidth={3}
-						/>
+						<Check className="h-8 w-8 text-white" strokeWidth={3} />
 					</div>
 					<div className="absolute -bottom-2 -left-2">
 						<div className="h-4 w-4 bg-orange-400 rounded-full blur-[2px]" />
@@ -64,7 +65,10 @@ export function AppSidebar({ className, ...props }: AppSidebarProps) {
 										: "bg-white/40 text-slate-500 hover:bg-gray-50 hover:scale-105",
 								)}
 							>
-								<Link to={item.path} className="flex items-center justify-center">
+								<Link
+									to={item.path}
+									className="flex items-center justify-center"
+								>
 									<item.icon
 										className={cn(
 											"h-6 w-6",
