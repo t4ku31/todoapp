@@ -1,7 +1,7 @@
-import { useDraggable } from "@dnd-kit/core";
-import { useEffect, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { Task } from "@/types/types";
+import { useDraggable } from "@dnd-kit/core";
+import { useEffect, useState } from "react";
 import { CategorySelect } from "./ui/CategorySelect";
 import { DeleteButton } from "./ui/DeleteButton";
 import { EditableDate } from "./ui/EditableDate";
@@ -86,7 +86,6 @@ export function TaskItem({ task, onUpdateTask, onDeleteTask }: TaskItemProps) {
 						<TaskListSelector
 							currentTaskListId={task.taskListId}
 							onTaskListChange={(taskListId) =>
-								// @ts-expect-error - taskListId is handled by the store
 								onUpdateTask(task.id, { taskListId })
 							}
 							onOpenChange={setIsExpanded}
