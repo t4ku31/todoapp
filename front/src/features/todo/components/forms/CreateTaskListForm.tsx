@@ -120,7 +120,7 @@ export default function CreateTaskListForm({
 						>
 							<CalendarIcon className="mr-2 h-4 w-4" />
 							{form.watch("date") ? (
-								format(form.getValues("date")!, "PPP")
+								format(form.getValues("date") as Date, "PPP")
 							) : (
 								<span>Pick a date</span>
 							)}
