@@ -21,6 +21,9 @@ export default function HomeView() {
 	const deleteTask = useTodoStore((state) => state.deleteTask);
 	const startTimer = usePomodoroStore((state) => state.startTimer);
 	const currentTaskId = usePomodoroStore((state) => state.currentTaskId);
+	const setFocusTask = usePomodoroStore((state) => state.setFocusTask);
+	const setPhase = usePomodoroStore((state) => state.setPhase);
+	const updateSettings = usePomodoroStore((state) => state.updateSettings);
 
 	// Get current selected task
 	const currentTask = currentTaskId ? allTasks.find(t => t.id === currentTaskId) : null;
@@ -32,6 +35,17 @@ export default function HomeView() {
 	const [selectedDate, setSelectedDate] = useState(
 		format(new Date(), "yyyy-MM-dd"),
 	);
+
+	// Auto-select first task if none selected
+	const todaysTasks = allTasks.filter(t => 
+		t.executionDate === selectedDate && t.status !== 'COMPLETED'
+	);
+	
+	useEffect(() => {
+		if (!currentTaskId && todaysTasks.length > 0) {
+			setFocusTask(todaysTasks[0].id);
+		}
+	}, [currentTaskId, todaysTasks, setFocusTask]);
 
 	const inboxList = taskLists.find((list) => list.title === "Inbox");
 
@@ -46,6 +60,10 @@ export default function HomeView() {
 	};
 
 	const startFocusSession = () => {
+		updateSettings({
+			whiteNoise: 'white-noise',  
+		});
+		setPhase('focus');
 		startTimer();
 		navigate("/focus");
 	};

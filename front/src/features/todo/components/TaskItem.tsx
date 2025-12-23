@@ -65,7 +65,7 @@ export function TaskItem({ task, onUpdateTask, onDeleteTask, variant = 'default'
 			className={`relative p-4 bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 group
 				${isFocusSelector ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'}
 				${isSelected 
-					? 'border-2 border-purple-500 ring-2 ring-purple-200 shadow-purple-100' 
+					? 'border-4 border-purple-500 ring-4 ring-purple-200 shadow-purple-100' 
 					: 'border border-gray-100'}
 				${isFocusSelector && !isSelected ? 'hover:border-purple-200' : ''}`}
 		>

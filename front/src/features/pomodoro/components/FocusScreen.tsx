@@ -1,3 +1,4 @@
+import { useWhiteNoise } from "@/hooks/useWhiteNoise";
 import { usePomodoroStore } from "@/store/usePomodoroStore";
 import { useTodoStore } from "@/store/useTodoStore";
 import { format } from "date-fns";
@@ -10,6 +11,9 @@ import { TimerRing } from "./TimerRing";
 export default function FocusScreen() {
   const navigate = useNavigate();
   const [taskDropdownOpen, setTaskDropdownOpen] = useState(false);
+  
+  // White noise audio hook
+  useWhiteNoise();
   
   const {
     timeLeft,
@@ -120,7 +124,7 @@ export default function FocusScreen() {
   };
 
   const toggleWhiteNoise = () => {
-    updateSettings({ whiteNoise: isWhiteNoiseOn ? 'none' : 'rain' });
+    updateSettings({ whiteNoise: isWhiteNoiseOn ? 'none' : 'white-noise' });
   };
 
   const toggleAutoAdvance = () => {
