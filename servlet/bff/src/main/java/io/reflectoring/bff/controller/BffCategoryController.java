@@ -85,4 +85,22 @@ public class BffCategoryController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/categories/{id}")
+    public ResponseEntity<Void> deleteCategory(
+            @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client,
+            @PathVariable Long id) {
+        log.info("[DELETE /api/categories/{}] Request by user: {}", id, client.getPrincipalName());
+        try {
+            categoryService.deleteCategory(client.getAccessToken().getTokenValue(), id);
+            log.info("[DELETE /api/categories/{}] Deleted category", id);
+            return ResponseEntity.noContent().build();
+        } catch (RestClientResponseException e) {
+            log.error("[DELETE /api/categories/{}] Error deleting category: {}", id, e.getMessage());
+            return ResponseEntity.status(e.getStatusCode()).build();
+        } catch (Exception e) {
+            log.error("[DELETE /api/categories/{}] Error deleting category: {}", id, e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }

@@ -63,4 +63,14 @@ public class BffCategoryService {
                 .toBodilessEntity();
         log.info("Successfully updated category id: {}", id);
     }
+
+    public void deleteCategory(String token, Long id) {
+        log.info("Deleting category id: {} in Resource Server", id);
+        restClient.delete()
+                .uri(resourceUrl + "/categories/" + id)
+                .header("Authorization", "Bearer " + token)
+                .retrieve()
+                .toBodilessEntity();
+        log.info("Successfully deleted category id: {}", id);
+    }
 }

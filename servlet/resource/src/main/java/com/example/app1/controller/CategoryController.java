@@ -52,4 +52,12 @@ public class CategoryController {
         log.info("[PATCH /api/categories/{}] Updated category", id);
         return updated;
     }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
+    public void deleteCategory(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getSubject();
+        log.info("[DELETE /api/categories/{}] Deleting category for user: {}", id, userId);
+        categoryService.deleteCategory(id, userId);
+        log.info("[DELETE /api/categories/{}] Deleted category", id);
+    }
 }

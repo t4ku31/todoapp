@@ -1,1 +1,457 @@
-{"openapi":"3.1.0","info":{"title":"OpenAPI definition","version":"v0"},"servers":[{"url":"http://localhost:7070","description":"Generated server url"}],"paths":{"/api/tasks":{"get":{"tags":["bff-task-controller"],"operationId":"getUserTasks","responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/TaskSummary"}}}}}}},"post":{"tags":["bff-task-controller"],"operationId":"createTask","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/TaskCreate"}}},"required":true},"responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"$ref":"#/components/schemas/TaskSummary"}}}}}}},"/api/tasklists":{"get":{"tags":["bff-task-list-controller"],"operationId":"getUserTaskLists","responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/TaskListSummary"}}}}}}},"post":{"tags":["bff-task-list-controller"],"operationId":"createTaskList","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/TaskListCreate"}}},"required":true},"responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"$ref":"#/components/schemas/TaskListSummary"}}}}}}},"/api/focus-sessions":{"post":{"tags":["bff-focus-session-controller"],"operationId":"addFocusTime","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/AddRequest"}}},"required":true},"responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"$ref":"#/components/schemas/Response"}}}}}}},"/api/categories":{"get":{"tags":["bff-category-controller"],"operationId":"getAllCategories","responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/Response"}}}}}}},"post":{"tags":["bff-category-controller"],"operationId":"createCategory","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/Request"}}},"required":true},"responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"$ref":"#/components/schemas/Response"}}}}}}},"/api/tasks/{id}":{"get":{"tags":["bff-task-controller"],"operationId":"getTask","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer","format":"int64"}}],"responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"$ref":"#/components/schemas/TaskSummary"}}}}}},"delete":{"tags":["bff-task-controller"],"operationId":"deleteTask","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer","format":"int64"}}],"responses":{"200":{"description":"OK"}}},"patch":{"tags":["bff-task-controller"],"operationId":"updateTask","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer","format":"int64"}}],"requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/TaskUpdate"}}},"required":true},"responses":{"200":{"description":"OK"}}}},"/api/tasklists/{id}":{"delete":{"tags":["bff-task-list-controller"],"operationId":"deleteTaskList","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer","format":"int64"}}],"responses":{"200":{"description":"OK"}}},"patch":{"tags":["bff-task-list-controller"],"operationId":"updateTaskList","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer","format":"int64"}}],"requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/TaskListUpdate"}}},"required":true},"responses":{"200":{"description":"OK"}}}},"/api/tasklists/{taskListId}/tasks":{"get":{"tags":["bff-task-controller"],"operationId":"getTasksByTaskListId","parameters":[{"name":"taskListId","in":"path","required":true,"schema":{"type":"integer","format":"int64"}}],"responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/TaskSummary"}}}}}}}},"/api/focus-sessions/total":{"get":{"tags":["bff-focus-session-controller"],"operationId":"getTotalSummary","responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"$ref":"#/components/schemas/TotalSummary"}}}}}}},"/api/focus-sessions/daily":{"get":{"tags":["bff-focus-session-controller"],"operationId":"getDailySummary","parameters":[{"name":"date","in":"query","required":true,"schema":{"type":"string","format":"date"}}],"responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"$ref":"#/components/schemas/DailySummary"}}}}}}}},"components":{"schemas":{"TaskCreate":{"type":"object","properties":{"title":{"type":"string"},"taskListId":{"type":"integer","format":"int64"},"executionDate":{"type":"string","format":"date"},"categoryId":{"type":"integer","format":"int64"}}},"Response":{"type":"object","properties":{"id":{"type":"integer","format":"int64"},"name":{"type":"string"},"color":{"type":"string"}}},"TaskSummary":{"type":"object","properties":{"id":{"type":"integer","format":"int64"},"title":{"type":"string"},"status":{"type":"string","enum":["PENDING","IN_PROGRESS","COMPLETED"]},"executionDate":{"type":"string","format":"date"},"taskListId":{"type":"integer","format":"int64"},"category":{"$ref":"#/components/schemas/Response"}}},"TaskListCreate":{"type":"object","properties":{"title":{"type":"string"},"dueDate":{"type":"string","format":"date"},"tasks":{"type":"array","items":{"$ref":"#/components/schemas/TaskCreate"}}}},"TaskListSummary":{"type":"object","properties":{"id":{"type":"integer","format":"int64"},"title":{"type":"string"},"dueDate":{"type":"string","format":"date"},"isCompleted":{"type":"boolean"},"tasks":{"type":"array","items":{"$ref":"#/components/schemas/TaskSummary"}}}},"AddRequest":{"type":"object","properties":{"taskId":{"type":"integer","format":"int64"},"date":{"type":"string","format":"date"},"durationSeconds":{"type":"integer","format":"int32"}}},"Request":{"type":"object","properties":{"name":{"type":"string"},"color":{"type":"string"}}},"TaskUpdate":{"type":"object","properties":{"title":{"type":"string"},"status":{"type":"string","enum":["PENDING","IN_PROGRESS","COMPLETED"]},"executionDate":{"type":"string","format":"date"},"categoryId":{"type":"integer","format":"int64"},"taskListId":{"type":"integer","format":"int64"}}},"TaskListUpdate":{"type":"object","properties":{"title":{"type":"string"},"dueDate":{"type":"string","format":"date"},"isCompleted":{"type":"boolean"}}},"TotalSummary":{"type":"object","properties":{"totalSeconds":{"type":"integer","format":"int32"}}},"DailySummary":{"type":"object","properties":{"date":{"type":"string","format":"date"},"totalSeconds":{"type":"integer","format":"int32"}}}}}}
+{
+	"openapi": "3.1.0",
+	"info": { "title": "OpenAPI definition", "version": "v0" },
+	"servers": [
+		{ "url": "http://localhost:7070", "description": "Generated server url" }
+	],
+	"paths": {
+		"/api/tasks": {
+			"get": {
+				"tags": ["bff-task-controller"],
+				"operationId": "getUserTasks",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"*/*": {
+								"schema": {
+									"type": "array",
+									"items": { "$ref": "#/components/schemas/TaskSummary" }
+								}
+							}
+						}
+					}
+				}
+			},
+			"post": {
+				"tags": ["bff-task-controller"],
+				"operationId": "createTask",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": { "$ref": "#/components/schemas/TaskCreate" }
+						}
+					},
+					"required": true
+				},
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"*/*": {
+								"schema": { "$ref": "#/components/schemas/TaskSummary" }
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/tasklists": {
+			"get": {
+				"tags": ["bff-task-list-controller"],
+				"operationId": "getUserTaskLists",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"*/*": {
+								"schema": {
+									"type": "array",
+									"items": { "$ref": "#/components/schemas/TaskListSummary" }
+								}
+							}
+						}
+					}
+				}
+			},
+			"post": {
+				"tags": ["bff-task-list-controller"],
+				"operationId": "createTaskList",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": { "$ref": "#/components/schemas/TaskListCreate" }
+						}
+					},
+					"required": true
+				},
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"*/*": {
+								"schema": { "$ref": "#/components/schemas/TaskListSummary" }
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/focus-sessions": {
+			"post": {
+				"tags": ["bff-focus-session-controller"],
+				"operationId": "addFocusTime",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": { "$ref": "#/components/schemas/AddRequest" }
+						}
+					},
+					"required": true
+				},
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"*/*": { "schema": { "$ref": "#/components/schemas/Response" } }
+						}
+					}
+				}
+			}
+		},
+		"/api/categories": {
+			"get": {
+				"tags": ["bff-category-controller"],
+				"operationId": "getAllCategories",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"*/*": {
+								"schema": {
+									"type": "array",
+									"items": { "$ref": "#/components/schemas/Response" }
+								}
+							}
+						}
+					}
+				}
+			},
+			"post": {
+				"tags": ["bff-category-controller"],
+				"operationId": "createCategory",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": { "$ref": "#/components/schemas/Request" }
+						}
+					},
+					"required": true
+				},
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"*/*": { "schema": { "$ref": "#/components/schemas/Response" } }
+						}
+					}
+				}
+			}
+		},
+		"/api/categories/{id}": {
+			"delete": {
+				"tags": ["bff-category-controller"],
+				"operationId": "deleteCategory",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "format": "int64" }
+					}
+				],
+				"responses": { "200": { "description": "OK" } }
+			},
+			"patch": {
+				"tags": ["bff-category-controller"],
+				"operationId": "updateCategory",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "format": "int64" }
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": { "$ref": "#/components/schemas/Request" }
+						}
+					},
+					"required": true
+				},
+				"responses": { "200": { "description": "OK" } }
+			}
+		},
+		"/api/tasks/{id}": {
+			"get": {
+				"tags": ["bff-task-controller"],
+				"operationId": "getTask",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "format": "int64" }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"*/*": {
+								"schema": { "$ref": "#/components/schemas/TaskSummary" }
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"tags": ["bff-task-controller"],
+				"operationId": "deleteTask",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "format": "int64" }
+					}
+				],
+				"responses": { "200": { "description": "OK" } }
+			},
+			"patch": {
+				"tags": ["bff-task-controller"],
+				"operationId": "updateTask",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "format": "int64" }
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": { "$ref": "#/components/schemas/TaskUpdate" }
+						}
+					},
+					"required": true
+				},
+				"responses": { "200": { "description": "OK" } }
+			}
+		},
+		"/api/tasklists/{id}": {
+			"delete": {
+				"tags": ["bff-task-list-controller"],
+				"operationId": "deleteTaskList",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "format": "int64" }
+					}
+				],
+				"responses": { "200": { "description": "OK" } }
+			},
+			"patch": {
+				"tags": ["bff-task-list-controller"],
+				"operationId": "updateTaskList",
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "format": "int64" }
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": { "$ref": "#/components/schemas/TaskListUpdate" }
+						}
+					},
+					"required": true
+				},
+				"responses": { "200": { "description": "OK" } }
+			}
+		},
+		"/api/tasklists/{taskListId}/tasks": {
+			"get": {
+				"tags": ["bff-task-controller"],
+				"operationId": "getTasksByTaskListId",
+				"parameters": [
+					{
+						"name": "taskListId",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "format": "int64" }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"*/*": {
+								"schema": {
+									"type": "array",
+									"items": { "$ref": "#/components/schemas/TaskSummary" }
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/focus-sessions/total": {
+			"get": {
+				"tags": ["bff-focus-session-controller"],
+				"operationId": "getTotalSummary",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"*/*": {
+								"schema": { "$ref": "#/components/schemas/TotalSummary" }
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/focus-sessions/daily": {
+			"get": {
+				"tags": ["bff-focus-session-controller"],
+				"operationId": "getDailySummary",
+				"parameters": [
+					{
+						"name": "date",
+						"in": "query",
+						"required": true,
+						"schema": { "type": "string", "format": "date" }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"*/*": {
+								"schema": { "$ref": "#/components/schemas/DailySummary" }
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"components": {
+		"schemas": {
+			"TaskCreate": {
+				"type": "object",
+				"properties": {
+					"title": { "type": "string" },
+					"taskListId": { "type": "integer", "format": "int64" },
+					"executionDate": { "type": "string", "format": "date" },
+					"categoryId": { "type": "integer", "format": "int64" }
+				}
+			},
+			"Response": {
+				"type": "object",
+				"properties": {
+					"id": { "type": "integer", "format": "int64" },
+					"name": { "type": "string" },
+					"color": { "type": "string" }
+				}
+			},
+			"TaskSummary": {
+				"type": "object",
+				"properties": {
+					"id": { "type": "integer", "format": "int64" },
+					"title": { "type": "string" },
+					"status": {
+						"type": "string",
+						"enum": ["PENDING", "IN_PROGRESS", "COMPLETED"]
+					},
+					"executionDate": { "type": "string", "format": "date" },
+					"taskListId": { "type": "integer", "format": "int64" },
+					"category": { "$ref": "#/components/schemas/Response" }
+				}
+			},
+			"TaskListCreate": {
+				"type": "object",
+				"properties": {
+					"title": { "type": "string" },
+					"dueDate": { "type": "string", "format": "date" },
+					"tasks": {
+						"type": "array",
+						"items": { "$ref": "#/components/schemas/TaskCreate" }
+					}
+				}
+			},
+			"TaskListSummary": {
+				"type": "object",
+				"properties": {
+					"id": { "type": "integer", "format": "int64" },
+					"title": { "type": "string" },
+					"dueDate": { "type": "string", "format": "date" },
+					"isCompleted": { "type": "boolean" },
+					"tasks": {
+						"type": "array",
+						"items": { "$ref": "#/components/schemas/TaskSummary" }
+					}
+				}
+			},
+			"AddRequest": {
+				"type": "object",
+				"properties": {
+					"taskId": { "type": "integer", "format": "int64" },
+					"date": { "type": "string", "format": "date" },
+					"durationSeconds": { "type": "integer", "format": "int32" }
+				}
+			},
+			"Request": {
+				"type": "object",
+				"properties": {
+					"name": { "type": "string" },
+					"color": { "type": "string" }
+				}
+			},
+			"TaskUpdate": {
+				"type": "object",
+				"properties": {
+					"title": { "type": "string" },
+					"status": {
+						"type": "string",
+						"enum": ["PENDING", "IN_PROGRESS", "COMPLETED"]
+					},
+					"executionDate": { "type": "string", "format": "date" },
+					"categoryId": { "type": "integer", "format": "int64" },
+					"taskListId": { "type": "integer", "format": "int64" }
+				}
+			},
+			"TaskListUpdate": {
+				"type": "object",
+				"properties": {
+					"title": { "type": "string" },
+					"dueDate": { "type": "string", "format": "date" },
+					"isCompleted": { "type": "boolean" }
+				}
+			},
+			"TotalSummary": {
+				"type": "object",
+				"properties": {
+					"totalSeconds": { "type": "integer", "format": "int32" }
+				}
+			},
+			"DailySummary": {
+				"type": "object",
+				"properties": {
+					"date": { "type": "string", "format": "date" },
+					"totalSeconds": { "type": "integer", "format": "int32" }
+				}
+			}
+		}
+	}
+}
