@@ -5,6 +5,21 @@ const config: Config = {
 	content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
 	theme: {
 		extend: {
+			keyframes: {
+				wave: {
+					"0%": { transform: "translateY(0)" },
+					"50%": { transform: "translateY(-5px)" },
+					"100%": { transform: "translateY(0)" },
+				},
+				shimmer: {
+					"0%": { backgroundPosition: "0% 50%" },
+					"100%": { backgroundPosition: "200% 50%" },
+				},
+			},
+			animation: {
+				shimmer: "shimmer 3s linear infinite",
+			},
+
 			colors: {
 				border: "hsl(var(--border))",
 				input: "hsl(var(--input))", // ← これを追加

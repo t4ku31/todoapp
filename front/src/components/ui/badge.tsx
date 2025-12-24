@@ -16,9 +16,16 @@ const badgeVariants = cva(
 					"border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
 				outline: "text-foreground",
 			},
+			size: {
+				default: "px-2.5 py-0.5 text-xs",
+				sm: "h-6 px-2 text-xs gap-1.5",
+				md: "h-7 px-3 text-xs gap-1.5",
+				lg: "h-8 px-4 text-sm gap-2",
+			},
 		},
 		defaultVariants: {
 			variant: "default",
+			size: "default",
 		},
 	},
 );

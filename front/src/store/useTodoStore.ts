@@ -1,19 +1,20 @@
+import { toast } from "sonner";
+import { create } from "zustand";
 import { apiClient } from "@/config/env";
 import { sortTasks } from "@/features/todo/utils/taskSorter";
 import type { Category, Task, TaskList } from "@/types/types";
 import { normalizeError } from "@/utils/error";
-import { toast } from "sonner";
-import { create } from "zustand";
 
 interface TodoState {
 	taskLists: TaskList[];
 	allTasks: Task[]; // Flattened list for optimized access
-    categories: Category[];
+
+	categories: Category[];
 	loading: boolean;
 	error: string | null;
 
 	fetchTaskLists: () => Promise<void>;
-    fetchCategories: () => Promise<void>;
+	fetchCategories: () => Promise<void>;
 	addTaskList: (newTaskList: TaskList) => void;
 	updateTaskListTitle: (taskListId: number, newTitle: string) => Promise<void>;
 	updateTaskListDate: (taskListId: number, newDate: string) => Promise<void>;
@@ -28,17 +29,21 @@ interface TodoState {
 		title: string,
 		dueDate?: string | null,
 		executionDate?: string | null,
-        categoryId?: number,
+		categoryId?: number,
 	) => Promise<void>;
-	updateTask: (taskId: number, updates: Partial<Task> & { categoryId?: number; taskListId?: number }) => Promise<void>;
+	updateTask: (
+		taskId: number,
+		updates: Partial<Task> & { categoryId?: number; taskListId?: number },
+	) => Promise<void>;
 	deleteTask: (taskId: number) => Promise<void>;
 	getInboxList: () => TaskList | undefined;
+	getTasksForDate: (date: string) => Task[];
 }
 
 export const useTodoStore = create<TodoState>((set, get) => ({
 	taskLists: [],
 	allTasks: [],
-    categories: [],
+	categories: [],
 	loading: false,
 	error: null,
 
@@ -61,18 +66,22 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
 	getInboxList: () => {
 		const taskLists = get().taskLists;
-		return taskLists.find(list => list.title === "Inbox");
+		return taskLists.find((list) => list.title === "Inbox");
 	},
-	
-    fetchCategories: async () => {
-        try {
-            const response = await apiClient.get<Category[]>("/api/categories");
+
+	getTasksForDate: (date: string) => {
+		return get().allTasks.filter((task) => task.executionDate === date);
+	},
+
+	fetchCategories: async () => {
+		try {
+			const response = await apiClient.get<Category[]>("/api/categories");
 			set({ categories: response.data });
-        } catch (err) {
-            console.error("Failed to fetch categories:", err);
-            // Don't set global error for this, maybe just log or toast
-        }
-    },
+		} catch (err) {
+			console.error("Failed to fetch categories:", err);
+			// Don't set global error for this, maybe just log or toast
+		}
+	},
 
 	addTaskList: (newTaskList: TaskList) => {
 		const sortedList = {
@@ -170,7 +179,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 				taskListId,
 				dueDate,
 				executionDate,
-                categoryId,
+				categoryId,
 			});
 			const newTask = response.data;
 
@@ -180,7 +189,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 						const updatedTasks = [
 							...(list.tasks || []),
 							{
-                                ...newTask,
+								...newTask,
 								// Ensure defaults if API doesn't return everything immediately (though it should)
 								status: newTask.status || "PENDING",
 								taskListId: taskListId,
@@ -206,17 +215,18 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		// Optimistic update
 		const originalLists = get().taskLists;
 		const originalTasks = get().allTasks;
-        const categories = get().categories;
+		const categories = get().categories;
 
-        let optimisticUpdates = { ...updates };
-        if (updates.categoryId) {
-            const category = categories.find(c => c.id === updates.categoryId);
-            if (category) {
-                optimisticUpdates = { ...optimisticUpdates, category };
-            }
-        }
+		let optimisticUpdates = { ...updates };
+		if (updates.categoryId) {
+			const category = categories.find((c) => c.id === updates.categoryId);
+			if (category) {
+				optimisticUpdates = { ...optimisticUpdates, category };
+			}
+		}
 
 		set((state) => ({
+			//update taskLists state
 			taskLists: state.taskLists.map((list) => ({
 				...list,
 				tasks: list.tasks
@@ -225,6 +235,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 						)
 					: [],
 			})),
+			//update allTasks state
 			allTasks: state.allTasks.map((task) =>
 				task.id === taskId ? { ...task, ...optimisticUpdates } : task,
 			),
@@ -232,7 +243,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
 		try {
 			await apiClient.patch(`/api/tasks/${taskId}`, updates);
-			
+
 			// If taskListId was updated, refetch to get the correct state
 			if (updates.taskListId) {
 				await get().fetchTaskLists();
@@ -263,6 +274,4 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 			toast.error("削除失敗", { description: appError.message });
 		}
 	},
-
-
 }));

@@ -1,3 +1,5 @@
+import { CalendarCheck2 } from "lucide-react";
+import { type Control, Controller } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -13,8 +15,6 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { CalendarCheck2 } from "lucide-react";
-import { type Control, Controller } from "react-hook-form";
 import { CategorySelect } from "../ui/CategorySelect";
 
 interface TaskInputProps {
@@ -61,8 +61,6 @@ export const TaskInput = ({
 					/>
 				)}
 			/>
-
-
 
 			<Controller
 				control={control}

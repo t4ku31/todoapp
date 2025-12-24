@@ -1,6 +1,7 @@
 {
     "java.configuration.updateBuildConfiguration": "interactive",
     "java.compile.nullAnalysis.mode": "automatic",
+    "biome.lsp.bin": "./front/node_modules/@biomejs/biome/bin/biome",
     "[javascript]": {
         "editor.defaultFormatter": "biomejs.biome",
         "editor.formatOnSave": true

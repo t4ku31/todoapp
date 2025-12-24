@@ -9,7 +9,7 @@ export default function LoginPage() {
 	};
 
 	return (
-		<div className="min-h-screen w-full flex items-center justify-center">
+		<div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-r from-blue-200 via-purple-200 to-purple-300">
 			<div>
 				<Logo className="min-w-[300px] pb-3" />
 				<Card className="rounded-lg min-h-[200px] min-w-[380px]">
