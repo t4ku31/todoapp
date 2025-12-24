@@ -1,8 +1,10 @@
+import { useDraggable } from "@dnd-kit/core";
+import { useEffect, useState } from "react";
+
 import { Checkbox } from "@/components/ui/checkbox";
 import { usePomodoroStore } from "@/store/usePomodoroStore";
 import type { Task } from "@/types/types";
-import { useDraggable } from "@dnd-kit/core";
-import { useEffect, useState } from "react";
+
 import { CategorySelect } from "./ui/CategorySelect";
 import { DeleteButton } from "./ui/DeleteButton";
 import { EditableDate } from "./ui/EditableDate";
@@ -13,14 +15,19 @@ interface TaskItemProps {
 	task: Task;
 	onUpdateTask: (taskId: number, updates: Partial<Task>) => Promise<void>;
 	onDeleteTask: (taskId: number) => Promise<void>;
-	variant?: 'default' | 'focusSelector';
+	variant?: "default" | "focusSelector";
 }
 
-export function TaskItem({ task, onUpdateTask, onDeleteTask, variant = 'default' }: TaskItemProps) {
+export function TaskItem({
+	task,
+	onUpdateTask,
+	onDeleteTask,
+	variant = "default",
+}: TaskItemProps) {
 	const { setFocusTask, currentTaskId } = usePomodoroStore();
-	
-	const isFocusSelector = variant === 'focusSelector';
-	
+
+	const isFocusSelector = variant === "focusSelector";
+
 	const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
 		id: `task-${task.id}`,
 		data: { task },
@@ -44,31 +51,31 @@ export function TaskItem({ task, onUpdateTask, onDeleteTask, variant = 'default'
 		: task.status === "COMPLETED"
 			? "PENDING"
 			: task.status;
-			
+
 	const handleClick = () => {
 		if (isFocusSelector && task.status !== "COMPLETED") {
 			setFocusTask(task.id);
 		}
 	};
-	
-	return (
-		<div
-			ref={setNodeRef}
-			style={{
-				...style,
-				borderLeftWidth: 4,
-				borderLeftColor: task.category?.color ?? "transparent",
-			}}
-			{...(isFocusSelector ? {} : listeners)}
-			{...(isFocusSelector ? {} : attributes)}
-			onClick={handleClick}
-			className={`relative p-4 bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 group
-				${isFocusSelector ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'}
-				${isSelected 
-					? 'border-4 border-purple-500 ring-4 ring-purple-200 shadow-purple-100' 
-					: 'border border-gray-100'}
-				${isFocusSelector && !isSelected ? 'hover:border-purple-200' : ''}`}
-		>
+
+	const baseClassName = `relative p-4 bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 group
+		${isFocusSelector ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"}
+		${
+			isSelected
+				? "border-4 border-purple-500 ring-4 ring-purple-200 shadow-purple-100"
+				: "border border-gray-100"
+		}
+		${isFocusSelector && !isSelected ? "hover:border-purple-200" : ""}`;
+
+	const baseStyle = {
+		...style,
+		borderLeftWidth: 4,
+		borderLeftColor: task.category?.color ?? "transparent",
+	};
+
+	// Shared content for both modes
+	const taskContent = (
+		<>
 			{/* 常に表示: Checkbox + Title + Focus Button */}
 			<div className="flex items-center gap-4">
 				<Checkbox
@@ -133,6 +140,34 @@ export function TaskItem({ task, onUpdateTask, onDeleteTask, variant = 'default'
 					</div>
 				</div>
 			</div>
+		</>
+	);
+
+	// Use native <button> for focusSelector mode (proper accessibility)
+	if (isFocusSelector) {
+		return (
+			<button
+				type="button"
+				ref={setNodeRef}
+				style={baseStyle}
+				onClick={handleClick}
+				className={`${baseClassName} w-full text-left`}
+			>
+				{taskContent}
+			</button>
+		);
+	}
+
+	// Use <div> with drag handlers for default mode
+	return (
+		<div
+			ref={setNodeRef}
+			style={baseStyle}
+			{...listeners}
+			{...attributes}
+			className={baseClassName}
+		>
+			{taskContent}
 		</div>
 	);
 }

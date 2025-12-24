@@ -1,7 +1,7 @@
-import { Button } from "@/components/ui/button";
-import type { Task } from "@/types/types";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import type { Task } from "@/types/types";
 import { TaskItem } from "../TaskItem";
 
 interface CompletedSectionProps {
@@ -59,13 +59,13 @@ export function CompletedSection({
 							>
 								{variant === "simple" && renderItem ? (
 									renderItem(task)
-								) : (
+								) : onDeleteTask ? (
 									<TaskItem
 										task={task}
 										onUpdateTask={onUpdateTask}
-										onDeleteTask={onDeleteTask!}
+										onDeleteTask={onDeleteTask}
 									/>
-								)}
+								) : null}
 							</motion.div>
 						))}
 					</AnimatePresence>
@@ -74,4 +74,3 @@ export function CompletedSection({
 		</div>
 	);
 }
-

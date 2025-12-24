@@ -1,6 +1,6 @@
+import { useDroppable } from "@dnd-kit/core";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { Task, TaskList } from "@/types/types";
-import { useDroppable } from "@dnd-kit/core";
 import { CreateTaskForm } from "./forms/CreateTaskForm";
 import { TaskItem } from "./TaskItem";
 import { CompletedSection } from "./ui/CompletedSection";
@@ -97,12 +97,13 @@ export default function CustomTaskList({
 								onDeleteTask={onDeleteTask}
 							/>
 						))
-					) : (taskList.tasks || []).filter(t => t.status === 'COMPLETED').length === 0 ? (
+					) : (taskList.tasks || []).filter((t) => t.status === "COMPLETED")
+							.length === 0 ? (
 						<p className="text-gray-400 text-sm text-center py-8">
 							No tasks yet
 						</p>
 					) : null}
-					
+
 					{/* Completed Tasks Section */}
 					<CompletedSection
 						tasks={taskList.tasks || []}
