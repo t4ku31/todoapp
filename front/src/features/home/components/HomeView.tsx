@@ -1,17 +1,17 @@
+import { addDays, format, parse, subDays } from "date-fns";
+import { Play } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FocusCircle } from "@/features/home/components/FocusCircle";
 import { DailyTaskList } from "@/features/todo/components/DailyTaskList";
 import { usePomodoroStore } from "@/store/usePomodoroStore";
 import { useTodoStore } from "@/store/useTodoStore";
-import { addDays, format, parse, subDays } from "date-fns";
-import { Play } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 export default function HomeView() {
 	const navigate = useNavigate();
-	const userName = "User";
 
 	const taskLists = useTodoStore((state) => state.taskLists);
 	const allTasks = useTodoStore((state) => state.allTasks);
@@ -26,7 +26,9 @@ export default function HomeView() {
 	const updateSettings = usePomodoroStore((state) => state.updateSettings);
 
 	// Get current selected task
-	const currentTask = currentTaskId ? allTasks.find(t => t.id === currentTaskId) : null;
+	const currentTask = currentTaskId
+		? allTasks.find((t) => t.id === currentTaskId)
+		: null;
 
 	useEffect(() => {
 		fetchTaskLists();
@@ -37,10 +39,10 @@ export default function HomeView() {
 	);
 
 	// Auto-select first task if none selected
-	const todaysTasks = allTasks.filter(t => 
-		t.executionDate === selectedDate && t.status !== 'COMPLETED'
+	const todaysTasks = allTasks.filter(
+		(t) => t.executionDate === selectedDate && t.status !== "COMPLETED",
 	);
-	
+
 	useEffect(() => {
 		if (!currentTaskId && todaysTasks.length > 0) {
 			setFocusTask(todaysTasks[0].id);
@@ -61,9 +63,9 @@ export default function HomeView() {
 
 	const startFocusSession = () => {
 		updateSettings({
-			whiteNoise: 'white-noise',  
+			whiteNoise: "white-noise",
 		});
-		setPhase('focus');
+		setPhase("focus");
 		startTimer();
 		navigate("/focus");
 	};
@@ -86,13 +88,18 @@ export default function HomeView() {
 					<div className="space-y-4">
 						<h1 className="text-2xl md:text-3xl font-bold text-gray-800">
 							{currentTask ? (
-								<>Ready to work on <span className="text-purple-600">{currentTask.title}</span>?</>
+								<>
+									Ready to work on{" "}
+									<span className="text-purple-600">{currentTask.title}</span>?
+								</>
 							) : (
 								<>Ready to crush your goals?</>
 							)}
 						</h1>
-						<Button onClick={startFocusSession}
-							className=" w-full h-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white px-6 py-3 rounded-full shadow-lg">
+						<Button
+							onClick={startFocusSession}
+							className=" w-full h-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white px-6 py-3 rounded-full shadow-lg"
+						>
 							<Play className="w-4 h-4 mr-2" />
 							Start Focus Session (25m)
 						</Button>
