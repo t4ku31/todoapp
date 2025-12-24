@@ -39,4 +39,28 @@ public class BffCategoryService {
         log.info("Successfully fetched {} categories", categories.size());
         return categories;
     }
+
+    public CategoryDto.Response createCategory(String token, CategoryDto.Request category) {
+        log.info("Creating category in Resource Server");
+        CategoryDto.Response createdCategory = restClient.post()
+                .uri(resourceUrl + "/categories")
+                .header("Authorization", "Bearer " + token)
+                .body(category)
+                .retrieve()
+                .body(CategoryDto.Response.class);
+
+        log.info("Successfully created category with id: {}", createdCategory.id());
+        return createdCategory;
+    }
+
+    public void updateCategory(String token, Long id, CategoryDto.Request category) {
+        log.info("Updating category id: {} in Resource Server", id);
+        restClient.patch()
+                .uri(resourceUrl + "/categories/" + id)
+                .header("Authorization", "Bearer " + token)
+                .body(category)
+                .retrieve()
+                .toBodilessEntity();
+        log.info("Successfully updated category id: {}", id);
+    }
 }

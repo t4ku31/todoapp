@@ -1,5 +1,3 @@
-import { Tag } from "lucide-react";
-import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,7 +7,9 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { useTodoStore } from "@/store/useTodoStore";
+import { useCategoryStore } from "@/store/useCategoryStore";
+import { Tag } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface CategorySelectProps {
 	selectedCategoryId?: number;
@@ -24,8 +24,8 @@ export function CategorySelect({
 	onOpenChange,
 	className,
 }: CategorySelectProps) {
-	const categories = useTodoStore((state) => state.categories);
-	const fetchCategories = useTodoStore((state) => state.fetchCategories);
+	const categories = useCategoryStore((state) => state.categories);
+	const fetchCategories = useCategoryStore((state) => state.fetchCategories);
 	const [open, setOpen] = useState(false);
 
 	useEffect(() => {

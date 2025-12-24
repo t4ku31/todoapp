@@ -20,14 +20,19 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "categories")
+@Table(name = "categories", uniqueConstraints = {
+        @jakarta.persistence.UniqueConstraint(columnNames = { "userId", "name" })
+})
 public class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, length = 255)
+    private String userId;
+
+    @Column(nullable = false)
     private String name;
 
     @Column
