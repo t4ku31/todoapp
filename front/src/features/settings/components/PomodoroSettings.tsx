@@ -1,3 +1,7 @@
+import { Volume2, VolumeX } from "lucide-react";
+import { useEffect, useState } from "react";
+
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -16,14 +20,54 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { usePomodoroStore } from "@/store/usePomodoroStore";
-import { Volume2, VolumeX } from "lucide-react";
 
 export const PomodoroSettings = () => {
-	const { settings, updateSettings } = usePomodoroStore();
+	const { settings, fetchSettings, updateSettings } = usePomodoroStore();
+	const [inputValues, setInputValues] = useState<{
+		focusDuration: string;
+		shortBreakDuration: string;
+		longBreakDuration: string;
+		longBreakInterval: string;
+		dailyGoal: string;
+	}>({
+		focusDuration: (settings.focusDuration ?? 25).toString(),
+		shortBreakDuration: (settings.shortBreakDuration ?? 5).toString(),
+		longBreakDuration: (settings.longBreakDuration ?? 15).toString(),
+		longBreakInterval: (settings.longBreakInterval ?? 4).toString(),
+		dailyGoal: (settings.dailyGoal ?? 120).toString(),
+	});
 
-	const handleDurationChange = (key: keyof typeof settings, value: string) => {
+	// Sync local state when settings change from store (e.g. fetch or preset click)
+	useEffect(() => {
+		fetchSettings();
+	}, [fetchSettings]);
+
+	useEffect(() => {
+		setInputValues({
+			focusDuration: (settings.focusDuration ?? 25).toString(),
+			shortBreakDuration: (settings.shortBreakDuration ?? 5).toString(),
+			longBreakDuration: (settings.longBreakDuration ?? 15).toString(),
+			longBreakInterval: (settings.longBreakInterval ?? 4).toString(),
+			dailyGoal: (settings.dailyGoal ?? 120).toString(),
+		});
+	}, [
+		settings.focusDuration,
+		settings.shortBreakDuration,
+		settings.longBreakDuration,
+		settings.longBreakInterval,
+		settings.dailyGoal,
+	]);
+
+	const handleDurationChange = (
+		key: keyof typeof inputValues,
+		value: string,
+	) => {
+		// Always update local state to allow typing/clearing
+		setInputValues((prev) => ({ ...prev, [key]: value }));
+
 		const numValue = parseInt(value, 10);
-		if (!isNaN(numValue) && numValue > 0) {
+		// Only update store if value is valid
+		if (!Number.isNaN(numValue) && numValue > 0) {
 			updateSettings({ [key]: numValue });
 		}
 	};
@@ -42,18 +86,36 @@ export const PomodoroSettings = () => {
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-						<div className="space-y-2">
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div className="space-y-3">
 							<Label htmlFor="focusDuration">Focus Duration (min)</Label>
 							<Input
 								id="focusDuration"
 								type="number"
 								min="1"
-								value={settings.focusDuration}
+								placeholder={(settings.focusDuration ?? 25).toString()}
+								value={inputValues.focusDuration}
 								onChange={(e) =>
 									handleDurationChange("focusDuration", e.target.value)
 								}
 							/>
+							<div className="flex flex-wrap gap-2">
+								{[15, 25, 50, 90].map((duration) => (
+									<Button
+										key={duration}
+										variant={
+											settings.focusDuration === duration
+												? "default"
+												: "outline"
+										}
+										size="sm"
+										onClick={() => updateSettings({ focusDuration: duration })}
+										className="h-7 px-2 text-xs"
+									>
+										{duration}m
+									</Button>
+								))}
+							</div>
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="shortBreakDuration">Short Break (min)</Label>
@@ -61,21 +123,63 @@ export const PomodoroSettings = () => {
 								id="shortBreakDuration"
 								type="number"
 								min="1"
-								value={settings.shortBreakDuration}
+								placeholder={(settings.shortBreakDuration ?? 5).toString()}
+								value={inputValues.shortBreakDuration}
 								onChange={(e) =>
 									handleDurationChange("shortBreakDuration", e.target.value)
 								}
 							/>
 						</div>
 						<div className="space-y-2">
-							<Label htmlFor="longBreakDuration">Long Break (min)</Label>
+							<div className="flex items-center justify-between">
+								<Label htmlFor="longBreakDuration">Long Break (min)</Label>
+								<div className="flex items-center space-x-2">
+									<Checkbox
+										id="longBreakEnabled"
+										checked={settings.isLongBreakEnabled}
+										onCheckedChange={(checked) =>
+											updateSettings({ isLongBreakEnabled: checked === true })
+										}
+									/>
+									<span className="text-xs text-muted-foreground">Enable</span>
+								</div>
+							</div>
 							<Input
 								id="longBreakDuration"
 								type="number"
 								min="1"
-								value={settings.longBreakDuration}
+								disabled={!settings.isLongBreakEnabled}
+								placeholder={(settings.longBreakDuration ?? 15).toString()}
+								value={inputValues.longBreakDuration}
 								onChange={(e) =>
 									handleDurationChange("longBreakDuration", e.target.value)
+								}
+							/>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="longBreakInterval">Long Break Interval</Label>
+							<Input
+								id="longBreakInterval"
+								type="number"
+								min="1"
+								disabled={!settings.isLongBreakEnabled}
+								placeholder={(settings.longBreakInterval ?? 4).toString()}
+								value={inputValues.longBreakInterval}
+								onChange={(e) =>
+									handleDurationChange("longBreakInterval", e.target.value)
+								}
+							/>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="dailyGoal">Daily Goal (min)</Label>
+							<Input
+								id="dailyGoal"
+								type="number"
+								min="1"
+								placeholder={(settings.dailyGoal ?? 120).toString()}
+								value={inputValues.dailyGoal}
+								onChange={(e) =>
+									handleDurationChange("dailyGoal", e.target.value)
 								}
 							/>
 						</div>
