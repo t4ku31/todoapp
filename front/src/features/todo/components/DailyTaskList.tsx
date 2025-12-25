@@ -1,10 +1,10 @@
+import { format, isSameDay, parse } from "date-fns";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CreateTaskForm } from "@/features/todo/components/forms/CreateTaskForm";
 import type { Task } from "@/types/types";
-import { format, isSameDay, parse } from "date-fns";
-import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { TaskItem } from "./TaskItem";
 import { CompletedSection } from "./ui/CompletedSection";
 import { CompletionBadge } from "./ui/CompletionBadge";
@@ -26,7 +26,7 @@ interface DailyTaskListProps {
 	taskListId: number;
 	emptyMessage?: string;
 	className?: string;
-	taskItemVariant?: 'default' | 'focusSelector';
+	taskItemVariant?: "default" | "focusSelector";
 }
 
 export function DailyTaskList({
@@ -40,7 +40,7 @@ export function DailyTaskList({
 	taskListId,
 	emptyMessage = "No tasks for this date.",
 	className = "",
-	taskItemVariant = 'default',
+	taskItemVariant = "default",
 }: DailyTaskListProps) {
 	// Filter tasks by date first
 	const tasksForDate = tasks.filter((task) => task.executionDate === date);
@@ -99,7 +99,8 @@ export function DailyTaskList({
 			</div>
 
 			{/* Active Tasks */}
-			{activeTasks.length === 0 && tasksForDate.filter(t => t.status === 'COMPLETED').length === 0 ? (
+			{activeTasks.length === 0 &&
+			tasksForDate.filter((t) => t.status === "COMPLETED").length === 0 ? (
 				<Card className="p-4 bg-white/80">
 					<p className="text-gray-500 text-center">{emptyMessage}</p>
 				</Card>

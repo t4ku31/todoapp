@@ -2,19 +2,16 @@ import { toast } from "sonner";
 import { create } from "zustand";
 import { apiClient } from "@/config/env";
 import { sortTasks } from "@/features/todo/utils/taskSorter";
-import type { Category, Task, TaskList } from "@/types/types";
+import type { Task, TaskList } from "@/types/types";
 import { normalizeError } from "@/utils/error";
 
 interface TodoState {
 	taskLists: TaskList[];
 	allTasks: Task[]; // Flattened list for optimized access
-
-	categories: Category[];
 	loading: boolean;
 	error: string | null;
 
 	fetchTaskLists: () => Promise<void>;
-	fetchCategories: () => Promise<void>;
 	addTaskList: (newTaskList: TaskList) => void;
 	updateTaskListTitle: (taskListId: number, newTitle: string) => Promise<void>;
 	updateTaskListDate: (taskListId: number, newDate: string) => Promise<void>;
@@ -43,7 +40,6 @@ interface TodoState {
 export const useTodoStore = create<TodoState>((set, get) => ({
 	taskLists: [],
 	allTasks: [],
-	categories: [],
 	loading: false,
 	error: null,
 
@@ -71,16 +67,6 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
 	getTasksForDate: (date: string) => {
 		return get().allTasks.filter((task) => task.executionDate === date);
-	},
-
-	fetchCategories: async () => {
-		try {
-			const response = await apiClient.get<Category[]>("/api/categories");
-			set({ categories: response.data });
-		} catch (err) {
-			console.error("Failed to fetch categories:", err);
-			// Don't set global error for this, maybe just log or toast
-		}
 	},
 
 	addTaskList: (newTaskList: TaskList) => {
@@ -172,14 +158,13 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		}
 	},
 
-	createTask: async (taskListId, title, dueDate, executionDate, categoryId) => {
+	createTask: async (taskListId, title, dueDate, executionDate) => {
 		try {
 			const response = await apiClient.post<Task>("/api/tasks", {
 				title,
 				taskListId,
 				dueDate,
 				executionDate,
-				categoryId,
 			});
 			const newTask = response.data;
 
@@ -215,15 +200,8 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		// Optimistic update
 		const originalLists = get().taskLists;
 		const originalTasks = get().allTasks;
-		const categories = get().categories;
 
-		let optimisticUpdates = { ...updates };
-		if (updates.categoryId) {
-			const category = categories.find((c) => c.id === updates.categoryId);
-			if (category) {
-				optimisticUpdates = { ...optimisticUpdates, category };
-			}
-		}
+		const optimisticUpdates = { ...updates };
 
 		set((state) => ({
 			//update taskLists state

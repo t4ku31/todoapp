@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/popover";
 import { apiClient } from "@/config/env";
 import { cn } from "@/lib/utils";
-import { useTodoStore } from "@/store/useTodoStore";
+import { useCategoryStore } from "@/store/useCategoryStore";
 import type { TaskList } from "@/types/types";
 import { type TaskListFormValues, taskListSchema } from "./schema";
 import { TaskInput } from "./TaskInput";
@@ -28,7 +28,9 @@ export default function CreateTaskListForm({
 	onCancel,
 	className,
 }: CreateTaskListFormProps) {
-	const defaultCategoryId = useTodoStore((state) => state.categories[0]?.id);
+	const defaultCategoryId = useCategoryStore(
+		(state) => state.categories[0]?.id,
+	);
 
 	const form = useForm<TaskListFormValues>({
 		resolver: zodResolver(taskListSchema),

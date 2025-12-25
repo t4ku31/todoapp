@@ -10,20 +10,32 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class TaskDto {
 
         @Schema(name = "TaskCreate")
-        public record Create(String title, Long taskListId, LocalDate executionDate,
-                        Long categoryId) {
+        public record Create(
+                        @Schema(description = "Task title", example = "Buy milk") String title,
+                        @Schema(description = "Task list ID", example = "1") Long taskListId,
+                        @Schema(description = "Execution date", example = "2023-12-24") LocalDate executionDate,
+                        @Schema(description = "Category ID", example = "1") Long categoryId) {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @Schema(name = "TaskUpdate")
-        public record Update(String title, TaskStatus status, LocalDate executionDate,
-                        Long categoryId, Long taskListId) {
+        public record Update(
+                        @Schema(description = "Task title", example = "Buy milk") String title,
+                        @Schema(description = "Task status", example = "COMPLETED") TaskStatus status,
+                        @Schema(description = "Execution date", example = "2023-12-24") LocalDate executionDate,
+                        @Schema(description = "Category ID", example = "1") Long categoryId,
+                        @Schema(description = "Task list ID", example = "1") Long taskListId) {
         }
 
         @JsonIgnoreProperties(ignoreUnknown = true)
         @Schema(name = "TaskSummary")
-        public record Summary(Long id, String title, TaskStatus status, LocalDate executionDate,
-                        Long taskListId, CategoryDto.Response category) {
+        public record Summary(
+                        @Schema(description = "Task ID", example = "1") Long id,
+                        @Schema(description = "Task title", example = "Buy milk") String title,
+                        @Schema(description = "Task status", example = "COMPLETED") TaskStatus status,
+                        @Schema(description = "Execution date", example = "2023-12-24") LocalDate executionDate,
+                        @Schema(description = "Task list ID", example = "1") Long taskListId,
+                        @Schema(description = "Category details") CategoryDto.Response category) {
         }
 
 }

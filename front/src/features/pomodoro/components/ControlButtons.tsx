@@ -22,6 +22,8 @@ interface ControlButtonsProps {
 	onEndSession: () => void;
 	onToggleWhiteNoise: () => void;
 	onToggleAutoAdvance: () => void;
+	volume: number;
+	onVolumeChange: (volume: number) => void;
 }
 
 export function ControlButtons({
@@ -35,6 +37,8 @@ export function ControlButtons({
 	onEndSession,
 	onToggleWhiteNoise,
 	onToggleAutoAdvance,
+	volume,
+	onVolumeChange,
 }: ControlButtonsProps) {
 	return (
 		<>
@@ -117,23 +121,48 @@ export function ControlButtons({
 				</button>
 			</div>
 
-			{/* Auto-advance toggle */}
-			<div className="flex items-center gap-2 pt-8">
-				<button
-					type="button"
-					onClick={onToggleAutoAdvance}
-					className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-md transition-all hover:scale-105
+			{/* Controls Row: Auto-advance & Volume */}
+			<div className="flex flex-col items-center gap-4 pt-8 w-full max-w-xs px-4">
+				<div className="flex items-center justify-center w-full">
+					{/* Auto-advance toggle */}
+					<button
+						type="button"
+						onClick={onToggleAutoAdvance}
+						className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-md transition-all hover:scale-105
             ${
 							autoAdvance
 								? "bg-purple-500 text-white"
 								: "bg-white text-gray-600 border border-gray-200"
 						}`}
-				>
-					<Repeat2 className="w-4 h-4" />
-					<span className="text-sm font-medium">
-						{autoAdvance ? "自動切り替え ON" : "自動切り替え OFF"}
-					</span>
-				</button>
+					>
+						<Repeat2 className="w-4 h-4" />
+						<span className="text-sm font-medium">
+							{autoAdvance ? "自動切り替え ON" : "自動切り替え OFF"}
+						</span>
+					</button>
+				</div>
+
+				{/* Volume Slider - Only visible if White Noise is ON */}
+				{isWhiteNoiseOn && (
+					<div className="w-full bg-white/50 rounded-lg p-3 flex items-center gap-3">
+						{volume === 0 ? (
+							<VolumeX className="w-4 h-4 text-gray-600" />
+						) : (
+							<Volume2 className="w-4 h-4 text-gray-600" />
+						)}
+						<input
+							type="range"
+							min="0"
+							max="1"
+							step="0.01"
+							value={volume}
+							onChange={(e) =>
+								onVolumeChange(Number.parseFloat(e.target.value))
+							}
+							className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500"
+						/>
+					</div>
+				)}
 			</div>
 		</>
 	);
