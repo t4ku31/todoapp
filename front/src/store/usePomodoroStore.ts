@@ -1,7 +1,7 @@
-import { apiClient } from "@/config/env";
 import { format } from "date-fns";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { apiClient } from "@/config/env";
 
 export type PomodoroPhase = "focus" | "shortBreak" | "longBreak";
 
@@ -9,6 +9,8 @@ interface PomodoroSettings {
 	focusDuration: number; // minutes
 	shortBreakDuration: number; // minutes
 	longBreakDuration: number; // minutes
+	longBreakInterval: number; // number of focus sessions before long break
+	isLongBreakEnabled: boolean; // enable long break
 	dailyGoal: number; // daily goal in minutes
 	autoAdvance: boolean; // auto advance to next phase
 	whiteNoise: string; // 'none' | 'rain' | 'cafe' | 'white_noise'
@@ -66,17 +68,24 @@ interface PomodoroState {
 	) => Promise<void>;
 	fetchDailySummary: () => Promise<void>;
 	fetchTotalSummary: () => Promise<void>;
+	fetchSettings: () => Promise<void>;
+	saveSettings: (settings: Partial<PomodoroSettings>) => Promise<void>;
 }
 
 const DEFAULT_SETTINGS: PomodoroSettings = {
-	focusDuration: 5,
-	shortBreakDuration: 1,
-	longBreakDuration: 5,
+	focusDuration: 25,
+	shortBreakDuration: 5,
+	longBreakDuration: 15,
+	longBreakInterval: 4,
+	isLongBreakEnabled: true,
 	dailyGoal: 120, // 2 hours default
 	autoAdvance: false,
 	whiteNoise: "none",
 	volume: 0.5,
 };
+
+// simple debounce helper
+let saveTimeout: ReturnType<typeof setTimeout>;
 
 export const usePomodoroStore = create<PomodoroState>()(
 	persist(
@@ -162,11 +171,23 @@ export const usePomodoroStore = create<PomodoroState>()(
 
 						// Increment focus session count
 						const newCount = focusSessionCount + 1;
+						console.log(
+							"Incrementing focus session count from",
+							focusSessionCount,
+							"to",
+							newCount,
+						);
 						set({ focusSessionCount: newCount });
 						console.log("Focus session count:", newCount);
 
-						// Determine next break: longBreak after 4 focus sessions
-						const nextPhase = newCount % 4 === 0 ? "longBreak" : "shortBreak";
+						// Determine next break: longBreak after N focus sessions if enabled
+						let nextPhase: PomodoroPhase = "shortBreak";
+						if (
+							settings.isLongBreakEnabled &&
+							newCount % settings.longBreakInterval === 0
+						) {
+							nextPhase = "longBreak";
+						}
 						console.log("Switching to:", nextPhase);
 						get().setPhase(nextPhase);
 					} else {
@@ -183,21 +204,56 @@ export const usePomodoroStore = create<PomodoroState>()(
 			},
 
 			skipPhase: () => {
-				const { phase, totalFocusTime, currentTaskId } = get();
+				const {
+					phase,
+					totalFocusTime,
+					currentTaskId,
+					focusSessionCount,
+					settings,
+				} = get();
 
-				// Save focus time when skipping from focus phase
-				if (phase === "focus" && totalFocusTime > 0) {
-					get().saveFocusTime(totalFocusTime, currentTaskId);
-					set({ totalFocusTime: 0 });
+				// Skip from Focus
+				if (phase === "focus") {
+					// Save partial focus time
+					if (totalFocusTime > 0) {
+						get().saveFocusTime(totalFocusTime, currentTaskId);
+						set({ totalFocusTime: 0 });
+					}
+
+					// Increment count
+					const newCount = focusSessionCount + 1;
+					console.log(
+						"Incrementing focus session count from",
+						focusSessionCount,
+						"to",
+						newCount,
+					);
+					set({ focusSessionCount: newCount });
+
+					// Determine next phase (Short vs Long Break)
+					let nextPhase: PomodoroPhase = "shortBreak";
+					if (
+						settings.isLongBreakEnabled &&
+						newCount % settings.longBreakInterval === 0
+					) {
+						nextPhase = "longBreak";
+					}
+					get().setPhase(nextPhase);
+				} else {
+					// Skip from Break -> Back to Focus
+					// Do NOT increment count
+					get().setPhase("focus");
 				}
-
-				// Simple toggle for now: Focus -> Short Break -> Focus
-				const nextPhase = phase === "focus" ? "shortBreak" : "focus";
-				get().setPhase(nextPhase);
 			},
 
-			updateSettings: (newSettings) =>
-				set((state) => ({ settings: { ...state.settings, ...newSettings } })),
+			updateSettings: (newSettings) => {
+				set((state) => {
+					const updated = { ...state.settings, ...newSettings };
+					// Trigger save to server (debounced)
+					get().saveSettings(updated);
+					return { settings: updated };
+				});
+			},
 
 			setFocusTask: (taskId) => {
 				const { currentTaskId, totalFocusTime, phase } = get();
@@ -266,6 +322,47 @@ export const usePomodoroStore = create<PomodoroState>()(
 				} catch (error) {
 					console.error("Failed to fetch total summary:", error);
 				}
+			},
+
+			fetchSettings: async () => {
+				try {
+					const response = await apiClient.get<PomodoroSettings>(
+						"/api/settings/pomodoro",
+					);
+					console.log("API Fetch Response:", response.data);
+					if (response.data) {
+						set((state) => {
+							// If timer is not active, update timeLeft to match the new settings
+							if (!state.isActive) {
+								const { phase } = state;
+								let duration = response.data.focusDuration;
+								if (phase === "shortBreak")
+									duration = response.data.shortBreakDuration;
+								if (phase === "longBreak")
+									duration = response.data.longBreakDuration;
+								return {
+									settings: response.data,
+									timeLeft: duration * 60,
+								};
+							}
+							return { settings: response.data };
+						});
+					}
+				} catch (error) {
+					console.error("Failed to fetch settings:", error);
+				}
+			},
+
+			saveSettings: async (settings) => {
+				clearTimeout(saveTimeout);
+				saveTimeout = setTimeout(async () => {
+					try {
+						await apiClient.patch("/api/settings/pomodoro", settings);
+						console.log("Settings saved to server");
+					} catch (error) {
+						console.error("Failed to save settings:", error);
+					}
+				}, 1000); // Debounce 1s
 			},
 		}),
 		{
