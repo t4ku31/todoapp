@@ -1,9 +1,3 @@
-import { InboxMobile } from "@/features/todo/components/InboxMobile";
-import { InboxPanel } from "@/features/todo/components/InboxPanel";
-import CreateTaskListButton from "@/features/todo/components/ui/CreateTaskListButton";
-import { useCategoryStore } from "@/store/useCategoryStore";
-import { useTodoStore } from "@/store/useTodoStore";
-import type { Task } from "@/types/types";
 import {
 	DndContext,
 	type DragEndEvent,
@@ -11,6 +5,12 @@ import {
 	type DragStartEvent,
 } from "@dnd-kit/core";
 import { useEffect, useState } from "react";
+import { InboxMobile } from "@/features/todo/components/InboxMobile";
+import { InboxPanel } from "@/features/todo/components/InboxPanel";
+import CreateTaskListButton from "@/features/todo/components/ui/CreateTaskListButton";
+import { useCategoryStore } from "@/store/useCategoryStore";
+import { useTodoStore } from "@/store/useTodoStore";
+import type { Task } from "@/types/types";
 import CustomTaskList from "./CustomTaskList";
 
 export default function TodoView() {

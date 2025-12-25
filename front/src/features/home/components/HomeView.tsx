@@ -24,6 +24,7 @@ export default function HomeView() {
 	const setFocusTask = usePomodoroStore((state) => state.setFocusTask);
 	const setPhase = usePomodoroStore((state) => state.setPhase);
 	const updateSettings = usePomodoroStore((state) => state.updateSettings);
+	const fetchSettings = usePomodoroStore((state) => state.fetchSettings);
 
 	// Get current selected task
 	const currentTask = currentTaskId
@@ -32,7 +33,8 @@ export default function HomeView() {
 
 	useEffect(() => {
 		fetchTaskLists();
-	}, [fetchTaskLists]);
+		fetchSettings();
+	}, [fetchTaskLists, fetchSettings]);
 
 	const [selectedDate, setSelectedDate] = useState(
 		format(new Date(), "yyyy-MM-dd"),

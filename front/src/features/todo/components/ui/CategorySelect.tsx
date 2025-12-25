@@ -1,3 +1,5 @@
+import { Tag } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,8 +10,6 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useCategoryStore } from "@/store/useCategoryStore";
-import { Tag } from "lucide-react";
-import { useEffect, useState } from "react";
 
 interface CategorySelectProps {
 	selectedCategoryId?: number;

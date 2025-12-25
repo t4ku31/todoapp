@@ -1,7 +1,7 @@
+import { Settings } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CategorySettings } from "@/features/settings/components/CategorySettings";
 import { PomodoroSettings } from "@/features/settings/components/PomodoroSettings";
-import { Settings } from "lucide-react";
 
 export default function SettingsPage() {
 	return (

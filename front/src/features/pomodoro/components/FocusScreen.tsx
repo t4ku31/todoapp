@@ -180,6 +180,8 @@ export default function FocusScreen() {
 					onEndSession={handleEndSession}
 					onToggleWhiteNoise={toggleWhiteNoise}
 					onToggleAutoAdvance={toggleAutoAdvance}
+					volume={settings.volume}
+					onVolumeChange={(newVol) => updateSettings({ volume: newVol })}
 				/>
 			</div>
 		</div>
