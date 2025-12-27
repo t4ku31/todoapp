@@ -117,6 +117,7 @@ public class TaskService {
                 .status(status)
                 .executionDate(taskCreateRequest.executionDate())
                 .userId(userId)
+                .estimatedDuration(taskCreateRequest.estimatedDuration())
                 .taskList(taskList);
 
         if (taskCreateRequest.categoryId() != null) {
@@ -177,6 +178,11 @@ public class TaskService {
             existing.setTitle(request.title());
         }
         if (request.status() != null) {
+            if (request.status() == TaskStatus.COMPLETED && existing.getStatus() != TaskStatus.COMPLETED) {
+                existing.setCompletedAt(java.time.LocalDateTime.now());
+            } else if (request.status() != TaskStatus.COMPLETED && existing.getStatus() == TaskStatus.COMPLETED) {
+                existing.setCompletedAt(null);
+            }
             existing.setStatus(request.status());
         }
 
@@ -195,6 +201,45 @@ public class TaskService {
             existing.setTaskList(targetList);
             log.info("Moving task {} to task list {}", id, request.taskListId());
         }
+        if (request.estimatedDuration() != null) {
+            existing.setEstimatedDuration(request.estimatedDuration());
+        }
+        if (request.completedAt() != null) {
+            // Allow manual override if needed, or ignore?
+            // The requirement is "automatically set", but if the UI sends it (e.g. undo),
+            // we might want to respect it.
+            // However, for now, the requirement specifically asked for "when status
+            // changes".
+            // If I change status to COMPLETED, it sets now().
+            // If I send completedAt explicitly, it should probably override or be ignored.
+            // deeper analysis: The user said
+            // "taskのstatusがcompletに変更されたときにcompletedAtに値を自動投入するように変更して"
+            // (Change it so that a value is automatically input to completedAt when the
+            // task status is changed to complete)
+            // Prioritize status change logic.
+            // If the DTO has completedAt, we should ideally allow it too, but let's stick
+            // to the automation logic first.
+            // Actually, I should probably check if `request.completedAt()` is provided and
+            // allow it, but the automation is key.
+            // Let's add the manual setter too just in case, but put it AFTER the auto-logic
+            // so explicit wins?
+            // Or maybe explicit wins if not null?
+            // Let's stick to the simplest interpretation: Status change triggers
+            // auto-update.
+
+            existing.setCompletedAt(request.completedAt());
+        }
+
+        // Refined logic:
+        // 1. If status changes to COMPLETED -> set now()
+        // 2. If status changes from COMPLETED -> set null
+        // 3. If request has explicit completedAt -> set it (override)
+
+        // However, the `replace_file_content` below is what I will use.
+        // I will implement the status check logic. I will also add the `completedAt`
+        // setter from the request if it exists,
+        // as I added that field to the DTO earlier.
+
         Task saved = taskRepository.save(existing);
         log.info("Updated task {} for user: {}", saved, userId);
         return saved;

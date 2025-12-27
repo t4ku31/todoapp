@@ -64,6 +64,12 @@ public class Task {
     @Column(name = "execution_date")
     private LocalDate executionDate;
 
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
+    @Column(name = "estimated_duration")
+    private Integer estimatedDuration;
+
     /**
      * Current status of the task
      */

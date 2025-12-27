@@ -1,9 +1,9 @@
-import { toast } from "sonner";
-import { create } from "zustand";
 import { apiClient } from "@/config/env";
 import { sortTasks } from "@/features/todo/utils/taskSorter";
 import type { Task, TaskList } from "@/types/types";
 import { normalizeError } from "@/utils/error";
+import { toast } from "sonner";
+import { create } from "zustand";
 
 interface TodoState {
 	taskLists: TaskList[];
@@ -27,6 +27,7 @@ interface TodoState {
 		dueDate?: string | null,
 		executionDate?: string | null,
 		categoryId?: number,
+		estimatedDuration?: number,
 	) => Promise<void>;
 	updateTask: (
 		taskId: number,
@@ -158,13 +159,22 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		}
 	},
 
-	createTask: async (taskListId, title, dueDate, executionDate) => {
+	createTask: async (
+		taskListId,
+		title,
+		dueDate,
+		executionDate,
+		categoryId,
+		estimatedDuration,
+	) => {
 		try {
 			const response = await apiClient.post<Task>("/api/tasks", {
 				title,
 				taskListId,
 				dueDate,
 				executionDate,
+				categoryId,
+				estimatedDuration,
 			});
 			const newTask = response.data;
 
