@@ -20,10 +20,12 @@ export default function FocusScreen() {
 	const {
 		timeLeft,
 		isActive,
+		isOvertime,
 		phase,
 		startTimer,
 		pauseTimer,
 		resetTimer,
+		completeSession,
 		tick,
 		skipPhase,
 		settings,
@@ -33,7 +35,6 @@ export default function FocusScreen() {
 		totalFocusTime,
 		dailyFocusTime,
 		fetchDailySummary,
-		saveFocusTime,
 		adjustTime,
 	} = usePomodoroStore();
 
@@ -69,35 +70,21 @@ export default function FocusScreen() {
 		console.log("Daily summary fetched");
 	}, [fetchDailySummary]);
 
-	// Save focus time on page leave
+	// Save focus time on page leave - Best effort
 	useEffect(() => {
 		const handleBeforeUnload = () => {
 			if (phase === "focus" && totalFocusTime > 0) {
-				saveFocusTime(totalFocusTime, currentTaskId);
-				console.log("Focus time saved before unload");
+				resetTimer(); // Record as interrupted
 			}
 		};
-
-		const handleVisibilityChange = () => {
-			// タブ切替、ブラウザ最小化時に未保存のフォーカス時間の保存
-			if (
-				document.visibilityState === "hidden" &&
-				phase === "focus" &&
-				totalFocusTime > 0
-			) {
-				saveFocusTime(totalFocusTime, currentTaskId);
-				console.log("Focus time saved");
-			}
-		};
+		// Visibility change?
+		// We rely on store state persistence or resetTimer.
 
 		window.addEventListener("beforeunload", handleBeforeUnload);
-		document.addEventListener("visibilitychange", handleVisibilityChange);
-
 		return () => {
 			window.removeEventListener("beforeunload", handleBeforeUnload);
-			document.removeEventListener("visibilitychange", handleVisibilityChange);
 		};
-	}, [phase, totalFocusTime, currentTaskId, saveFocusTime]);
+	}, [phase, totalFocusTime, resetTimer]);
 
 	// Timer tick effect
 	useEffect(() => {
@@ -117,20 +104,37 @@ export default function FocusScreen() {
 			: phase === "shortBreak"
 				? settings.shortBreakDuration * 60
 				: settings.longBreakDuration * 60;
-	const progress = ((totalDuration - timeLeft) / totalDuration) * 100;
+	// Progress:
+	// If overtime (timeLeft < 0), progress > 100% or just 100%?
+	// Let's cap at 100 or show spin?
+	// Simple calc:
+	const progress = Math.min(
+		100,
+		((totalDuration - timeLeft) / totalDuration) * 100,
+	);
 
 	// Handlers
 	const handleEndSession = async () => {
-		if (phase === "focus" && totalFocusTime > 0) {
-			await saveFocusTime(totalFocusTime, currentTaskId);
-			console.log("Focus time saved by ha");
-		}
+		// Stop button -> Interrupted
 		resetTimer();
 		setFocusTask(null);
 		navigate("/home");
 	};
 
+	const handleCompleteSession = async () => {
+		// Finish/Break button (for Flow)
+		completeSession();
+		// Maybe navigate? Or stay?
+		// Usually stay or move to break.
+	};
+
 	const handlePlayPause = () => {
+		// New Requirement: If in Overtime (Flow) and Auto Advance is OFF,
+		// the Play (or main) button should triggering "Complete Session".
+		if (isOvertime && !settings.autoAdvance) {
+			completeSession();
+			return;
+		}
 		isActive ? pauseTimer() : startTimer();
 	};
 
@@ -168,6 +172,18 @@ export default function FocusScreen() {
 					dailyGoal={settings.dailyGoal}
 					onAdjustTime={adjustTime}
 				/>
+
+				{/* Show "Finish" button if in Overtime */}
+				{/* Show "Finish" button if in Overtime */}
+				{isOvertime && !settings.autoAdvance && (
+					<button
+						type="button"
+						onClick={handleCompleteSession}
+						className="mb-4 bg-green-500 text-white px-6 py-2 rounded-full font-bold shadow-lg hover:bg-green-600 transition"
+					>
+						Complete Session
+					</button>
+				)}
 
 				<ControlButtons
 					isActive={isActive}

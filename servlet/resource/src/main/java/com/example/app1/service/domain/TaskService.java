@@ -1,4 +1,4 @@
-package com.example.app1.service;
+package com.example.app1.service.domain;
 
 import java.util.List;
 
@@ -28,6 +28,8 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final TaskListRepository taskListRepository;
     private final com.example.app1.repository.CategoryRepository categoryRepository;
+    private final CategoryService categoryService; // Injected
+    private final com.example.app1.repository.FocusSessionRepository focusSessionRepository;
 
     /**
      * Get all tasks for a specific task list.
@@ -117,12 +119,17 @@ public class TaskService {
                 .status(status)
                 .executionDate(taskCreateRequest.executionDate())
                 .userId(userId)
+                .estimatedDuration(taskCreateRequest.estimatedDuration())
                 .taskList(taskList);
 
         if (taskCreateRequest.categoryId() != null) {
             Category category = categoryRepository.findById(taskCreateRequest.categoryId())
                     .orElseThrow(() -> new IllegalArgumentException("Category not found"));
             taskBuilder.category(category);
+        } else {
+            // Default to "Others" category
+            Category others = categoryService.getOrCreateCategory(userId, "その他", "#94a3b8");
+            taskBuilder.category(others);
         }
 
         Task task = taskBuilder.build();
@@ -177,6 +184,11 @@ public class TaskService {
             existing.setTitle(request.title());
         }
         if (request.status() != null) {
+            if (request.status() == TaskStatus.COMPLETED && existing.getStatus() != TaskStatus.COMPLETED) {
+                existing.setCompletedAt(java.time.LocalDateTime.now());
+            } else if (request.status() != TaskStatus.COMPLETED && existing.getStatus() == TaskStatus.COMPLETED) {
+                existing.setCompletedAt(null);
+            }
             existing.setStatus(request.status());
         }
 
@@ -195,8 +207,57 @@ public class TaskService {
             existing.setTaskList(targetList);
             log.info("Moving task {} to task list {}", id, request.taskListId());
         }
+        if (request.estimatedDuration() != null) {
+            existing.setEstimatedDuration(request.estimatedDuration());
+        }
+        if (request.completedAt() != null) {
+            existing.setCompletedAt(request.completedAt());
+        }
+
         Task saved = taskRepository.save(existing);
         log.info("Updated task {} for user: {}", saved, userId);
         return saved;
+    }
+
+    /**
+     * Get task statistics for a specific range.
+     */
+    @Transactional(readOnly = true)
+    public com.example.app1.dto.TaskDto.Stats getTaskStatsInRange(String userId, java.time.LocalDate startDate,
+            java.time.LocalDate endDate) {
+        Long completedCount = taskRepository.countCompletedByUserIdAndExecutionDateBetween(
+                userId, startDate, endDate);
+        Long totalCount = taskRepository.countByUserIdAndExecutionDateBetween(
+                userId, startDate, endDate);
+
+        // Logic for Estimation Accuracy
+        List<Task> completedTasks = taskRepository.findCompletedByUserIdAndExecutionDateBetween(userId, startDate,
+                endDate);
+        log.info("Completed tasks: {}", completedTasks);
+        int totalEstimatedMinutes = completedTasks.stream()
+                .filter(t -> t.getEstimatedDuration() != null)
+                .mapToInt(Task::getEstimatedDuration)
+                .sum();
+        log.info("Total estimated minutes: {}", totalEstimatedMinutes);
+        List<Long> completedTaskIds = completedTasks.stream().map(Task::getId).toList();
+
+        int totalActualMinutes = 0;
+        if (!completedTaskIds.isEmpty()) {
+            Integer totalSeconds = focusSessionRepository.sumActualDurationByTaskIds(completedTaskIds);
+            if (totalSeconds != null)
+                totalActualMinutes = totalSeconds / 60;
+        }
+
+        log.info("Task stats for user {} from {} to {}: {} / {} completed. Est: {}m, Act: {}m",
+                userId, startDate, endDate, completedCount, totalCount, totalEstimatedMinutes, totalActualMinutes);
+
+        return com.example.app1.dto.TaskDto.Stats.builder()
+                .startDate(startDate)
+                .endDate(endDate)
+                .completedCount(completedCount != null ? completedCount : 0L)
+                .totalCount(totalCount != null ? totalCount : 0L)
+                .totalEstimatedMinutes(totalEstimatedMinutes)
+                .totalActualMinutes(totalActualMinutes)
+                .build();
     }
 }

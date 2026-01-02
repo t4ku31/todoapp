@@ -20,10 +20,13 @@ export function TimerRing({
 	dailyGoal,
 	onAdjustTime,
 }: TimerRingProps) {
-	// Format time mm:ss
-	const minutes = Math.floor(timeLeft / 60);
-	const seconds = timeLeft % 60;
-	const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+	// Format time mm:ss or +mm:ss if overtime
+	const isOvertime = timeLeft < 0;
+	const absTime = Math.abs(timeLeft);
+	const minutes = Math.floor(absTime / 60);
+	const seconds = absTime % 60;
+	const sign = isOvertime ? "+" : "";
+	const formattedTime = `${sign}${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
 	// Phase colors
 	const phaseColors = {
@@ -171,7 +174,7 @@ export function TimerRing({
 				<span
 					className={`text-sm font-semibold uppercase tracking-widest mt-2 ${colors.text}`}
 				>
-					{phaseLabel}
+					{isOvertime ? "Overtime" : phaseLabel}
 				</span>
 				{/* Total Focus Time */}
 				<div className="mt-2 flex flex-col items-center">

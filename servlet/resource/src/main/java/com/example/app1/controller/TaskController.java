@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.app1.dto.TaskDto;
 import com.example.app1.model.Task;
-import com.example.app1.service.TaskService;
+import com.example.app1.service.domain.TaskService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -171,5 +171,20 @@ public class TaskController {
             log.warn("Task {} not found for user: {}", id, userId);
             return ResponseEntity.notFound().build();
         }
+    }
+
+    /**
+     * Get task statistics for a range.
+     */
+    @GetMapping("/tasks/stats")
+    public ResponseEntity<com.example.app1.dto.TaskDto.Stats> getTaskStats(
+            @org.springframework.web.bind.annotation.RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate startDate,
+            @org.springframework.web.bind.annotation.RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate endDate,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getSubject();
+        log.info("Received request for task stats for user: {} from {} to {}", userId, startDate, endDate);
+
+        com.example.app1.dto.TaskDto.Stats stats = taskService.getTaskStatsInRange(userId, startDate, endDate);
+        return ResponseEntity.ok(stats);
     }
 }

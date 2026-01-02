@@ -21,15 +21,11 @@ export default defineConfig({
 			//     changeOrigin: true,
 			//     secure: false,
 			//   },
-			//   '/api': {
-			//     target: 'http://bff-server:8080',
-			//     changeOrigin: true,
-			//     secure: false,
-			//     headers: {
-			//       'X-Forwarded-Host': 'front-server:5173',
-			//       'X-Forwarded-Proto': 'http',
-			//     },
-			//   },
+			"/api": {
+				target: "http://bff-server:7070",
+				changeOrigin: true,
+				secure: false,
+			},
 			//   '/logout': {
 			//     target: 'http://bff-server:8080',
 			//     changeOrigin: true,

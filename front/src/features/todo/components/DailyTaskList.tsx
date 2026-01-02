@@ -20,6 +20,7 @@ interface DailyTaskListProps {
 		dueDate?: string | null,
 		executionDate?: string | null,
 		categoryId?: number,
+		estimatedDuration?: number,
 	) => Promise<void>;
 	onPrevDay?: () => void;
 	onNextDay?: () => void;

@@ -24,6 +24,7 @@ interface CustomTaskListProps {
 		title: string,
 		dueDate?: string | null,
 		executionDate?: string | null,
+		estimatedDuration?: number,
 	) => Promise<void>;
 }
 

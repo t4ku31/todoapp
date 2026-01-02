@@ -8,6 +8,7 @@ import type { Task } from "@/types/types";
 import { CategorySelect } from "./ui/CategorySelect";
 import { DeleteButton } from "./ui/DeleteButton";
 import { EditableDate } from "./ui/EditableDate";
+import { EditableDuration } from "./ui/EditableDuration";
 import { EditableTitle } from "./ui/EditableTitle";
 import { TaskListSelector } from "./ui/TaskListSelector";
 
@@ -126,6 +127,15 @@ export function TaskItem({
 							type="executionDate"
 							onDateChange={(id, date) =>
 								onUpdateTask(id, { executionDate: date })
+							}
+							onOpenChange={setIsExpanded}
+						/>
+
+						<EditableDuration
+							id={task.id}
+							duration={task.estimatedDuration}
+							onDurationChange={(id, duration) =>
+								onUpdateTask(id, { estimatedDuration: duration })
 							}
 							onOpenChange={setIsExpanded}
 						/>

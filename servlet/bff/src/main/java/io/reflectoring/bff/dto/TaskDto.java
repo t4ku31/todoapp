@@ -14,7 +14,8 @@ public class TaskDto {
                         @Schema(description = "Task title", example = "Buy milk") String title,
                         @Schema(description = "Task list ID", example = "1") Long taskListId,
                         @Schema(description = "Execution date", example = "2023-12-24") LocalDate executionDate,
-                        @Schema(description = "Category ID", example = "1") Long categoryId) {
+                        @Schema(description = "Category ID", example = "1") Long categoryId,
+                        @Schema(description = "Estimated duration in minutes", example = "30") Integer estimatedDuration) {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -24,7 +25,9 @@ public class TaskDto {
                         @Schema(description = "Task status", example = "COMPLETED") TaskStatus status,
                         @Schema(description = "Execution date", example = "2023-12-24") LocalDate executionDate,
                         @Schema(description = "Category ID", example = "1") Long categoryId,
-                        @Schema(description = "Task list ID", example = "1") Long taskListId) {
+                        @Schema(description = "Task list ID", example = "1") Long taskListId,
+                        @Schema(description = "Estimated duration in minutes", example = "30") Integer estimatedDuration,
+                        @Schema(description = "Completed at timestamp", example = "2023-12-24T10:00:00") java.time.LocalDateTime completedAt) {
         }
 
         @JsonIgnoreProperties(ignoreUnknown = true)
@@ -35,7 +38,19 @@ public class TaskDto {
                         @Schema(description = "Task status", example = "COMPLETED") TaskStatus status,
                         @Schema(description = "Execution date", example = "2023-12-24") LocalDate executionDate,
                         @Schema(description = "Task list ID", example = "1") Long taskListId,
-                        @Schema(description = "Category details") CategoryDto.Response category) {
+                        @Schema(description = "Category details") CategoryDto.Response category,
+                        @Schema(description = "Estimated duration in minutes", example = "30") Integer estimatedDuration,
+                        @Schema(description = "Completed at timestamp") java.time.LocalDateTime completedAt) {
+        }
+
+        @Schema(name = "TaskStats")
+        public record Stats(
+                        @Schema(description = "Start date") LocalDate startDate,
+                        @Schema(description = "End date") LocalDate endDate,
+                        @Schema(description = "Completed tasks count") Long completedCount,
+                        @Schema(description = "Total tasks count") Long totalCount,
+                        @Schema(description = "Total estimated minutes") Integer totalEstimatedMinutes,
+                        @Schema(description = "Total actual minutes") Integer totalActualMinutes) {
         }
 
 }

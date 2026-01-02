@@ -5,6 +5,7 @@ export const taskSchema = z.object({
 
 	executionDate: z.date().optional(),
 	categoryId: z.number().optional(),
+	estimatedDuration: z.number().optional(),
 });
 
 export const taskListSchema = z.object({

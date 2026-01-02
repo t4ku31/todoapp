@@ -23,17 +23,29 @@ public class BffFocusSessionService {
         this.resourceUrl = appProperties.getResourceServerUrl() + "/api";
     }
 
-    public FocusSessionDto.Response addFocusTime(FocusSessionDto.AddRequest request, String token) {
-        log.info("Adding focus time: {} seconds for date {}", request.durationSeconds(), request.date());
+    public FocusSessionDto.Response recordSession(FocusSessionDto.RecordRequest request, String token) {
+        log.info("Recording session: type={}, status={}, duration={}", request.getSessionType(), request.getStatus(),
+                request.getActualDuration());
         FocusSessionDto.Response response = restClient.post()
-                .uri(resourceUrl + "/focus-sessions")
+                .uri(resourceUrl + "/focus-sessions/record")
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + token)
                 .body(request)
                 .retrieve()
                 .body(FocusSessionDto.Response.class);
-        log.info("Successfully saved focus session: {}", response);
+        log.info("Successfully recorded session: {}", response);
         return response;
+    }
+
+    public FocusSessionDto.EfficiencyStats getEfficiencyStats(LocalDate date, String token) {
+        log.info("Fetching efficiency stats for date: {}", date);
+        FocusSessionDto.EfficiencyStats stats = restClient.get()
+                .uri(resourceUrl + "/focus-sessions/efficiency/{date}", date)
+                .header("Authorization", "Bearer " + token)
+                .retrieve()
+                .body(FocusSessionDto.EfficiencyStats.class);
+        log.info("Efficiency stats: {}", stats);
+        return stats;
     }
 
     public FocusSessionDto.DailySummary getDailySummary(LocalDate date, String token) {
@@ -55,6 +67,17 @@ public class BffFocusSessionService {
                 .retrieve()
                 .body(FocusSessionDto.TotalSummary.class);
         log.info("Total summary: {} seconds", summary != null ? summary.totalSeconds() : 0);
+        return summary;
+    }
+
+    public FocusSessionDto.WeeklySummary getWeeklySummary(LocalDate date, String token) {
+        log.info("Fetching weekly summary for date: {}", date);
+        FocusSessionDto.WeeklySummary summary = restClient.get()
+                .uri(resourceUrl + "/focus-sessions/weekly/{date}", date)
+                .header("Authorization", "Bearer " + token)
+                .retrieve()
+                .body(FocusSessionDto.WeeklySummary.class);
+        log.info("Weekly summary: {} seconds", summary != null ? summary.totalSeconds() : 0);
         return summary;
     }
 }

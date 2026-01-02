@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.app1.dto.CategoryDto;
 import com.example.app1.model.Category;
-import com.example.app1.service.CategoryService;
+import com.example.app1.service.domain.CategoryService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

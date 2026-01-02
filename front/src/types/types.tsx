@@ -19,6 +19,8 @@ export interface Task {
 	dueDate?: string;
 	executionDate?: string;
 	category?: Category;
+	estimatedDuration?: number; // minutes
+	completedAt?: string; // ISO 8601 date string
 }
 
 export interface TaskList {

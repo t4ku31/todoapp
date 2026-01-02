@@ -25,6 +25,7 @@ interface CreateTaskFormProps {
 		dueDate?: string | null,
 		executionDate?: string | null,
 		categoryId?: number,
+		estimatedDuration?: number,
 	) => Promise<void>;
 	className?: string;
 	placeholder?: string;
@@ -65,6 +66,7 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 				title: "",
 				executionDate: new Date(),
 				categoryId: undefined,
+				estimatedDuration: undefined,
 			},
 		});
 
@@ -78,11 +80,13 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 						? format(data.executionDate, "yyyy-MM-dd")
 						: format(new Date(), "yyyy-MM-dd"),
 					data.categoryId,
+					data.estimatedDuration,
 				);
 				form.reset({
 					title: "",
 					executionDate: new Date(),
 					categoryId: undefined,
+					estimatedDuration: undefined,
 				});
 				// Optionally reset focus to input?
 			} catch (error) {
@@ -138,6 +142,51 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 									onCategoryChange={(value) => field.onChange(value)}
 									onOpenChange={setOnOpen}
 								/>
+							)}
+						/>
+
+						<Controller
+							control={form.control}
+							name="estimatedDuration"
+							render={({ field }) => (
+								<Popover onOpenChange={setOnOpen}>
+									<PopoverTrigger asChild>
+										<Badge
+											variant="outline"
+											className={cn(
+												"border-none font-normal cursor-pointer hover:scale-105 transition-all duration-200 ease-in-out",
+												field.value
+													? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+													: "text-muted-foreground hover:bg-gray-100/80 hover:text-gray-700",
+											)}
+										>
+											<span className="text-xs">
+												{field.value ? `${field.value} min` : "時間"}
+											</span>
+										</Badge>
+									</PopoverTrigger>
+									<PopoverContent className="w-40 p-2" align="start">
+										<div className="space-y-2">
+											<p className="text-xs font-semibold text-center text-gray-500">
+												予想時間 (分)
+											</p>
+											<Input
+												type="number"
+												min="0"
+												placeholder="0"
+												value={field.value || ""}
+												onChange={(e) => {
+													const val = e.target.value
+														? parseInt(e.target.value, 10)
+														: undefined;
+													field.onChange(val);
+												}}
+												className="h-8 text-sm"
+												autoFocus
+											/>
+										</div>
+									</PopoverContent>
+								</Popover>
 							)}
 						/>
 

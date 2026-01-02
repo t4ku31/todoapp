@@ -103,4 +103,18 @@ public class BffTaskService {
         return tasks;
     }
 
+    public io.reflectoring.bff.dto.TaskDto.Stats getTaskStats(java.time.LocalDate startDate,
+            java.time.LocalDate endDate, String token) {
+        log.info("Fetching task stats for range: {} to {}", startDate, endDate);
+        io.reflectoring.bff.dto.TaskDto.Stats stats = restClient.get()
+                .uri(resourceUrl + "/tasks/stats?startDate={startDate}&endDate={endDate}", startDate, endDate)
+                .header("Authorization", "Bearer " + token)
+                .retrieve()
+                .body(io.reflectoring.bff.dto.TaskDto.Stats.class);
+        log.info("Task stats: {} / {} completed",
+                stats != null ? stats.completedCount() : 0,
+                stats != null ? stats.totalCount() : 0);
+        return stats;
+    }
+
 }
