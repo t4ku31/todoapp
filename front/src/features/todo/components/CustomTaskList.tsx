@@ -1,6 +1,6 @@
+import { useDroppable } from "@dnd-kit/core";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { Task, TaskList } from "@/types/types";
-import { useDroppable } from "@dnd-kit/core";
 import { CreateTaskForm } from "./forms/CreateTaskForm";
 import { TaskItem } from "./TaskItem";
 import { CompletedSection } from "./ui/CompletedSection";

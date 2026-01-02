@@ -1,8 +1,8 @@
+import { useDroppable } from "@dnd-kit/core";
+import { ChevronRight, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTodoStore } from "@/store/useTodoStore";
 import type { Task } from "@/types/types";
-import { useDroppable } from "@dnd-kit/core";
-import { ChevronRight, Inbox } from "lucide-react";
 import { CreateTaskForm } from "./forms/CreateTaskForm";
 import { TaskItem } from "./TaskItem";
 

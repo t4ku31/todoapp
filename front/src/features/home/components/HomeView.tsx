@@ -5,10 +5,10 @@ import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { FocusCircle } from "@/features/home/components/FocusCircle";
 import { DailyTaskList } from "@/features/todo/components/DailyTaskList";
 import { usePomodoroStore } from "@/store/usePomodoroStore";
 import { useTodoStore } from "@/store/useTodoStore";
+import { FocusCircle } from "./FocusCircle";
 
 export default function HomeView() {
 	const navigate = useNavigate();
@@ -83,54 +83,58 @@ export default function HomeView() {
 	};
 
 	return (
-		<div className="h-full flex flex-col p-6 md:p-6 gap-6">
-			{/* Hero Section */}
-			<Card className="p-6 md:p-8 bg-gradient-to-r from-indigo-100 to-purple-100 border-none shadow-lg">
-				<div className="flex flex-col md:flex-row items-center justify-between gap-6">
-					<div className="space-y-4">
-						<h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+		<div className="h-full flex p-6 gap-6">
+			{/* Right Column: Task List */}
+			<Card className="p-4 flex-1 flex flex-col min-h-0">
+				<div className="flex-1 overflow-y-auto min-h-0 pr-2 pb-32">
+					<DailyTaskList
+						date={selectedDate}
+						tasks={allTasks}
+						onUpdateTask={updateTask}
+						onDeleteTask={deleteTask}
+						onCreateTask={onCreateTask}
+						onPrevDay={handlePrevDay}
+						onNextDay={handleNextDay}
+						taskListId={inboxList?.id ?? 0}
+						taskItemVariant="focusSelector"
+						emptyMessage={
+							selectedDate === format(new Date(), "yyyy-MM-dd")
+								? "No tasks scheduled for today"
+								: "No tasks scheduled for this date"
+						}
+					/>
+				</div>
+			</Card>
+			{/* Left Column: Hero + Focus Circle */}
+			<div className="flex flex-col gap-6 w-80 flex-shrink-0">
+				{/* Hero Section */}
+				<Card className="flex-1 p-4 md:p-6 bg-gradient-to-r from-indigo-100 to-purple-100 border-none shadow-lg">
+					<div className="flex flex-col justify-between w-full h-full space-y-4">
+						<h1 className="text-xl pt-8 md:text-2xl font-bold text-gray-800 text-center">
 							{currentTask ? (
-								<>
-									Ready to work on{" "}
-									<span className="text-purple-600">{currentTask.title}</span>?
-								</>
+								<div className="flex flex-col items-center gap-1">
+									<span className="pr-20">Start working on</span>
+									<span className="pl-20 text-purple-600">
+										{currentTask.title}
+									</span>
+								</div>
 							) : (
 								<>Ready to crush your goals?</>
 							)}
 						</h1>
 						<Button
 							onClick={startFocusSession}
-							className=" w-full h-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white px-6 py-3 rounded-full shadow-lg"
+							className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white px-6 py-3 rounded-full shadow-lg"
 						>
 							<Play className="w-4 h-4 mr-2" />
 							Start Focus Session (25m)
 						</Button>
 					</div>
-					<FocusCircle />
-				</div>
-			</Card>
+				</Card>
 
-			{/* Today's Plan Section */}
-			<div className="flex-1 min-h-0 space-y-4">
-				<Card className="p-4 h-full flex flex-col">
-					<div className="flex-1 overflow-y-auto min-h-0 pr-2 pb-32">
-						<DailyTaskList
-							date={selectedDate}
-							tasks={allTasks}
-							onUpdateTask={updateTask}
-							onDeleteTask={deleteTask}
-							onCreateTask={onCreateTask}
-							onPrevDay={handlePrevDay}
-							onNextDay={handleNextDay}
-							taskListId={inboxList?.id ?? 0}
-							taskItemVariant="focusSelector"
-							emptyMessage={
-								selectedDate === format(new Date(), "yyyy-MM-dd")
-									? "No tasks scheduled for today"
-									: "No tasks scheduled for this date"
-							}
-						/>
-					</div>
+				{/* Focus Circle */}
+				<Card className="shadow-lg flex-1">
+					<FocusCircle />
 				</Card>
 			</div>
 		</div>

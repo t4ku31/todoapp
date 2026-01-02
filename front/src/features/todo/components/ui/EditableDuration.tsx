@@ -1,3 +1,5 @@
+import { Clock } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -6,8 +8,6 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { Clock } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
 
 interface EditableDurationProps {
 	id: number;

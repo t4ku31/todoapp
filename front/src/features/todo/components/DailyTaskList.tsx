@@ -1,10 +1,10 @@
+import { format, isSameDay, parse } from "date-fns";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CreateTaskForm } from "@/features/todo/components/forms/CreateTaskForm";
 import type { Task } from "@/types/types";
-import { format, isSameDay, parse } from "date-fns";
-import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { TaskItem } from "./TaskItem";
 import { CompletedSection } from "./ui/CompletedSection";
 import { CompletionBadge } from "./ui/CompletionBadge";

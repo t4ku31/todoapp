@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCategoryStore } from "@/store/useCategoryStore";
 
-// 12色のプリセットカラーパレット
+// 12色のプリセットカラーパレット (Vivid / Tailwind 500s)
 const COLOR_PALETTE = [
 	"#ef4444", // Red
 	"#f97316", // Orange
@@ -26,6 +26,7 @@ const COLOR_PALETTE = [
 	"#6366f1", // Indigo
 	"#8b5cf6", // Violet
 	"#ec4899", // Pink
+	"#6b7280", // Gray
 ];
 
 // カラーピッカーコンポーネント

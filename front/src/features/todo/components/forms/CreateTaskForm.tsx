@@ -1,3 +1,8 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { format } from "date-fns";
+import { CalendarCheck2, Plus } from "lucide-react";
+import { forwardRef, useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -8,11 +13,6 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
-import { CalendarCheck2, Plus } from "lucide-react";
-import { forwardRef, useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
 import { CategorySelect } from "../ui/CategorySelect";
 import { TaskListSelector } from "../ui/TaskListSelector";
 import { type TaskFormValues, taskSchema } from "./schema";

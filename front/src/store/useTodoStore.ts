@@ -1,9 +1,9 @@
+import { toast } from "sonner";
+import { create } from "zustand";
 import { apiClient } from "@/config/env";
 import { sortTasks } from "@/features/todo/utils/taskSorter";
 import type { Task, TaskList } from "@/types/types";
 import { normalizeError } from "@/utils/error";
-import { toast } from "sonner";
-import { create } from "zustand";
 
 interface TodoState {
 	taskLists: TaskList[];
