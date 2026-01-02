@@ -1,4 +1,4 @@
-package com.example.app1.service;
+package com.example.app1.service.domain;
 
 import java.util.List;
 
@@ -28,6 +28,8 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final TaskListRepository taskListRepository;
     private final com.example.app1.repository.CategoryRepository categoryRepository;
+    private final CategoryService categoryService; // Injected
+    private final com.example.app1.repository.FocusSessionRepository focusSessionRepository;
 
     /**
      * Get all tasks for a specific task list.
@@ -124,6 +126,10 @@ public class TaskService {
             Category category = categoryRepository.findById(taskCreateRequest.categoryId())
                     .orElseThrow(() -> new IllegalArgumentException("Category not found"));
             taskBuilder.category(category);
+        } else {
+            // Default to "Others" category
+            Category others = categoryService.getOrCreateCategory(userId, "その他", "#94a3b8");
+            taskBuilder.category(others);
         }
 
         Task task = taskBuilder.build();
@@ -205,43 +211,53 @@ public class TaskService {
             existing.setEstimatedDuration(request.estimatedDuration());
         }
         if (request.completedAt() != null) {
-            // Allow manual override if needed, or ignore?
-            // The requirement is "automatically set", but if the UI sends it (e.g. undo),
-            // we might want to respect it.
-            // However, for now, the requirement specifically asked for "when status
-            // changes".
-            // If I change status to COMPLETED, it sets now().
-            // If I send completedAt explicitly, it should probably override or be ignored.
-            // deeper analysis: The user said
-            // "taskのstatusがcompletに変更されたときにcompletedAtに値を自動投入するように変更して"
-            // (Change it so that a value is automatically input to completedAt when the
-            // task status is changed to complete)
-            // Prioritize status change logic.
-            // If the DTO has completedAt, we should ideally allow it too, but let's stick
-            // to the automation logic first.
-            // Actually, I should probably check if `request.completedAt()` is provided and
-            // allow it, but the automation is key.
-            // Let's add the manual setter too just in case, but put it AFTER the auto-logic
-            // so explicit wins?
-            // Or maybe explicit wins if not null?
-            // Let's stick to the simplest interpretation: Status change triggers
-            // auto-update.
-
             existing.setCompletedAt(request.completedAt());
         }
-
-        // Refined logic:
-        // 1. If status changes to COMPLETED -> set now()
-        // 2. If status changes from COMPLETED -> set null
-        // 3. If request has explicit completedAt -> set it (override)
-
-        // However, the `replace_file_content` below is what I will use.
-        // I will implement the status check logic. I will also add the `completedAt`
-        // setter from the request if it exists,
-        // as I added that field to the DTO earlier.
 
         Task saved = taskRepository.save(existing);
         log.info("Updated task {} for user: {}", saved, userId);
         return saved;
+    }
+
+    /**
+     * Get task statistics for a specific range.
+     */
+    @Transactional(readOnly = true)
+    public com.example.app1.dto.TaskDto.Stats getTaskStatsInRange(String userId, java.time.LocalDate startDate,
+            java.time.LocalDate endDate) {
+        Long completedCount = taskRepository.countCompletedByUserIdAndExecutionDateBetween(
+                userId, startDate, endDate);
+        Long totalCount = taskRepository.countByUserIdAndExecutionDateBetween(
+                userId, startDate, endDate);
+
+        // Logic for Estimation Accuracy
+        List<Task> completedTasks = taskRepository.findCompletedByUserIdAndExecutionDateBetween(userId, startDate,
+                endDate);
+        log.info("Completed tasks: {}", completedTasks);
+        int totalEstimatedMinutes = completedTasks.stream()
+                .filter(t -> t.getEstimatedDuration() != null)
+                .mapToInt(Task::getEstimatedDuration)
+                .sum();
+        log.info("Total estimated minutes: {}", totalEstimatedMinutes);
+        List<Long> completedTaskIds = completedTasks.stream().map(Task::getId).toList();
+
+        int totalActualMinutes = 0;
+        if (!completedTaskIds.isEmpty()) {
+            Integer totalSeconds = focusSessionRepository.sumActualDurationByTaskIds(completedTaskIds);
+            if (totalSeconds != null)
+                totalActualMinutes = totalSeconds / 60;
+        }
+
+        log.info("Task stats for user {} from {} to {}: {} / {} completed. Est: {}m, Act: {}m",
+                userId, startDate, endDate, completedCount, totalCount, totalEstimatedMinutes, totalActualMinutes);
+
+        return com.example.app1.dto.TaskDto.Stats.builder()
+                .startDate(startDate)
+                .endDate(endDate)
+                .completedCount(completedCount != null ? completedCount : 0L)
+                .totalCount(totalCount != null ? totalCount : 0L)
+                .totalEstimatedMinutes(totalEstimatedMinutes)
+                .totalActualMinutes(totalActualMinutes)
+                .build();
     }
 }

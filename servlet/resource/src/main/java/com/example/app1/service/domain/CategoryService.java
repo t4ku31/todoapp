@@ -1,4 +1,4 @@
-package com.example.app1.service;
+package com.example.app1.service.domain;
 
 import java.util.List;
 import java.util.Objects;
@@ -21,14 +21,44 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
 
+    // デフォルトカテゴリの定義
+    private static final List<CategoryDto.Request> DEFAULT_CATEGORIES = List.of(
+            new CategoryDto.Request("仕事", "#3B82F6"), // blue
+            new CategoryDto.Request("学習", "#10B981"), // green
+            new CategoryDto.Request("趣味", "#F59E0B"), // amber
+            new CategoryDto.Request("その他", "#94a3b8") // gray
+    );
+
     /**
      * Get all available categories.
+     * If user has no categories, create default categories first.
      * 
      * @return List of all categories
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<Category> getAllCategories(String userId) {
-        return categoryRepository.findAllByUserId(userId);
+        List<Category> categories = categoryRepository.findAllByUserId(userId);
+
+        // ユーザーがカテゴリを持っていない場合、デフォルトを作成
+        if (categories.isEmpty()) {
+            log.info("No categories found for user {}. Creating default categories.", userId);
+            categories = createDefaultCategories(userId);
+        }
+
+        return categories;
+    }
+
+    /**
+     * Create default categories for a new user.
+     */
+    private List<Category> createDefaultCategories(String userId) {
+        return DEFAULT_CATEGORIES.stream()
+                .map(cat -> categoryRepository.save(Category.builder()
+                        .userId(userId)
+                        .name(cat.name())
+                        .color(cat.color())
+                        .build()))
+                .toList();
     }
 
     @Transactional
@@ -67,6 +97,15 @@ public class CategoryService {
         }
 
         return categoryRepository.save(category);
+    }
+
+    /**
+     * Get a category by name, or create it if it doesn't exist.
+     */
+    @Transactional
+    public Category getOrCreateCategory(String userId, String name, String defaultColor) {
+        return categoryRepository.findByUserIdAndName(userId, name)
+                .orElseGet(() -> createCategory(new CategoryDto.Request(name, defaultColor), userId));
     }
 
     @Transactional

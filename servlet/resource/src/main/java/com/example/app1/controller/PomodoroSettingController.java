@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.app1.domain.PomodoroSetting;
-import com.example.app1.service.PomodoroSettingService;
+import com.example.app1.service.domain.PomodoroSettingService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

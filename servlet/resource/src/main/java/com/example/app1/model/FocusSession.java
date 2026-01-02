@@ -1,6 +1,5 @@
 package com.example.app1.model;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -8,6 +7,7 @@ import org.hibernate.annotations.DynamicUpdate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -24,6 +24,7 @@ import lombok.NoArgsConstructor;
  * FocusSession entity representing a focus time record for analytics.
  * Tracks the duration of focus sessions per user, task, and date.
  */
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -37,39 +38,44 @@ public class FocusSession {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * User identifier from Auth0 sub claim
-     */
     @Column(name = "user_id", nullable = false, length = 255)
     private String userId;
 
-    /**
-     * The task associated with this focus session (optional)
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id")
     private Task task;
 
     @Column(name = "task_id", insertable = false, updatable = false)
     private Long taskId;
+    @Column(name = "session_type", nullable = false)
+    @Enumerated(jakarta.persistence.EnumType.STRING)
+    private SessionType sessionType;
 
-    /**
-     * The date of the focus session
-     */
-    @Column(nullable = false)
-    private LocalDate date;
+    @Column(name = "status", nullable = false)
+    @Enumerated(jakarta.persistence.EnumType.STRING)
+    private SessionStatus status;
 
-    /**
-     * Duration of focus time in seconds
-     */
-    @Column(name = "duration_seconds", nullable = false)
-    @Builder.Default
-    private Integer durationSeconds = 0;
+    @Column(name = "scheduled_duration", nullable = false)
+    private Integer scheduledDuration;
 
-    /**
-     * Timestamp when the record was created
-     */
+    @Column(name = "actual_duration", nullable = false)
+    private Integer actualDuration;
+
+    @Column(name = "started_at")
+    private LocalDateTime startedAt;
+
+    @Column(name = "ended_at")
+    private LocalDateTime endedAt;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    public enum SessionType {
+        FOCUS, SHORT_BREAK, LONG_BREAK
+    }
+
+    public enum SessionStatus {
+        COMPLETED, INTERRUPTED
+    }
 }
