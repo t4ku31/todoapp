@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,20 +32,38 @@ public class BffFocusSessionController {
         this.focusSessionService = focusSessionService;
     }
 
-    @PostMapping
-    public ResponseEntity<FocusSessionDto.Response> addFocusTime(
-            @RequestBody FocusSessionDto.AddRequest request,
+    @PostMapping("/record")
+    public ResponseEntity<FocusSessionDto.Response> recordSession(
+            @RequestBody FocusSessionDto.RecordRequest request,
             @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
-        log.info("[POST /api/focus-sessions] Request by user: {}", client.getPrincipalName());
+        log.info("[POST /api/focus-sessions/record] Request by user: {}", client.getPrincipalName());
         try {
-            FocusSessionDto.Response response = focusSessionService.addFocusTime(
+            FocusSessionDto.Response response = focusSessionService.recordSession(
                     request, client.getAccessToken().getTokenValue());
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RestClientResponseException e) {
-            log.error("[POST /api/focus-sessions] Error: {}", e.getMessage());
+            log.error("[POST /api/focus-sessions/record] Error: {}", e.getMessage());
             return ResponseEntity.status(e.getStatusCode()).body(null);
         } catch (Exception e) {
-            log.error("[POST /api/focus-sessions] Error: {}", e.getMessage());
+            log.error("[POST /api/focus-sessions/record] Error: {}", e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/efficiency/{date}")
+    public ResponseEntity<FocusSessionDto.EfficiencyStats> getEfficiencyStats(
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
+        log.info("[GET /api/focus-sessions/efficiency/{}] Request by user: {}", date, client.getPrincipalName());
+        try {
+            FocusSessionDto.EfficiencyStats stats = focusSessionService.getEfficiencyStats(
+                    date, client.getAccessToken().getTokenValue());
+            return ResponseEntity.ok(stats);
+        } catch (RestClientResponseException e) {
+            log.error("[GET /api/focus-sessions/efficiency] Error: {}", e.getMessage());
+            return ResponseEntity.status(e.getStatusCode()).body(null);
+        } catch (Exception e) {
+            log.error("[GET /api/focus-sessions/efficiency] Error: {}", e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -81,6 +100,24 @@ public class BffFocusSessionController {
             return ResponseEntity.status(e.getStatusCode()).body(null);
         } catch (Exception e) {
             log.error("[GET /api/focus-sessions/total] Error: {}", e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/weekly/{date}")
+    public ResponseEntity<FocusSessionDto.WeeklySummary> getWeeklySummary(
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
+        log.info("[GET /api/focus-sessions/weekly/{}] Request by user: {}", date, client.getPrincipalName());
+        try {
+            FocusSessionDto.WeeklySummary summary = focusSessionService.getWeeklySummary(
+                    date, client.getAccessToken().getTokenValue());
+            return ResponseEntity.ok(summary);
+        } catch (RestClientResponseException e) {
+            log.error("[GET /api/focus-sessions/weekly] Error: {}", e.getMessage());
+            return ResponseEntity.status(e.getStatusCode()).body(null);
+        } catch (Exception e) {
+            log.error("[GET /api/focus-sessions/weekly] Error: {}", e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }

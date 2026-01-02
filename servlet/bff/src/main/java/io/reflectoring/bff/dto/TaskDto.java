@@ -43,4 +43,14 @@ public class TaskDto {
                         @Schema(description = "Completed at timestamp") java.time.LocalDateTime completedAt) {
         }
 
+        @Schema(name = "TaskStats")
+        public record Stats(
+                        @Schema(description = "Start date") LocalDate startDate,
+                        @Schema(description = "End date") LocalDate endDate,
+                        @Schema(description = "Completed tasks count") Long completedCount,
+                        @Schema(description = "Total tasks count") Long totalCount,
+                        @Schema(description = "Total estimated minutes") Integer totalEstimatedMinutes,
+                        @Schema(description = "Total actual minutes") Integer totalActualMinutes) {
+        }
+
 }

@@ -137,4 +137,24 @@ public class BffTaskController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    @GetMapping("/tasks/stats")
+    public ResponseEntity<io.reflectoring.bff.dto.TaskDto.Stats> getTaskStats(
+            @org.springframework.web.bind.annotation.RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate startDate,
+            @org.springframework.web.bind.annotation.RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate endDate,
+            @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
+        log.info("[GET /api/tasks/stats] Request by user: {} from {} to {}", client.getPrincipalName(), startDate,
+                endDate);
+        try {
+            io.reflectoring.bff.dto.TaskDto.Stats stats = taskService.getTaskStats(
+                    startDate, endDate, client.getAccessToken().getTokenValue());
+            return ResponseEntity.ok(stats);
+        } catch (RestClientResponseException e) {
+            log.error("[GET /api/tasks/stats] Error: {}", e.getMessage());
+            return ResponseEntity.status(e.getStatusCode()).body(null);
+        } catch (Exception e) {
+            log.error("[GET /api/tasks/stats] Error: {}", e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }
