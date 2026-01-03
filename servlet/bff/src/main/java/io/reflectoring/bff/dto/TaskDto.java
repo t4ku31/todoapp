@@ -1,6 +1,7 @@
 package io.reflectoring.bff.dto;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -15,7 +16,8 @@ public class TaskDto {
                         @Schema(description = "Task list ID", example = "1") Long taskListId,
                         @Schema(description = "Execution date", example = "2023-12-24") LocalDate executionDate,
                         @Schema(description = "Category ID", example = "1") Long categoryId,
-                        @Schema(description = "Estimated duration in minutes", example = "30") Integer estimatedDuration) {
+                        @Schema(description = "Subtasks list") List<SubtaskDto.Create> subtasks,
+                        @Schema(description = "Estimated number of pomodoros", example = "2") Integer estimatedPomodoros) {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -26,8 +28,8 @@ public class TaskDto {
                         @Schema(description = "Execution date", example = "2023-12-24") LocalDate executionDate,
                         @Schema(description = "Category ID", example = "1") Long categoryId,
                         @Schema(description = "Task list ID", example = "1") Long taskListId,
-                        @Schema(description = "Estimated duration in minutes", example = "30") Integer estimatedDuration,
-                        @Schema(description = "Completed at timestamp", example = "2023-12-24T10:00:00") java.time.LocalDateTime completedAt) {
+                        @Schema(description = "Completed at timestamp", example = "2023-12-24T10:00:00") java.time.LocalDateTime completedAt,
+                        @Schema(description = "Estimated number of pomodoros", example = "2") Integer estimatedPomodoros) {
         }
 
         @JsonIgnoreProperties(ignoreUnknown = true)
@@ -39,7 +41,8 @@ public class TaskDto {
                         @Schema(description = "Execution date", example = "2023-12-24") LocalDate executionDate,
                         @Schema(description = "Task list ID", example = "1") Long taskListId,
                         @Schema(description = "Category details") CategoryDto.Response category,
-                        @Schema(description = "Estimated duration in minutes", example = "30") Integer estimatedDuration,
+                        @Schema(description = "Subtasks list") List<SubtaskDto.Summary> subtasks,
+                        @Schema(description = "Estimated number of pomodoros", example = "2") Integer estimatedPomodoros,
                         @Schema(description = "Completed at timestamp") java.time.LocalDateTime completedAt) {
         }
 

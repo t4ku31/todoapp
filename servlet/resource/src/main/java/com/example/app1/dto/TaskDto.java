@@ -1,6 +1,7 @@
 package com.example.app1.dto;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import com.example.app1.model.TaskStatus;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -15,13 +16,13 @@ public class TaskDto {
 
         @Schema(name = "TaskCreate")
         public record Create(String title, Long taskListId, LocalDate executionDate,
-                        Long categoryId, Integer estimatedDuration) {
+                        Long categoryId, List<SubtaskDto.Create> subtasks, Integer estimatedPomodoros) {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @Schema(name = "TaskUpdate")
         public record Update(String title, TaskStatus status, LocalDate executionDate,
-                        Long categoryId, Long taskListId, Integer estimatedDuration,
+                        Long categoryId, Long taskListId,
                         java.time.LocalDateTime completedAt) {
         }
 

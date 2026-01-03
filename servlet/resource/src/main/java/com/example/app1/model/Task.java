@@ -2,6 +2,8 @@ package com.example.app1.model;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.DynamicUpdate;
@@ -11,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.micrometer.common.lang.NonNull;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -21,6 +24,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -67,8 +72,56 @@ public class Task {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
-    @Column(name = "estimated_duration")
-    private Integer estimatedDuration;
+    /**
+     * Estimated number of pomodoros for this task
+     */
+    @Column(name = "estimated_pomodoros")
+    @Builder.Default
+    private Integer estimatedPomodoros = 0;
+
+    /**
+     * Start date for date range tasks
+     */
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
+    /**
+     * End date for date range tasks
+     */
+    @Column(name = "end_date")
+    private LocalDate endDate;
+
+    /**
+     * Task description (Markdown supported)
+     */
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    /**
+     * Whether this is a recurring task
+     */
+    @Column(name = "is_recurring")
+    @Builder.Default
+    private Boolean isRecurring = false;
+
+    /**
+     * Recurrence rule in JSON format: {frequency, interval, daysOfWeek, endDate}
+     */
+    @Column(name = "recurrence_rule", length = 500)
+    private String recurrenceRule;
+
+    /**
+     * Reference to the parent recurring task
+     */
+    @Column(name = "recurrence_parent_id")
+    private Long recurrenceParentId;
+
+    /**
+     * Display order index
+     */
+    @Column(name = "order_index")
+    @Builder.Default
+    private Integer orderIndex = 0;
 
     /**
      * Current status of the task
@@ -105,6 +158,14 @@ public class Task {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id")
     private Category category;
+
+    /**
+     * Subtasks belonging to this task
+     */
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("orderIndex ASC")
+    @Builder.Default
+    private List<Subtask> subtasks = new ArrayList<>();
 
     @Column(name = "task_list_id", insertable = false, updatable = false)
     private Long taskListId;

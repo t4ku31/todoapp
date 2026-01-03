@@ -39,6 +39,7 @@ public class AnalyticsService {
     private final DailyGoalService dailyGoalService;
     private final FocusSessionRepository focusSessionRepository;
     private final TaskRepository taskRepository;
+    private final com.example.app1.repository.PomodoroSettingRepository pomodoroSettingRepository;
 
     /**
      * Get goal with actual focus time for a specific date.
@@ -340,7 +341,14 @@ public class AnalyticsService {
 
             int focusSeconds = taskFocusSeconds.getOrDefault(task.getId(), 0);
             int focusMinutes = focusSeconds / 60;
-            Integer estimatedMinutes = task.getEstimatedDuration(); // Assuming stored in minutes
+
+            // Calculate estimated minutes based on pomodoros
+            int focusDuration = pomodoroSettingRepository.findByUserId(userId)
+                    .map(s -> s.getFocusDuration())
+                    .orElse(25);
+            Integer estimatedMinutes = task.getEstimatedPomodoros() != null
+                    ? task.getEstimatedPomodoros() * focusDuration
+                    : 0;
 
             int progress = 0;
             if (estimatedMinutes != null && estimatedMinutes > 0) {
@@ -510,13 +518,16 @@ public class AnalyticsService {
                 : 0;
 
         // 4. Estimation Stats
+        int focusDuration = pomodoroSettingRepository.findByUserId(userId)
+                .map(s -> s.getFocusDuration())
+                .orElse(25);
         List<Task> completedTasks = taskRepository.findCompletedByUserIdAndExecutionDateBetween(
                 userId, startDate, endDate);
         int totalEstimated = 0;
         int totalActual = 0;
         for (Task task : completedTasks) {
-            if (task.getEstimatedDuration() != null) {
-                totalEstimated += task.getEstimatedDuration();
+            if (task.getEstimatedPomodoros() != null) {
+                totalEstimated += task.getEstimatedPomodoros() * focusDuration;
             }
             // Calculate actual from focus sessions for this task
         }
@@ -609,12 +620,15 @@ public class AnalyticsService {
         EfficiencyStats efficiency = getEfficiencyStats(userId, date, date);
 
         // 2. Estimation Stats (using executionDate)
+        int focusDuration = pomodoroSettingRepository.findByUserId(userId)
+                .map(s -> s.getFocusDuration())
+                .orElse(25);
         List<Task> tasks = taskRepository.findByUserIdAndExecutionDate(userId, date);
         int totalEstimated = 0;
         int tasksCompleted = 0;
         for (Task task : tasks) {
-            if (task.getEstimatedDuration() != null) {
-                totalEstimated += task.getEstimatedDuration();
+            if (task.getEstimatedPomodoros() != null) {
+                totalEstimated += task.getEstimatedPomodoros() * focusDuration;
             }
             if (TaskStatus.COMPLETED.equals(task.getStatus())) {
                 tasksCompleted++;

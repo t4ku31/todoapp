@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.app1.dto.TaskDto;
 import com.example.app1.model.Category;
+import com.example.app1.model.Subtask;
 import com.example.app1.model.Task;
 import com.example.app1.model.TaskList;
 import com.example.app1.model.TaskStatus;
@@ -29,6 +30,7 @@ public class TaskService {
     private final TaskListRepository taskListRepository;
     private final com.example.app1.repository.CategoryRepository categoryRepository;
     private final CategoryService categoryService; // Injected
+    private final com.example.app1.repository.PomodoroSettingRepository pomodoroSettingRepository;
     private final com.example.app1.repository.FocusSessionRepository focusSessionRepository;
 
     /**
@@ -119,7 +121,6 @@ public class TaskService {
                 .status(status)
                 .executionDate(taskCreateRequest.executionDate())
                 .userId(userId)
-                .estimatedDuration(taskCreateRequest.estimatedDuration())
                 .taskList(taskList);
 
         if (taskCreateRequest.categoryId() != null) {
@@ -132,7 +133,27 @@ public class TaskService {
             taskBuilder.category(others);
         }
 
+        if (taskCreateRequest.estimatedPomodoros() != null) {
+            taskBuilder.estimatedPomodoros(taskCreateRequest.estimatedPomodoros());
+        }
+
         Task task = taskBuilder.build();
+
+        // Handle subtasks creation
+        if (taskCreateRequest.subtasks() != null && !taskCreateRequest.subtasks().isEmpty()) {
+            List<Subtask> subtasks = taskCreateRequest.subtasks().stream()
+                    .map(subtaskDto -> Subtask.builder()
+                            .title(subtaskDto.title())
+                            .description(subtaskDto.description())
+                            .task(task)
+                            .isCompleted(false)
+                            .build())
+                    .toList();
+            // Since we are using CascadeType.ALL on OneToMany, adding to the list is enough
+            // IF we save the parent task. However, to be safe with bi-directional
+            // relationship:
+            task.getSubtasks().addAll(subtasks);
+        }
 
         Task saved = taskRepository.save(task);
         log.info("Created task {} for user: {}", saved.getId(), saved.getUserId());
@@ -207,9 +228,7 @@ public class TaskService {
             existing.setTaskList(targetList);
             log.info("Moving task {} to task list {}", id, request.taskListId());
         }
-        if (request.estimatedDuration() != null) {
-            existing.setEstimatedDuration(request.estimatedDuration());
-        }
+
         if (request.completedAt() != null) {
             existing.setCompletedAt(request.completedAt());
         }
@@ -234,9 +253,15 @@ public class TaskService {
         List<Task> completedTasks = taskRepository.findCompletedByUserIdAndExecutionDateBetween(userId, startDate,
                 endDate);
         log.info("Completed tasks: {}", completedTasks);
+
+        // Calculate total estimated minutes based on pomodoros
+        Integer focusDuration = pomodoroSettingRepository.findByUserId(userId)
+                .map(setting -> setting.getFocusDuration())
+                .orElse(25); // Default to 25 minutes if no settings found
+
         int totalEstimatedMinutes = completedTasks.stream()
-                .filter(t -> t.getEstimatedDuration() != null)
-                .mapToInt(Task::getEstimatedDuration)
+                .filter(t -> t.getEstimatedPomodoros() != null)
+                .mapToInt(t -> t.getEstimatedPomodoros() * focusDuration)
                 .sum();
         log.info("Total estimated minutes: {}", totalEstimatedMinutes);
         List<Long> completedTaskIds = completedTasks.stream().map(Task::getId).toList();
