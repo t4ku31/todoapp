@@ -14,4 +14,14 @@ public class SubtaskDto {
     @Schema(name = "SubtaskUpdate")
     public record Update(String title, String description, Boolean isCompleted, Integer orderIndex) {
     }
+
+    @Schema(name = "SubtaskSummary")
+    public record Summary(
+            Long id,
+            Long taskId,
+            String title,
+            String description,
+            Boolean isCompleted,
+            Integer orderIndex) {
+    }
 }

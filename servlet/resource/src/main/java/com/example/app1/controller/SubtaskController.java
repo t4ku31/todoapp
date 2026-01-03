@@ -40,7 +40,7 @@ public class SubtaskController {
      * @return The created subtask
      */
     @PostMapping("/tasks/{taskId}/subtasks")
-    public ResponseEntity<Subtask> createSubtask(
+    public ResponseEntity<SubtaskDto.Summary> createSubtask(
             @PathVariable Long taskId,
             @RequestBody SubtaskDto.Create request,
             @AuthenticationPrincipal Jwt jwt) {
@@ -50,7 +50,16 @@ public class SubtaskController {
         try {
             Subtask created = subtaskService.createSubtask(taskId, request, userId);
             log.info("Successfully created subtask {} for task {}", created.getId(), taskId);
-            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+
+            SubtaskDto.Summary summary = new SubtaskDto.Summary(
+                    created.getId(),
+                    created.getTaskId(),
+                    created.getTitle(),
+                    created.getDescription(),
+                    created.getIsCompleted(),
+                    created.getOrderIndex());
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(summary);
         } catch (IllegalArgumentException e) {
             log.warn("Task {} not found or access denied for user: {}", taskId, userId);
             return ResponseEntity.notFound().build();
@@ -66,7 +75,7 @@ public class SubtaskController {
      * @return The updated subtask (or No Content)
      */
     @PatchMapping("/subtasks/{id}")
-    public ResponseEntity<Subtask> updateSubtask(
+    public ResponseEntity<SubtaskDto.Summary> updateSubtask(
             @PathVariable Long id,
             @RequestBody SubtaskDto.Update request,
             @AuthenticationPrincipal Jwt jwt) {
@@ -76,7 +85,16 @@ public class SubtaskController {
         try {
             Subtask updated = subtaskService.updateSubtask(id, request, userId);
             log.info("Successfully updated subtask {} for user: {}", id, userId);
-            return ResponseEntity.ok(updated);
+
+            SubtaskDto.Summary summary = new SubtaskDto.Summary(
+                    updated.getId(),
+                    updated.getTaskId(),
+                    updated.getTitle(),
+                    updated.getDescription(),
+                    updated.getIsCompleted(),
+                    updated.getOrderIndex());
+
+            return ResponseEntity.ok(summary);
         } catch (IllegalArgumentException e) {
             log.warn("Subtask {} not found for user: {}", id, userId);
             return ResponseEntity.notFound().build();
