@@ -23,11 +23,14 @@ public class BffSubtaskService {
 
     public SubtaskDto.Summary createSubtask(Long taskId, SubtaskDto.Create request, String token) {
         log.info("Creating subtask for task {} via Resource Server", taskId);
+        // Re-construct the request with the taskId from the path
+        SubtaskDto.Create requestWithTaskId = new SubtaskDto.Create(taskId, request.title(), request.description());
+
         SubtaskDto.Summary created = restClient.post()
                 .uri(resourceUrl + "/tasks/{taskId}/subtasks", taskId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + token)
-                .body(request)
+                .body(requestWithTaskId)
                 .retrieve()
                 .body(SubtaskDto.Summary.class);
         log.info("Successfully created subtask: {}", created);

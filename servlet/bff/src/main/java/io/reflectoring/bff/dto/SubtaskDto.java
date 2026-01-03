@@ -4,7 +4,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class SubtaskDto {
 
-    public record Create(String title, String description) {
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record Create(Long taskId, String title, String description) {
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
