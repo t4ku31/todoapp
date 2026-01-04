@@ -106,7 +106,7 @@ public class TaskController {
      * @return The created task
      */
     @PostMapping("/tasks")
-    public ResponseEntity<Task> createTask(
+    public ResponseEntity<Object> createTask(
             @RequestBody TaskDto.Create taskCreateRequest,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
@@ -117,8 +117,13 @@ public class TaskController {
             log.info("Successfully created task {} for user: {}", created.getId(), userId);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (IllegalArgumentException e) {
-            log.warn("Task list not found for user: {}", userId);
-            return ResponseEntity.badRequest().build();
+            log.warn("Invalid request for user {}: {}", userId, e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(new com.example.app1.dto.ErrorResponseDto("Invalid request", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error creating task for user {}: {}", userId, e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(new com.example.app1.dto.ErrorResponseDto("Internal server error", e.getMessage()));
         }
     }
 

@@ -16,7 +16,8 @@ public class TaskDto {
 
         @Schema(name = "TaskCreate")
         public record Create(String title, Long taskListId, LocalDate executionDate,
-                        Long categoryId, List<SubtaskDto.Create> subtasks, Integer estimatedPomodoros) {
+                        Long categoryId, List<SubtaskDto.Create> subtasks, Integer estimatedPomodoros,
+                        Boolean isRecurring, String recurrenceRule, List<LocalDate> customDates) {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)

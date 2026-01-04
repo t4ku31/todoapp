@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.app1.dto.RecurrenceRuleDto;
 import com.example.app1.dto.TaskDto;
 import com.example.app1.model.Category;
 import com.example.app1.model.Subtask;
@@ -13,6 +14,7 @@ import com.example.app1.model.TaskList;
 import com.example.app1.model.TaskStatus;
 import com.example.app1.repository.TaskListRepository;
 import com.example.app1.repository.TaskRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -93,10 +95,11 @@ public class TaskService {
     /**
      * Create a new task.
      * Ensures the task list belongs to the user.
+     * If customDates are provided, creates a task for each date.
      * 
      * @param task   Task to create (userId will be set)
      * @param userId Auth0 sub claim identifying the user
-     * @return The created task
+     * @return The created task(s) - returns first task for backward compatibility
      * @throws IllegalArgumentException if task list doesn't belong to user
      */
     @Transactional
@@ -110,6 +113,136 @@ public class TaskService {
             throw new IllegalArgumentException("Task list not found or access denied");
         }
 
+        // If customDates are provided, create a task for each date
+        if (taskCreateRequest.customDates() != null && !taskCreateRequest.customDates().isEmpty()) {
+            log.info("Creating {} tasks with custom dates for user: {}",
+                    taskCreateRequest.customDates().size(), userId);
+
+            Task firstTask = null;
+            for (java.time.LocalDate date : taskCreateRequest.customDates()) {
+                Task task = createSingleTask(taskCreateRequest, userId, date, false, null, null);
+                if (firstTask == null) {
+                    firstTask = task;
+                }
+            }
+            return firstTask;
+        }
+
+        // Handle recurring task setup
+        Boolean isRecurring = taskCreateRequest.isRecurring();
+        String recurrenceRule = taskCreateRequest.recurrenceRule();
+
+        if (isRecurring != null && isRecurring && recurrenceRule != null) {
+            return createRecurringTasks(taskCreateRequest, userId, recurrenceRule);
+        }
+
+        return createSingleTask(taskCreateRequest, userId, taskCreateRequest.executionDate(),
+                false, null, null);
+    }
+
+    /**
+     * Create recurring task instances based on recurrence rule.
+     * Generates all instances immediately based on the rule's end condition.
+     */
+    private Task createRecurringTasks(TaskDto.Create taskCreateRequest, String userId, String recurrenceRule) {
+        log.info("Creating recurring tasks for user: {} with rule: {}", userId, recurrenceRule);
+
+        // Parse recurrence rule JSON
+        ObjectMapper mapper = new ObjectMapper();
+        RecurrenceRuleDto rule;
+        try {
+            rule = mapper.readValue(recurrenceRule, RecurrenceRuleDto.class);
+        } catch (Exception e) {
+            log.error("Failed to parse recurrence rule: {}", recurrenceRule, e);
+            throw new IllegalArgumentException("Invalid recurrence rule format: " + e.getMessage());
+        }
+
+        String frequency = rule.frequency();
+        if (frequency == null) {
+            throw new IllegalArgumentException("Frequency is required in recurrence rule");
+        }
+
+        String endDateStr = rule.endDate();
+        Integer occurrences = rule.occurrences();
+        java.util.List<String> daysOfWeek = rule.daysOfWeek();
+
+        log.debug("Parsed rule - Freq: {}, EndDate: {}, Occurrences: {}, Days: {}",
+                frequency, endDateStr, occurrences, daysOfWeek);
+
+        // case of specifying execution date
+        java.time.LocalDate startDate = taskCreateRequest.executionDate() != null
+                ? taskCreateRequest.executionDate()
+                : java.time.LocalDate.now();
+        // case of specifying end date
+        java.time.LocalDate endDate = null;
+        if (endDateStr != null) {
+            endDate = java.time.LocalDate.parse(endDateStr);
+        }
+
+        // Default: generate 30 instances if no end condition specified
+        int maxInstances = occurrences != null ? occurrences : 30;
+        if (endDate == null && occurrences == null) {
+            // If no end condition, limit to 90 days from start
+            endDate = startDate.plusDays(90);
+        }
+
+        // Generate dates based on frequency
+        java.util.List<java.time.LocalDate> dates = new java.util.ArrayList<>();
+        java.time.LocalDate currentDate = startDate;
+        int count = 0;
+
+        while (count < maxInstances) {
+            if (endDate != null && currentDate.isAfter(endDate)) {
+                break;
+            }
+
+            boolean shouldAdd = true;
+
+            // For weekly frequency with specific days
+            if ("weekly".equals(frequency) && daysOfWeek != null && !daysOfWeek.isEmpty()) {
+                String dayOfWeek = currentDate.getDayOfWeek().toString().toLowerCase().substring(0, 3);
+                shouldAdd = daysOfWeek.contains(dayOfWeek);
+            }
+
+            if (shouldAdd) {
+                dates.add(currentDate);
+                count++;
+            }
+
+            // Advance date based on frequency
+            currentDate = switch (frequency) {
+                case "daily" -> currentDate.plusDays(1);
+                case "weekly" -> {
+                    if (daysOfWeek != null && !daysOfWeek.isEmpty()) {
+                        yield currentDate.plusDays(1); // Check each day for weekly with specific days
+                    }
+                    yield currentDate.plusWeeks(1);
+                }
+                case "monthly" -> currentDate.plusMonths(1);
+                case "yearly" -> currentDate.plusYears(1);
+                default -> currentDate.plusDays(1);
+            };
+        }
+
+        log.info("Generated {} dates for recurring task", dates.size());
+
+        // Create parent task first
+        Task parentTask = createSingleTask(taskCreateRequest, userId, dates.get(0), true, recurrenceRule, null);
+
+        // Create child tasks for remaining dates
+        for (int i = 1; i < dates.size(); i++) {
+            createSingleTask(taskCreateRequest, userId, dates.get(i), false, null, parentTask.getId());
+        }
+
+        return parentTask;
+    }
+
+    /**
+     * Internal method to create a single task.
+     */
+    private Task createSingleTask(TaskDto.Create taskCreateRequest, String userId,
+            java.time.LocalDate executionDate, boolean isRecurring, String recurrenceRule, Long recurrenceParentId) {
+
         // Set default status
         TaskStatus status = TaskStatus.PENDING;
 
@@ -119,9 +252,22 @@ public class TaskService {
         Task.TaskBuilder taskBuilder = Task.builder()
                 .title(taskCreateRequest.title())
                 .status(status)
-                .executionDate(taskCreateRequest.executionDate())
+                .executionDate(executionDate)
                 .userId(userId)
                 .taskList(taskList);
+
+        // Set recurring fields
+        if (isRecurring) {
+            taskBuilder.isRecurring(true);
+            if (recurrenceRule != null) {
+                taskBuilder.recurrenceRule(recurrenceRule);
+            }
+        }
+
+        // Set parent reference for child tasks
+        if (recurrenceParentId != null) {
+            taskBuilder.recurrenceParentId(recurrenceParentId);
+        }
 
         if (taskCreateRequest.categoryId() != null) {
             Category category = categoryRepository.findById(taskCreateRequest.categoryId())
@@ -139,8 +285,10 @@ public class TaskService {
 
         Task task = taskBuilder.build();
 
-        // Handle subtasks creation
-        if (taskCreateRequest.subtasks() != null && !taskCreateRequest.subtasks().isEmpty()) {
+        // Handle subtasks creation (only for parent/standalone tasks, not for recurring
+        // instances)
+        if (recurrenceParentId == null && taskCreateRequest.subtasks() != null
+                && !taskCreateRequest.subtasks().isEmpty()) {
             List<Subtask> subtasks = taskCreateRequest.subtasks().stream()
                     .map(subtaskDto -> Subtask.builder()
                             .title(subtaskDto.title())
@@ -149,9 +297,6 @@ public class TaskService {
                             .isCompleted(false)
                             .build())
                     .toList();
-            // Since we are using CascadeType.ALL on OneToMany, adding to the list is enough
-            // IF we save the parent task. However, to be safe with bi-directional
-            // relationship:
             task.getSubtasks().addAll(subtasks);
         }
 
