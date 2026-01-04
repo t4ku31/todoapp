@@ -67,9 +67,17 @@ public class BffTaskController {
             @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
         log.info("[POST /api/tasks] Request by user: {}", client.getPrincipalName());
         log.info("[POST /api/tasks] Creating task: {}", request);
-        TaskDto.Summary created = taskService.createTask(request, client.getAccessToken().getTokenValue());
-        log.info("[POST /api/tasks] Successfully created task with id: {}", created.id());
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        try {
+            TaskDto.Summary created = taskService.createTask(request, client.getAccessToken().getTokenValue());
+            log.info("[POST /api/tasks] Successfully created task with id: {}", created.id());
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        } catch (RestClientResponseException e) {
+            log.error("[POST /api/tasks] Error creating task: {}", e.getMessage());
+            return ResponseEntity.status(e.getStatusCode()).body(null);
+        } catch (Exception e) {
+            log.error("[POST /api/tasks] Error creating task: {}", e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     // done to test

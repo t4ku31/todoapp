@@ -17,7 +17,10 @@ public class TaskDto {
                         @Schema(description = "Execution date", example = "2023-12-24") LocalDate executionDate,
                         @Schema(description = "Category ID", example = "1") Long categoryId,
                         @Schema(description = "Subtasks list") List<SubtaskDto.Create> subtasks,
-                        @Schema(description = "Estimated number of pomodoros", example = "2") Integer estimatedPomodoros) {
+                        @Schema(description = "Estimated number of pomodoros", example = "2") Integer estimatedPomodoros,
+                        @Schema(description = "Whether this is a recurring task") Boolean isRecurring,
+                        @Schema(description = "Recurrence rule in JSON format") String recurrenceRule,
+                        @Schema(description = "Custom dates for multi-select mode") List<LocalDate> customDates) {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -43,7 +46,10 @@ public class TaskDto {
                         @Schema(description = "Category details") CategoryDto.Response category,
                         @Schema(description = "Subtasks list") List<SubtaskDto.Summary> subtasks,
                         @Schema(description = "Estimated number of pomodoros", example = "2") Integer estimatedPomodoros,
-                        @Schema(description = "Completed at timestamp") java.time.LocalDateTime completedAt) {
+                        @Schema(description = "Completed at timestamp") java.time.LocalDateTime completedAt,
+                        @Schema(description = "Whether this is a recurring task") Boolean isRecurring,
+                        @Schema(description = "Recurrence rule") String recurrenceRule,
+                        @Schema(description = "Parent task ID for recurring instances") Long recurrenceParentId) {
         }
 
         @Schema(name = "TaskStats")
