@@ -1,5 +1,3 @@
-import { Tag } from "lucide-react";
-import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +8,8 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useCategoryStore } from "@/store/useCategoryStore";
+import { Tag } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface CategorySelectProps {
 	selectedCategoryId?: number;
@@ -83,7 +83,6 @@ export function CategorySelect({
 					) : (
 						<div className="flex items-center justify-center px-3 h-full w-full rounded-full border border-dashed text-muted-foreground hover:bg-accent/50 transition-colors">
 							<Tag className="mr-1.5 h-3 w-3" />
-							<span className="text-xs">Category</span>
 						</div>
 					)}
 				</Button>

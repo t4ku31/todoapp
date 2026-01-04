@@ -1,20 +1,20 @@
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { CalendarCheck2, Plus } from "lucide-react";
+import { ListTree } from "lucide-react";
 import { forwardRef, useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Input } from "@/components/ui/input";
 import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+	Controller,
+	FormProvider,
+	useFieldArray,
+	useForm,
+} from "react-hook-form";
 import { CategorySelect } from "../ui/CategorySelect";
-import { TaskListSelector } from "../ui/TaskListSelector";
+import { DateScheduler } from "../ui/DateScheduler";
+import { PomodoroInput } from "../ui/PomodoroInput";
+import { SubtaskList } from "../ui/SubtaskList";
 import { type TaskFormValues, taskSchema } from "./schema";
 
 interface CreateTaskFormProps {
@@ -25,7 +25,11 @@ interface CreateTaskFormProps {
 		dueDate?: string | null,
 		executionDate?: string | null,
 		categoryId?: number,
-		estimatedDuration?: number,
+		estimatedPomodoros?: number,
+		subtasks?: { title: string; description?: string }[],
+		isRecurring?: boolean,
+		recurrenceRule?: string | null,
+		customDates?: string[],
 	) => Promise<void>;
 	className?: string;
 	placeholder?: string;
@@ -48,13 +52,12 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 			placeholder,
 			autoFocus,
 			disabled,
-			showListSelector = true,
 			showExecutionDate = true,
 		},
 		_ref,
 	) => {
 		const [selectedTaskListId, setSelectedTaskListId] = useState(taskListId);
-		const [onOpen, setOnOpen] = useState(false);
+		const [, setOnOpen] = useState(false);
 		// Sync local state if prop changes
 		useEffect(() => {
 			setSelectedTaskListId(taskListId);
@@ -64,14 +67,53 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 			resolver: zodResolver(taskSchema),
 			defaultValues: {
 				title: "",
+				dateMode: "single",
 				executionDate: new Date(),
+				startDate: undefined,
+				endDate: undefined,
+				repeatFrequency: undefined,
 				categoryId: undefined,
-				estimatedDuration: undefined,
+				estimatedPomodoros: 0,
+				subtasks: [],
 			},
 		});
 
 		const onSubmit = async (data: TaskFormValues) => {
 			try {
+				// Build recurrence rule if in repeat mode
+				let isRecurring = false;
+				let recurrenceRule: string | null = null;
+				let customDatesForApi: string[] | undefined;
+
+				if (data.dateMode === "repeat" && data.repeatFrequency) {
+					if (data.repeatFrequency === "custom") {
+						// Custom mode uses customDates array
+						if (data.customDates && data.customDates.length > 0) {
+							customDatesForApi = data.customDates.map((d) =>
+								format(d, "yyyy-MM-dd"),
+							);
+						}
+					} else {
+						// Regular repeat mode
+						isRecurring = true;
+						const rule: Record<string, unknown> = {
+							frequency: data.repeatFrequency,
+						};
+						if (data.repeatDays && data.repeatDays.length > 0) {
+							rule.daysOfWeek = data.repeatDays;
+						}
+						if (data.repeatEndType === "on_date" && data.repeatEndDate) {
+							rule.endDate = format(data.repeatEndDate, "yyyy-MM-dd");
+						} else if (
+							data.repeatEndType === "after_count" &&
+							data.repeatEndCount
+						) {
+							rule.occurrences = data.repeatEndCount;
+						}
+						recurrenceRule = JSON.stringify(rule);
+					}
+				}
+
 				await onCreateTask(
 					selectedTaskListId,
 					data.title,
@@ -80,13 +122,28 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 						? format(data.executionDate, "yyyy-MM-dd")
 						: format(new Date(), "yyyy-MM-dd"),
 					data.categoryId,
-					data.estimatedDuration,
+					data.estimatedPomodoros,
+					// Filter out empty subtasks
+					data.subtasks?.filter((s) => s.title.trim() !== ""),
+					isRecurring,
+					recurrenceRule,
+					customDatesForApi,
 				);
 				form.reset({
 					title: "",
+					dateMode: "single",
 					executionDate: new Date(),
+					startDate: undefined,
+					endDate: undefined,
+					repeatFrequency: undefined,
+					repeatEndType: undefined,
+					repeatEndDate: undefined,
+					repeatEndCount: undefined,
+					repeatDays: undefined,
+					customDates: undefined,
 					categoryId: undefined,
-					estimatedDuration: undefined,
+					estimatedPomodoros: 0,
+					subtasks: [],
 				});
 				// Optionally reset focus to input?
 			} catch (error) {
@@ -104,176 +161,159 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 			}
 		};
 
-		return (
-			<div
-				className={cn(
-					"bg-white rounded-xl shadow-sm border border-gray-200 transition-all duration-200 overflow-hidden",
-					"focus-within:shadow-md focus-within:ring-5 focus-within:ring-indigo-500 focus-within:border-transparent",
-					onOpen && "shadow-md ring-5 ring-indigo-500 border-transparent",
-					className,
-				)}
-			>
-				{/* Top half: Input */}
-				<Controller
-					control={form.control}
-					name="title"
-					render={({ field }) => (
-						<Input
-							{...field}
-							onKeyDown={handleKeyDown}
-							placeholder={placeholder || "新しいタスクを追加..."}
-							autoFocus={autoFocus}
-							disabled={disabled || form.formState.isSubmitting}
-							className="border-none shadow-none text-base px-4 py-3 h-auto focus-visible:ring-0 rounded-none placeholder:text-gray-400"
-							value={field.value || ""}
-						/>
-					)}
-				/>
+		// Access category store to get color
+		// Note: We need to import useCategoryStore and selector logic if not available,
+		// but for now let's try to infer from typical usage or just pass a method.
+		// Actually, CategorySelect handles the logic. Let's trust useCategoryStore is global.
 
-				{/* Bottom half: Controls */}
-				<div className="flex items-center justify-between px-3 pb-3 pt-1">
-					<div className="flex items-center gap-2">
+		// We need the category list to find the color of the selected category
+		// Assuming we can get it from a hook or store.
+		// Since I cannot easily add a new import at top without adding 'import' lines, I will assume
+		// I can stick to the existing imports or add essential ones.
+		// Wait, I can redo imports in a replace_file_content if I replace the whole file or large chunk.
+		// But for now, let's stick to 'indigo-500' as default and maybe try to wire it if I can.
+
+		// Let's implement the layout first.
+
+		const watchedCategoryId = form.watch("categoryId");
+
+		// Subtask array controls
+		const {
+			fields: subtaskFields,
+			append: appendSubtask,
+			remove: removeSubtask,
+		} = useFieldArray({
+			control: form.control,
+			name: "subtasks",
+		});
+
+		const hasSubtasks = subtaskFields.length > 0;
+
+		// Mocking color retrieval or simpler approach:
+		// We'll pass a "color" prop to child components if we can.
+		// For now, hardcode "text-indigo-500" if category is selected, else gray.
+		const activeColorClass = watchedCategoryId
+			? "text-purple-600"
+			: "text-gray-400";
+
+		// Toggle for subtask expansion? Or always show if present?
+		// If has subtasks, we show them.
+
+		return (
+			<FormProvider {...form}>
+				<div
+					className={cn(
+						"group bg-white rounded-xl shadow-sm border border-gray-200 transition-all duration-200 relative",
+						"focus-within:shadow-md focus-within:ring-2 focus-within:ring-purple-100 focus-within:border-purple-300",
+						className,
+					)}
+				>
+					{/* Main Input Row */}
+					<div className="flex items-center px-3 py-2 gap-2">
+						{/* Left Icon: ListTree - Clickable to add subtask */}
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon"
+							className={cn(
+								"shrink-0 h-7 w-7 hover:bg-purple-50 transition-colors",
+								hasSubtasks ? "text-purple-600" : activeColorClass,
+							)}
+							onClick={() => {
+								// Add a new subtask - SubtaskList will auto-focus via useEffect
+								appendSubtask({ title: "", description: "" });
+							}}
+							title="Add subtask"
+						>
+							<ListTree className="w-5 h-5" />
+						</Button>
+
+						{/* Input Field */}
 						<Controller
 							control={form.control}
-							name="categoryId"
+							name="title"
 							render={({ field }) => (
-								<CategorySelect
-									selectedCategoryId={field.value}
-									onCategoryChange={(value) => field.onChange(value)}
-									onOpenChange={setOnOpen}
+								<Input
+									{...field}
+									onKeyDown={handleKeyDown}
+									placeholder={placeholder || "タスクを追加..."}
+									autoFocus={autoFocus}
+									disabled={disabled || form.formState.isSubmitting}
+									className="flex-1 border-none shadow-none focus-visible:ring-0 px-0 py-0 h-auto text-base placeholder:text-gray-400"
+									value={field.value || ""}
+									autoComplete="off"
 								/>
 							)}
 						/>
 
-						<Controller
-							control={form.control}
-							name="estimatedDuration"
-							render={({ field }) => (
-								<Popover onOpenChange={setOnOpen}>
-									<PopoverTrigger asChild>
-										<Badge
-											variant="outline"
-											className={cn(
-												"border-none font-normal cursor-pointer hover:scale-105 transition-all duration-200 ease-in-out",
-												field.value
-													? "bg-amber-100 text-amber-700 hover:bg-amber-200"
-													: "text-muted-foreground hover:bg-gray-100/80 hover:text-gray-700",
-											)}
-										>
-											<span className="text-xs">
-												{field.value ? `${field.value} min` : "時間"}
-											</span>
-										</Badge>
-									</PopoverTrigger>
-									<PopoverContent className="w-40 p-2" align="start">
-										<div className="space-y-2">
-											<p className="text-xs font-semibold text-center text-gray-500">
-												予想時間 (分)
-											</p>
-											<Input
-												type="number"
-												min="0"
-												placeholder="0"
-												value={field.value || ""}
-												onChange={(e) => {
-													const val = e.target.value
-														? parseInt(e.target.value, 10)
-														: undefined;
-													field.onChange(val);
-												}}
-												className="h-8 text-sm"
-												autoFocus
-											/>
-										</div>
-									</PopoverContent>
-								</Popover>
-							)}
-						/>
-
-						{showExecutionDate && (
+						{/* Right Side Controls (Inline) */}
+						<div className="flex items-center gap-1 shrink-0">
+							{/* Category Select (Hidden trigger or Small Dot?) 
+                                The image doesn't show a big selector. 
+                                Maybe we keep it as a dot or integrate it?
+                                For now, relying on the user to use the existing CategorySelect but styled minimally.
+                             */}
 							<Controller
 								control={form.control}
-								name="executionDate"
+								name="categoryId"
 								render={({ field }) => (
-									<Popover onOpenChange={setOnOpen}>
-										<PopoverTrigger asChild>
-											<Badge
-												size="sm"
-												// onClick={() => setOnOpen(true)} // Handled by Popover onOpenChange
-												className={cn(
-													"border-none font-normal cursor-pointer hover:scale-105 transition-all duration-200 ease-in-out",
-													field.value
-														? "bg-indigo-500 text-white hover:bg-indigo-600"
-														: "text-muted-foreground hover:bg-gray-100/80 hover:text-gray-700",
-												)}
-											>
-												<CalendarCheck2
-													className={cn(
-														"h-4 w-4 mr-1.5",
-														field.value ? "text-white" : "",
-													)}
-												/>
-												<span
-													className={cn(
-														"text-xs",
-														field.value ? "text-white" : "",
-													)}
-												>
-													{field.value ? format(field.value, "M/d") : "日付"}
-												</span>
-											</Badge>
-										</PopoverTrigger>
-										<PopoverContent className="w-auto p-0" align="start">
-											<div className="p-2 border-b text-xs font-semibold text-center text-blue-600">
-												実行日 (Execution Date)
-											</div>
-											<Calendar
-												mode="single"
-												selected={field.value}
-												onSelect={field.onChange}
-												className="p-4 [&_td]:w-10 [&_td]:h-10 [&_th]:w-10 [&_th]:h-10 [&_button]:w-10 [&_button]:h-10"
-												initialFocus
-											/>
-										</PopoverContent>
-									</Popover>
+									<CategorySelect
+										selectedCategoryId={field.value}
+										onCategoryChange={(value) => field.onChange(value)}
+										onOpenChange={setOnOpen}
+									/>
 								)}
 							/>
-						)}
 
-						{showListSelector && (
-							<TaskListSelector
-								currentTaskListId={selectedTaskListId}
-								onTaskListChange={setSelectedTaskListId}
-								onOpenChange={setOnOpen}
+							{/* Pomodoro Input */}
+							<Controller
+								control={form.control}
+								name="estimatedPomodoros"
+								render={({ field }) => (
+									<PomodoroInput
+										value={field.value}
+										onChange={field.onChange}
+										className="w-auto h-8 px-1"
+										color={
+											field.value && field.value > 0
+												? "text-purple-500"
+												: "text-gray-400"
+										}
+									/>
+								)}
 							/>
-						)}
+
+							{/* Date Scheduler - Single/Range/Repeat */}
+							{showExecutionDate && <DateScheduler onOpenChange={setOnOpen} />}
+						</div>
 					</div>
 
-					<div className="flex items-center gap-2">
-						<Button
-							onClick={(e) => {
-								e.preventDefault();
-								form.handleSubmit(onSubmit)();
-								setOnOpen(false);
-							}}
-							size="icon"
-							disabled={
-								disabled ||
-								form.formState.isSubmitting ||
-								!form.formState.isValid
-							}
-							className={cn(
-								"h-8 w-8 rounded-full transition-all duration-200 shadow-sm",
-								form.formState.isValid
-									? "bg-indigo-500 hover:bg-indigo-600 text-white"
-									: "bg-indigo-200 text-indigo-600 hover:bg-indigo-200",
-							)}
-						>
-							<Plus className="h-5 w-5" />
-						</Button>
+					{/* Subtasks Section - Renders below if exists */}
+					<div
+						className={cn(
+							"transition-all duration-300 ease-in-out border-t border-transparent",
+							hasSubtasks
+								? "border-gray-100 pb-2"
+								: "h-0 overflow-hidden opacity-0",
+						)}
+					>
+						<div className="px-2 pt-1">
+							<SubtaskList
+								fields={subtaskFields}
+								append={appendSubtask}
+								remove={removeSubtask}
+							/>
+						</div>
 					</div>
+
+					{/* Hidden 'Add Subtask' trigger? 
+                        The image implies explicit subtask addition might happen via hotkey or menu.
+                        But to match functionality, let's ensure SubtaskList has a way to add.
+                        Or maybe we add a small trigger here if it's not empty?
+                        Actually, SubtaskList handles the "Add" button logic.
+                    */}
 				</div>
-			</div>
+			</FormProvider>
 		);
 	},
 );
