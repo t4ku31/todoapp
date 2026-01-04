@@ -19,8 +19,20 @@ export interface Task {
 	dueDate?: string;
 	executionDate?: string;
 	category?: Category;
-	estimatedDuration?: number; // minutes
+	estimatedPomodoros?: number;
+	subtasks?: Subtask[];
 	completedAt?: string; // ISO 8601 date string
+	isRecurring?: boolean;
+	recurrenceRule?: string;
+	recurrenceParentId?: number;
+}
+
+export interface Subtask {
+	id: number;
+	title: string;
+	description?: string;
+	isCompleted: boolean;
+	orderIndex: number;
 }
 
 export interface TaskList {

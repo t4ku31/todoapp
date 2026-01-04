@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
 import { apiClient } from "@/config/env";
 import { sortTasks } from "@/features/todo/utils/taskSorter";
 import type { Task, TaskList } from "@/types/types";
 import { normalizeError } from "@/utils/error";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export const useTaskLists = () => {
 	const [taskLists, setTaskLists] = useState<TaskList[]>([]);
@@ -155,6 +155,12 @@ export const useTaskLists = () => {
 			title: string,
 			dueDate?: string | null,
 			executionDate?: string | null,
+			categoryId?: number,
+			estimatedPomodoros?: number,
+			subtasks?: { title: string; description?: string }[],
+			isRecurring?: boolean,
+			recurrenceRule?: string | null,
+			customDates?: string[],
 		) => {
 			try {
 				const response = await apiClient.post<Task>("/api/tasks", {
@@ -162,6 +168,12 @@ export const useTaskLists = () => {
 					taskListId,
 					dueDate,
 					executionDate,
+					categoryId,
+					estimatedPomodoros,
+					subtasks,
+					isRecurring,
+					recurrenceRule,
+					customDates,
 				});
 				const newTask = response.data;
 
@@ -177,6 +189,12 @@ export const useTaskLists = () => {
 									taskListId: taskListId,
 									dueDate: newTask.dueDate,
 									executionDate: newTask.executionDate,
+									category: newTask.category,
+									estimatedPomodoros: newTask.estimatedPomodoros,
+									subtasks: newTask.subtasks,
+									isRecurring: newTask.isRecurring,
+									recurrenceRule: newTask.recurrenceRule,
+									recurrenceParentId: newTask.recurrenceParentId,
 								},
 							];
 
@@ -189,7 +207,14 @@ export const useTaskLists = () => {
 					}),
 				);
 
-				toast.success("タスクを追加しました");
+				// Show appropriate message based on task type
+				if (customDates && customDates.length > 1) {
+					toast.success(`${customDates.length}件のタスクを作成しました`);
+				} else if (isRecurring) {
+					toast.success("繰り返しタスクを作成しました");
+				} else {
+					toast.success("タスクを追加しました");
+				}
 			} catch (err) {
 				console.error("Failed to create task:", err);
 				const appError = normalizeError(err);

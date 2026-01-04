@@ -133,9 +133,9 @@ export function TaskItem({
 
 						<EditableDuration
 							id={task.id}
-							duration={task.estimatedDuration}
+							duration={task.estimatedPomodoros}
 							onDurationChange={(id, duration) =>
-								onUpdateTask(id, { estimatedDuration: duration })
+								onUpdateTask(id, { estimatedPomodoros: duration })
 							}
 							onOpenChange={setIsExpanded}
 						/>

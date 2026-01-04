@@ -1,8 +1,8 @@
+import { useTodoStore } from "@/store/useTodoStore";
+import type { Task } from "@/types/types";
 import { useDroppable } from "@dnd-kit/core";
 import { ChevronDown, ChevronUp, Inbox } from "lucide-react";
 import { useState } from "react";
-import { useTodoStore } from "@/store/useTodoStore";
-import type { Task } from "@/types/types";
 import { CreateTaskForm } from "./forms/CreateTaskForm";
 import { TaskItem } from "./TaskItem";
 
@@ -14,7 +14,9 @@ interface InboxMobileProps {
 		title: string,
 		dueDate?: string | null,
 		executionDate?: string | null,
-		estimatedDuration?: number,
+		categoryId?: number,
+		estimatedPomodoros?: number,
+        subtasks?: { title: string; description?: string }[],
 	) => Promise<void>;
 }
 
