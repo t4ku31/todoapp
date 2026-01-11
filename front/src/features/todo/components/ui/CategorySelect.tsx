@@ -1,5 +1,3 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
 	Popover,
 	PopoverContent,
@@ -9,7 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useCategoryStore } from "@/store/useCategoryStore";
 import { Tag } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { IconBadge } from "./IconBadge";
 
 interface CategorySelectProps {
 	selectedCategoryId?: number;
@@ -25,12 +24,7 @@ export function CategorySelect({
 	className,
 }: CategorySelectProps) {
 	const categories = useCategoryStore((state) => state.categories);
-	const fetchCategories = useCategoryStore((state) => state.fetchCategories);
 	const [open, setOpen] = useState(false);
-
-	useEffect(() => {
-		fetchCategories();
-	}, [fetchCategories]);
 
 	const handleSelectCategory = (categoryId: number) => {
 		onCategoryChange(categoryId);
@@ -49,43 +43,15 @@ export function CategorySelect({
 			}}
 		>
 			<PopoverTrigger asChild>
-				<Button
-					variant="ghost"
-					size="sm"
+				<IconBadge
+					icon={Tag}
+					variant={selectedCategory ? "category" : "outline"}
+					color={selectedCategory?.color}
+					className={className}
 					onPointerDown={(e) => e.stopPropagation()}
-					className={cn(
-						"h-6 min-w-[3.5rem] w-auto px-0 hover:bg-transparent hover:scale-105 transition-all duration-200",
-						className,
-					)}
 				>
-					{selectedCategory ? (
-						<Badge
-							style={{
-								// @ts-expect-error - CSS custom properties
-								"--bg-color": selectedCategory.color
-									? `${selectedCategory.color}20`
-									: "transparent",
-								"--hover-bg": selectedCategory.color
-									? `${selectedCategory.color}35`
-									: "transparent",
-								color: selectedCategory.color,
-								borderColor: selectedCategory.color
-									? `${selectedCategory.color}40`
-									: undefined,
-							}}
-							variant="outline"
-							className="h-full px-3 flex items-center justify-center border transition-colors duration-200 bg-[var(--bg-color)] hover:bg-[var(--hover-bg)] rounded-full"
-						>
-							<span className="truncate max-w-[100px]">
-								{selectedCategory.name}
-							</span>
-						</Badge>
-					) : (
-						<div className="flex items-center justify-center px-3 h-full w-full rounded-full border border-dashed text-muted-foreground hover:bg-accent/50 transition-colors">
-							<Tag className="mr-1.5 h-3 w-3" />
-						</div>
-					)}
-				</Button>
+					{selectedCategory?.name || "タグ"}
+				</IconBadge>
 			</PopoverTrigger>
 			<PopoverContent
 				className="w-[200px] p-0"
