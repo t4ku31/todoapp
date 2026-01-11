@@ -25,6 +25,8 @@ export interface Task {
 	isRecurring?: boolean;
 	recurrenceRule?: string;
 	recurrenceParentId?: number;
+	isDeleted?: boolean;
+	description?: string;
 }
 
 export interface Subtask {
