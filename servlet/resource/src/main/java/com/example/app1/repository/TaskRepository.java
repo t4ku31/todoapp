@@ -27,22 +27,38 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
         List<Task> findByTaskListId(Long taskListId);
 
         /**
-         * Find all tasks belonging to a specific user.
+         * Find all tasks belonging to a specific user (excluding deleted).
          * 
          * @param userId Auth0 sub claim identifying the user
          * @return List of all tasks owned by the user
          */
-        List<Task> findByUserId(String userId);
+        @Query("SELECT t FROM Task t WHERE t.userId = :userId AND t.isDeleted = false")
+        List<Task> findByUserId(@Param("userId") String userId);
 
         /**
-         * Find tasks for a specific task list and user.
+         * Find tasks for a specific task list and user (excluding deleted and recurring
+         * children).
          * This ensures users can only access tasks in their own task lists.
+         * Recurring child tasks (recurrenceParentId != null) are excluded from task
+         * list view.
          * 
          * @param taskListId ID of the task list
          * @param userId     Auth0 sub claim identifying the user
-         * @return List of tasks in the task list owned by the user
+         * @return List of tasks in the task list owned by the user (excluding recurring
+         *         children)
          */
-        List<Task> findByTaskList_IdAndUserId(Long taskListId, String userId);
+        @Query("SELECT t FROM Task t WHERE t.taskList.id = :taskListId AND t.userId = :userId " +
+                        "AND t.isDeleted = false AND t.recurrenceParentId IS NULL")
+        List<Task> findByTaskList_IdAndUserId(@Param("taskListId") Long taskListId, @Param("userId") String userId);
+
+        /**
+         * Find all soft-deleted tasks (trash) for a user.
+         * Only returns items without a recurrenceParentId (i.e. parent tasks or
+         * non-recurring tasks)
+         * to avoid cluttering the trash view with all generated instances.
+         */
+        @Query("SELECT t FROM Task t WHERE t.userId = :userId AND t.isDeleted = true AND t.recurrenceParentId IS NULL")
+        List<Task> findByUserIdAndIsDeletedTrue(@Param("userId") String userId);
 
         /**
          * Find a specific task by ID and user ID.
@@ -159,4 +175,30 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                         @Param("status") com.example.app1.model.TaskStatus status,
                         @Param("start") java.time.LocalDateTime start,
                         @Param("end") java.time.LocalDateTime end);
+
+        /**
+         * Find all child tasks (recurring instances) by parent task ID.
+         * 
+         * @param parentId ID of the parent recurring task
+         * @return List of child tasks
+         */
+        List<Task> findByRecurrenceParentId(Long parentId);
+
+        /**
+         * Find pending (incomplete) child tasks by parent task ID.
+         * Used for propagating changes to future instances.
+         * 
+         * @param parentId ID of the parent recurring task
+         * @return List of pending child tasks
+         */
+        /**
+         * Find pending (incomplete) child tasks by parent task ID.
+         * Used for propagating changes to future instances.
+         * 
+         * @param recurrenceParentId ID of the parent recurring task
+         * @param status             Status to exclude (e.g. COMPLETED)
+         * @return List of pending child tasks
+         */
+        List<Task> findByRecurrenceParentIdAndStatusNot(Long recurrenceParentId,
+                        com.example.app1.model.TaskStatus status);
 }

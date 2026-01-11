@@ -20,7 +20,8 @@ interface DailyTaskListProps {
 		dueDate?: string | null,
 		executionDate?: string | null,
 		categoryId?: number,
-		estimatedDuration?: number,
+		estimatedPomodoros?: number,
+		subtasks?: { title: string; description?: string }[],
 	) => Promise<void>;
 	onPrevDay?: () => void;
 	onNextDay?: () => void;
@@ -28,6 +29,8 @@ interface DailyTaskListProps {
 	emptyMessage?: string;
 	className?: string;
 	taskItemVariant?: "default" | "focusSelector";
+	onTaskSelect?: (taskId: number) => void;
+	selectedTaskId?: number | null;
 }
 
 export function DailyTaskList({
@@ -42,6 +45,8 @@ export function DailyTaskList({
 	emptyMessage = "No tasks for this date.",
 	className = "",
 	taskItemVariant = "default",
+	onTaskSelect,
+	selectedTaskId,
 }: DailyTaskListProps) {
 	// Filter tasks by date first
 	const tasksForDate = tasks.filter((task) => task.executionDate === date);
@@ -121,6 +126,8 @@ export function DailyTaskList({
 								onUpdateTask={onUpdateTask}
 								onDeleteTask={onDeleteTask}
 								variant={taskItemVariant}
+								onSelect={onTaskSelect}
+								isSelected={selectedTaskId === task.id}
 							/>
 						</motion.div>
 					))}

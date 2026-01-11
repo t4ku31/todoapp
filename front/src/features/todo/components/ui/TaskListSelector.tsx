@@ -1,6 +1,5 @@
 import { Check, FolderInput } from "lucide-react";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
 import {
 	Popover,
 	PopoverContent,
@@ -9,6 +8,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useTodoStore } from "@/store/useTodoStore";
+import { IconBadge } from "./IconBadge";
 
 interface TaskListSelectorProps {
 	currentTaskListId: number;
@@ -36,19 +36,14 @@ export function TaskListSelector({
 	return (
 		<Popover open={open} onOpenChange={handleOpenChange}>
 			<PopoverTrigger asChild>
-				<Badge
+				<IconBadge
+					icon={FolderInput}
 					variant="outline"
-					size="md"
-					className={cn(
-						"w-auto min-w-[3.5rem] border-slate-800 rounded-full bg-white hover:scale-105 transition-all duration-200",
-						className,
-					)}
+					className={className}
+					onPointerDown={(e) => e.stopPropagation()}
 				>
-					<FolderInput className="w-3.5 h-3.5 text-slate-800" />
-					<span className="truncate max-w-[120px] text-slate-800">
-						{selectedList?.title || "リストを選択"}
-					</span>
-				</Badge>
+					{selectedList?.title || "リストを選択"}
+				</IconBadge>
 			</PopoverTrigger>
 			<PopoverContent className="w-[200px] p-0" align="start">
 				<ScrollArea className="h-48 p-1">

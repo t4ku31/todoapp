@@ -6,7 +6,7 @@ import { normalizeError } from "@/utils/error";
 
 interface CategoryState {
 	categories: Category[];
-	createCategory: (name: string, color: string) => Promise<void>;
+	createCategory: (name: string, color: string) => Promise<Category>;
 	updateCategory: (id: number, updates: Partial<Category>) => Promise<void>;
 	deleteCategory: (id: number) => Promise<void>;
 	fetchCategories: () => Promise<void>;
@@ -34,6 +34,7 @@ export const useCategoryStore = create<CategoryState>((set, get) => ({
 				categories: [...state.categories, response.data],
 			}));
 			toast.success("カテゴリを作成しました");
+			return response.data;
 		} catch (err) {
 			console.error("Failed to create category:", err);
 			const appError = normalizeError(err);

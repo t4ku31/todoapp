@@ -55,7 +55,7 @@ public class TaskListService {
             return List.of(inbox);
         }
 
-        log.info("Found {} task lists for user: {}", taskLists.size(), userId);
+        log.info("Found {}", taskLists);
         return taskLists;
     }
 

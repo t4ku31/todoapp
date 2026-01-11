@@ -1,15 +1,15 @@
+import { Button } from "@/components/ui/button";
+import { IconBadge } from "@/features/todo/components/ui/IconBadge";
+import { useTodoStore } from "@/store/useTodoStore";
 import { useDroppable } from "@dnd-kit/core";
 import { format, isSameDay } from "date-fns";
+import { Circle } from "lucide-react";
 import type { DayButtonProps } from "react-day-picker";
-import { Button } from "@/components/ui/button";
-import { useTodoStore } from "@/store/useTodoStore";
-import { TaskBadge } from "./TaskBadge";
 
 // Calendar day component that supports drag-and-drop
 // This replaces the default DayButton component of react-day-picker
 export function DroppableDayButton(props: DayButtonProps) {
 	const { day, modifiers, ...buttonProps } = props;
-	// Context is removed: const { selectedDate, setSelectedDate } = useCalendarContext();
 
 	const dayDate = day.date;
 	const dateKey = format(dayDate, "yyyy-MM-dd");
@@ -75,7 +75,16 @@ export function DroppableDayButton(props: DayButtonProps) {
 				{/* Full badges for 2xl and above */}
 				<div className="hidden 2xl:flex 2xl:flex-col 2xl:gap-1 w-full max-w-full overflow-hidden">
 					{displayTasks.map((task) => (
-						<TaskBadge key={task.id} task={task} />
+						<div key={task.id} className="w-full">
+							<IconBadge
+								icon={Circle}
+								variant="category"
+								color={task.category?.color || "#999"}
+								className="w-full justify-start py-0 px-1.5 h-auto text-[10px]"
+							>
+								{task.title}
+							</IconBadge>
+						</div>
 					))}
 					{remainingCount > 0 && (
 						<div className="text-[10px] text-muted-foreground pl-1 font-medium">

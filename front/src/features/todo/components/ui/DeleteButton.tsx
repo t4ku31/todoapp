@@ -16,24 +16,30 @@ interface DeleteButtonProps {
 	onDelete: () => void;
 	title?: string;
 	description?: string;
+	trigger?: React.ReactNode;
 }
 
 export function DeleteButton({
 	onDelete,
 	title = "タスクを削除しますか？",
 	description = "この操作は取り消せません。",
+	trigger,
 }: DeleteButtonProps) {
 	return (
 		<AlertDialog>
 			<AlertDialogTrigger asChild>
-				<Button
-					variant="ghost"
-					size="icon"
-					onPointerDown={(e) => e.stopPropagation()}
-					className="h-8 w-8 text-slate-400 hover:text-rose-500"
-				>
-					<Trash2 className="h-4 w-4 transition-colors" />
-				</Button>
+				{trigger ? (
+					trigger
+				) : (
+					<Button
+						variant="ghost"
+						size="icon"
+						onPointerDown={(e) => e.stopPropagation()}
+						className="h-8 w-8 text-slate-400 hover:text-rose-500"
+					>
+						<Trash2 className="h-4 w-4 transition-colors" />
+					</Button>
+				)}
 			</AlertDialogTrigger>
 			<AlertDialogContent>
 				<AlertDialogHeader>

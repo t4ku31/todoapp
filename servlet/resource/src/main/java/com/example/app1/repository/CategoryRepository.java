@@ -14,5 +14,7 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
 
     Optional<Category> findByUserIdAndName(String userId, String name);
 
+    Optional<Category> findByIdAndUserId(Long id, String userId);
+
     boolean existsByUserIdAndNameAndColor(String userId, String name, String color);
 }

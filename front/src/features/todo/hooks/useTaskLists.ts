@@ -131,6 +131,29 @@ export const useTaskLists = () => {
 		[taskLists],
 	);
 
+	// Create a new task list
+	const createTaskList = useCallback(async (title: string) => {
+		try {
+			const response = await apiClient.post<TaskList>("/api/tasklists", {
+				title,
+				tasks: [], // Empty tasks initially
+			});
+			const newList = response.data;
+
+			setTaskLists((prevLists) => [...prevLists, { ...newList, tasks: [] }]);
+
+			toast.success("リストを作成しました");
+			return newList;
+		} catch (err) {
+			console.error("Failed to create task list:", err);
+			const appError = normalizeError(err);
+			toast.error("リスト作成失敗", {
+				description: appError.message,
+			});
+			throw err;
+		}
+	}, []);
+
 	const deleteTaskList = useCallback(async (taskListId: number) => {
 		try {
 			await apiClient.delete(`/api/tasklists/${taskListId}`);
@@ -155,6 +178,12 @@ export const useTaskLists = () => {
 			title: string,
 			dueDate?: string | null,
 			executionDate?: string | null,
+			categoryId?: number,
+			estimatedPomodoros?: number,
+			subtasks?: { title: string; description?: string }[],
+			isRecurring?: boolean,
+			recurrenceRule?: string | null,
+			customDates?: string[],
 		) => {
 			try {
 				const response = await apiClient.post<Task>("/api/tasks", {
@@ -162,6 +191,12 @@ export const useTaskLists = () => {
 					taskListId,
 					dueDate,
 					executionDate,
+					categoryId,
+					estimatedPomodoros,
+					subtasks,
+					isRecurring,
+					recurrenceRule,
+					customDates,
 				});
 				const newTask = response.data;
 
@@ -177,6 +212,12 @@ export const useTaskLists = () => {
 									taskListId: taskListId,
 									dueDate: newTask.dueDate,
 									executionDate: newTask.executionDate,
+									category: newTask.category,
+									estimatedPomodoros: newTask.estimatedPomodoros,
+									subtasks: newTask.subtasks,
+									isRecurring: newTask.isRecurring,
+									recurrenceRule: newTask.recurrenceRule,
+									recurrenceParentId: newTask.recurrenceParentId,
 								},
 							];
 
@@ -189,7 +230,14 @@ export const useTaskLists = () => {
 					}),
 				);
 
-				toast.success("タスクを追加しました");
+				// Show appropriate message based on task type
+				if (customDates && customDates.length > 1) {
+					toast.success(`${customDates.length}件のタスクを作成しました`);
+				} else if (isRecurring) {
+					toast.success("繰り返しタスクを作成しました");
+				} else {
+					toast.success("タスクを追加しました");
+				}
 			} catch (err) {
 				console.error("Failed to create task:", err);
 				const appError = normalizeError(err);
@@ -271,6 +319,7 @@ export const useTaskLists = () => {
 		updateTaskListTitle,
 		updateTaskListDate,
 		updateTaskListCompletion,
+		createTaskList,
 		deleteTaskList,
 		createTask,
 		updateTask,
