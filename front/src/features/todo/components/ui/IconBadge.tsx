@@ -1,6 +1,6 @@
-import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import { forwardRef, type ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 type ColorScheme = "indigo" | "amber" | "rose" | "gray";
 

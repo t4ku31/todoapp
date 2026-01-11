@@ -1,11 +1,3 @@
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
 import { format, isBefore, startOfDay } from "date-fns";
 import { enUS } from "date-fns/locale";
 import {
@@ -16,6 +8,14 @@ import {
 	Repeat,
 } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { IconBadge } from "./IconBadge";
 
 type DateMode = "single" | "range" | "repeat";

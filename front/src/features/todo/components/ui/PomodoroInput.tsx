@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
 import { useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 
 interface PomodoroInputProps {
 	value?: number;
@@ -14,7 +14,7 @@ export function PomodoroInput({
 	onChange,
 	max = 10,
 	className,
-	color = "text-purple-500",
+	color = "text-indigo-500",
 }: PomodoroInputProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const isDraggingRef = useRef(false);
@@ -88,7 +88,7 @@ export function PomodoroInput({
 		<div
 			ref={containerRef}
 			className={cn(
-				"flex items-center gap-1 cursor-pointer select-none hover:bg-gray-100 rounded p-1 transition-colors outline-none focus:ring-2 focus:ring-offset-1 focus:ring-purple-500",
+				"flex items-center gap-1 cursor-pointer select-none hover:bg-gray-100 rounded p-1 transition-colors outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500",
 				color,
 				className,
 			)}

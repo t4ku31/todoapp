@@ -1,3 +1,10 @@
+import { Calendar } from "@/components/ui/calendar";
+import { Card } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { DailyTaskList } from "@/features/todo/components/DailyTaskList";
+import { IconBadge } from "@/features/todo/components/ui/IconBadge";
+import { useTodoStore } from "@/store/useTodoStore";
+import type { Task } from "@/types/types";
 import {
 	DndContext,
 	type DragEndEvent,
@@ -9,17 +16,10 @@ import {
 } from "@dnd-kit/core";
 import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import { format, parseISO } from "date-fns";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { CheckSquare, ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Calendar } from "@/components/ui/calendar";
-import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { DailyTaskList } from "@/features/todo/components/DailyTaskList";
-import { useTodoStore } from "@/store/useTodoStore";
-import type { Task } from "@/types/types";
 import { DroppableDayButton } from "./DroppableDayButton";
-import { TaskBadge } from "./TaskBadge";
 
 export default function CalendarView() {
 	const [selectedDate, setSelectedDate] = useState<Date | undefined>(
@@ -237,10 +237,16 @@ export default function CalendarView() {
 					</div>
 				</div>
 				{createPortal(
-					<DragOverlay className={`bg-[${activeTask?.category?.color}]`}>
+					<DragOverlay>
 						{activeTask ? (
-							<div className="w-[200px]">
-								<TaskBadge task={activeTask} />
+							<div className="opacity-90 rotate-2 cursor-grabbing pointer-events-none">
+								<IconBadge
+									icon={CheckSquare}
+									variant="category"
+									color={activeTask.category?.color || "#999"}
+								>
+									{activeTask.title}
+								</IconBadge>
 							</div>
 						) : null}
 					</DragOverlay>,

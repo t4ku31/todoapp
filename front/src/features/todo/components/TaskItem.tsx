@@ -1,10 +1,10 @@
+import { useDraggable } from "@dnd-kit/core";
+import { GripVertical, ListTree, Trash2, Undo2 } from "lucide-react";
+import { memo, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { usePomodoroStore } from "@/store/usePomodoroStore";
 import type { Task } from "@/types/types";
-import { useDraggable } from "@dnd-kit/core";
-import { GripVertical, ListTree, Trash2, Undo2 } from "lucide-react";
-import { memo, useEffect, useState } from "react";
 
 import { CategorySelect } from "./ui/CategorySelect";
 import { DeleteButton } from "./ui/DeleteButton";

@@ -6,7 +6,7 @@ export default function AppLayout() {
 	return (
 		<SidebarProvider className="w-full h-screen overflow-hidden flex">
 			<AppSidebar />
-			<main className="flex-1 h-full overflow-auto bg-gradient-to-r from-blue-200 via-purple-200 to-purple-300">
+			<main className="flex-1 h-full overflow-auto bg-gradient-to-br from-indigo-50 via-white to-purple-50">
 				<Outlet />
 			</main>
 		</SidebarProvider>

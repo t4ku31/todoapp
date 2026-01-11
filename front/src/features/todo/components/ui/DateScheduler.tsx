@@ -1,3 +1,8 @@
+import { format } from "date-fns";
+import { enUS } from "date-fns/locale";
+import { CalendarDays, CalendarRange, Repeat } from "lucide-react";
+import { useState } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -6,11 +11,6 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { enUS } from "date-fns/locale";
-import { CalendarDays, CalendarRange, Repeat } from "lucide-react";
-import { useState } from "react";
-import { useFormContext, useWatch } from "react-hook-form";
 import type { DateMode, DayOfWeek, TaskFormValues } from "../forms/schema";
 
 interface DateSchedulerProps {
@@ -21,7 +21,7 @@ interface DateSchedulerProps {
 
 export function DateScheduler({
 	className,
-	activeColor = "text-purple-600",
+	activeColor = "text-indigo-600",
 	onOpenChange,
 }: DateSchedulerProps) {
 	const { control, setValue } = useFormContext<TaskFormValues>();
@@ -184,7 +184,7 @@ export function DateScheduler({
 						className={cn(
 							"flex-1 px-4 py-2 text-sm font-medium transition-colors",
 							activeTab === "single"
-								? "border-b-2 border-purple-500 text-purple-600"
+								? "border-b-2 border-indigo-500 text-indigo-600"
 								: "text-gray-500 hover:text-gray-700",
 						)}
 					>
@@ -197,7 +197,7 @@ export function DateScheduler({
 						className={cn(
 							"flex-1 px-4 py-2 text-sm font-medium transition-colors",
 							activeTab === "range"
-								? "border-b-2 border-purple-500 text-purple-600"
+								? "border-b-2 border-indigo-500 text-indigo-600"
 								: "text-gray-500 hover:text-gray-700",
 						)}
 					>
@@ -210,7 +210,7 @@ export function DateScheduler({
 						className={cn(
 							"flex-1 px-4 py-2 text-sm font-medium transition-colors",
 							activeTab === "repeat"
-								? "border-b-2 border-purple-500 text-purple-600"
+								? "border-b-2 border-indigo-500 text-indigo-600"
 								: "text-gray-500 hover:text-gray-700",
 						)}
 					>
@@ -295,8 +295,8 @@ export function DateScheduler({
 											className={cn(
 												"px-3 py-2 text-sm rounded-lg border-2 transition-all font-medium",
 												repeatFrequency === option.value
-													? "border-purple-500 bg-purple-50 text-purple-700"
-													: "border-gray-200 hover:border-purple-300 text-gray-600",
+													? "border-indigo-500 bg-indigo-50 text-indigo-700"
+													: "border-gray-200 hover:border-indigo-300 text-gray-600",
 											)}
 										>
 											{option.label}
@@ -334,8 +334,8 @@ export function DateScheduler({
 													className={cn(
 														"w-9 h-9 rounded-full text-sm font-medium transition-all",
 														isSelected
-															? "bg-purple-500 text-white"
-															: "bg-gray-100 text-gray-600 hover:bg-purple-100",
+															? "bg-indigo-500 text-white"
+															: "bg-gray-100 text-gray-600 hover:bg-indigo-100",
 														day.value === "sun" &&
 															!isSelected &&
 															"text-red-500",
@@ -373,7 +373,7 @@ export function DateScheduler({
 												.map((date) => (
 													<span
 														key={date.toISOString()}
-														className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded"
+														className="px-2 py-1 text-xs bg-indigo-100 text-indigo-700 rounded"
 													>
 														{format(date, "M/d", { locale: enUS })}
 													</span>
@@ -402,8 +402,8 @@ export function DateScheduler({
 													className={cn(
 														"px-3 py-1.5 text-sm rounded-lg border transition-all",
 														executionDate
-															? "border-purple-300 bg-purple-50 text-purple-700"
-															: "border-gray-200 text-gray-500 hover:border-purple-300",
+															? "border-indigo-300 bg-indigo-50 text-indigo-700"
+															: "border-gray-200 text-gray-500 hover:border-indigo-300",
 													)}
 												>
 													{executionDate
@@ -440,7 +440,7 @@ export function DateScheduler({
 												name="repeatEndType"
 												checked={repeatEndType === "never"}
 												onChange={() => setValue("repeatEndType", "never")}
-												className="w-4 h-4 text-purple-600 focus:ring-purple-500"
+												className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
 											/>
 											<span className="text-sm text-gray-700">Never</span>
 										</label>
@@ -452,7 +452,7 @@ export function DateScheduler({
 												name="repeatEndType"
 												checked={repeatEndType === "on_date"}
 												onChange={() => setValue("repeatEndType", "on_date")}
-												className="w-4 h-4 text-purple-600 focus:ring-purple-500"
+												className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
 											/>
 											<span className="text-sm text-gray-700">On</span>
 											{repeatEndType === "on_date" && (
@@ -463,8 +463,8 @@ export function DateScheduler({
 															className={cn(
 																"px-2 py-1 text-sm rounded border transition-all",
 																repeatEndDate
-																	? "border-purple-300 bg-purple-50 text-purple-700"
-																	: "border-gray-200 text-gray-500 hover:border-purple-300",
+																	? "border-indigo-300 bg-indigo-50 text-indigo-700"
+																	: "border-gray-200 text-gray-500 hover:border-indigo-300",
 															)}
 														>
 															{repeatEndDate
@@ -502,7 +502,7 @@ export function DateScheduler({
 														setValue("repeatEndCount", 10);
 													}
 												}}
-												className="w-4 h-4 text-purple-600 focus:ring-purple-500"
+												className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
 											/>
 											<span className="text-sm text-gray-700">After</span>
 											{repeatEndType === "after_count" && (
@@ -518,7 +518,7 @@ export function DateScheduler({
 																Number.parseInt(e.target.value) || 1,
 															)
 														}
-														className="w-16 px-2 py-1 text-sm border rounded text-center focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+														className="w-16 px-2 py-1 text-sm border rounded text-center focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
 													/>
 													<span className="text-sm text-gray-700">times</span>
 												</>
@@ -530,13 +530,13 @@ export function DateScheduler({
 
 							{/* Summary */}
 							{repeatFrequency && (
-								<div className="mt-4 p-3 bg-purple-50 rounded-lg">
-									<div className="text-sm text-purple-700">
+								<div className="mt-4 p-3 bg-indigo-50 rounded-lg">
+									<div className="text-sm text-indigo-700">
 										<span className="font-medium">
 											{getRepeatLabel(repeatFrequency)}
 										</span>
 										{repeatFrequency === "weekly" && (
-											<span className="text-purple-600">
+											<span className="text-indigo-600">
 												{" "}
 												(
 												{repeatDays.length > 0
@@ -546,20 +546,20 @@ export function DateScheduler({
 											</span>
 										)}
 										{repeatFrequency === "custom" && customDates.length > 0 && (
-											<span className="text-purple-600">
+											<span className="text-indigo-600">
 												{" "}
 												• {customDates.length} dates selected
 											</span>
 										)}
 										{repeatFrequency !== "custom" && executionDate && (
-											<span className="text-purple-600">
+											<span className="text-indigo-600">
 												{" "}
 												• from{" "}
 												{format(executionDate, "MMM d", { locale: enUS })}
 											</span>
 										)}
 										{repeatFrequency !== "custom" && (
-											<span className="text-purple-600">
+											<span className="text-indigo-600">
 												{" "}
 												• {getEndSummary()}
 											</span>

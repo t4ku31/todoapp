@@ -1,7 +1,3 @@
-import { cn } from "@/lib/utils";
-import { useCategoryStore } from "@/store/useCategoryStore";
-import { useTodoStore } from "@/store/useTodoStore";
-import type { Task } from "@/types/types";
 import {
 	DndContext,
 	type DragEndEvent,
@@ -10,6 +6,10 @@ import {
 } from "@dnd-kit/core";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { useCategoryStore } from "@/store/useCategoryStore";
+import { useTodoStore } from "@/store/useTodoStore";
+import type { Task } from "@/types/types";
 import { FilteredTaskView } from "./FilteredTaskView";
 import { TaskDetailPanel } from "./TaskDetailPanel";
 import { TaskSidebar } from "./TaskSidebar";

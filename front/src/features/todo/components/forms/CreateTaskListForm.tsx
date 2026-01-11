@@ -1,3 +1,7 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { format } from "date-fns";
+import { CalendarIcon, Check, Plus, Trash2, X } from "lucide-react";
+import { useFieldArray, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -10,10 +14,6 @@ import { apiClient } from "@/config/env";
 import { cn } from "@/lib/utils";
 import { useCategoryStore } from "@/store/useCategoryStore";
 import type { TaskList } from "@/types/types";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
-import { CalendarIcon, Check, Plus, Trash2, X } from "lucide-react";
-import { useFieldArray, useForm } from "react-hook-form";
 import { type TaskListFormValues, taskListSchema } from "./schema";
 import { TaskInput } from "./TaskInput";
 
@@ -58,8 +58,6 @@ export default function CreateTaskListForm({
 
 	// Save task list
 	const onSubmit = async (data: TaskListFormValues) => {
-		console.log("arg from onSubmit:", data);
-
 		const validTasks = data.tasks
 			.filter((t) => t.title && t.title.trim() !== "")
 			.map((t) => ({
@@ -69,7 +67,6 @@ export default function CreateTaskListForm({
 					: null,
 				categoryId: t.categoryId,
 			}));
-		console.log("validTasks from onSubmit:", validTasks);
 		if (validTasks.length === 0 && !data.title) return; // Should be handled by validation but extra safety
 
 		const tasklist = {
@@ -79,12 +76,10 @@ export default function CreateTaskListForm({
 		};
 
 		try {
-			console.log("Request new list:", tasklist);
 			const response = await apiClient.post<TaskList>(
 				"/api/tasklists",
 				tasklist,
 			);
-			console.log("Response new list:", response.data);
 			onTaskListCreated(response.data);
 		} catch (error) {
 			console.error("Failed to create task list:", error);

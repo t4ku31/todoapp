@@ -27,7 +27,7 @@ function App() {
 
 				<Route element={<AppLayout />}>
 					<Route path="/home" element={<HomePage />} />
-					<Route path="/tasks" element={<Todo />} />
+					<Route path="/tasks/*" element={<Todo />} />
 					<Route path="/calendar" element={<CalendarPage />} />
 					<Route path="/analytics" element={<Analytics />} />
 					<Route path="/settings" element={<Settings />} />

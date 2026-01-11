@@ -79,7 +79,7 @@ export default function HomeView() {
 		executionDate?: string | null,
 		categoryId?: number,
 		estimatedPomodoros?: number,
-        subtasks?: { title: string; description?: string }[],
+		subtasks?: { title: string; description?: string }[],
 	) => {
 		await createTask(
 			taskListId,
@@ -88,7 +88,7 @@ export default function HomeView() {
 			executionDate,
 			categoryId,
 			estimatedPomodoros,
-            subtasks,
+			subtasks,
 		);
 	};
 

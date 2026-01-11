@@ -1,3 +1,5 @@
+import { Tag } from "lucide-react";
+import { useState } from "react";
 import {
 	Popover,
 	PopoverContent,
@@ -6,8 +8,6 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useCategoryStore } from "@/store/useCategoryStore";
-import { Tag } from "lucide-react";
-import { useState } from "react";
 import { IconBadge } from "./IconBadge";
 
 interface CategorySelectProps {

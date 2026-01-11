@@ -1,9 +1,9 @@
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { apiClient } from "@/config/env";
 import { sortTasks } from "@/features/todo/utils/taskSorter";
 import type { Task, TaskList } from "@/types/types";
 import { normalizeError } from "@/utils/error";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
 
 export const useTaskLists = () => {
 	const [taskLists, setTaskLists] = useState<TaskList[]>([]);
@@ -130,6 +130,29 @@ export const useTaskLists = () => {
 		},
 		[taskLists],
 	);
+
+	// Create a new task list
+	const createTaskList = useCallback(async (title: string) => {
+		try {
+			const response = await apiClient.post<TaskList>("/api/tasklists", {
+				title,
+				tasks: [], // Empty tasks initially
+			});
+			const newList = response.data;
+
+			setTaskLists((prevLists) => [...prevLists, { ...newList, tasks: [] }]);
+
+			toast.success("リストを作成しました");
+			return newList;
+		} catch (err) {
+			console.error("Failed to create task list:", err);
+			const appError = normalizeError(err);
+			toast.error("リスト作成失敗", {
+				description: appError.message,
+			});
+			throw err;
+		}
+	}, []);
 
 	const deleteTaskList = useCallback(async (taskListId: number) => {
 		try {
@@ -296,6 +319,7 @@ export const useTaskLists = () => {
 		updateTaskListTitle,
 		updateTaskListDate,
 		updateTaskListCompletion,
+		createTaskList,
 		deleteTaskList,
 		createTask,
 		updateTask,

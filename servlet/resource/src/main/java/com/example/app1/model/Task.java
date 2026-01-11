@@ -132,6 +132,13 @@ public class Task {
     private TaskStatus status = TaskStatus.PENDING;
 
     /**
+     * Whether the task is in the trash (soft deleted)
+     */
+    @Column(name = "is_deleted")
+    @Builder.Default
+    private Boolean isDeleted = false;
+
+    /**
      * Timestamp when the task was created
      */
     @CreationTimestamp

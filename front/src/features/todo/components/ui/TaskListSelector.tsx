@@ -1,3 +1,5 @@
+import { Check, FolderInput } from "lucide-react";
+import { useState } from "react";
 import {
 	Popover,
 	PopoverContent,
@@ -6,8 +8,6 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useTodoStore } from "@/store/useTodoStore";
-import { Check, FolderInput } from "lucide-react";
-import { useState } from "react";
 import { IconBadge } from "./IconBadge";
 
 interface TaskListSelectorProps {
