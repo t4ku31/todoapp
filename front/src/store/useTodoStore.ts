@@ -34,10 +34,12 @@ interface TodoState {
 		dueDate?: string | null,
 		executionDate?: string | null,
 		categoryId?: number,
-
 		estimatedPomodoros?: number,
 		subtasks?: { title: string; description?: string }[],
-	) => Promise<void>;
+		scheduledStartAt?: string | null,
+		scheduledEndAt?: string | null,
+		isAllDay?: boolean,
+	) => Promise<Task>;
 	updateTask: (
 		taskId: number,
 		updates: Partial<Task> & { categoryId?: number; taskListId?: number },
@@ -367,6 +369,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		categoryId,
 		estimatedPomodoros,
 		subtasks,
+		scheduledStartAt,
+		scheduledEndAt,
+		isAllDay,
 	) => {
 		try {
 			const response = await apiClient.post<Task>("/api/tasks", {
@@ -377,6 +382,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 				categoryId,
 				estimatedPomodoros,
 				subtasks,
+				scheduledStartAt,
+				scheduledEndAt,
+				isAllDay,
 			});
 			const newTask = response.data;
 
@@ -400,6 +408,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 			}));
 
 			toast.success("タスクを追加しました");
+			return newTask;
 		} catch (err) {
 			console.error("Failed to create task:", err);
 			const appError = normalizeError(err);
