@@ -64,7 +64,7 @@ class TaskServiceTest {
     void createTask_Basic() {
         // Arrange
         TaskDto.Create request = new TaskDto.Create(
-                "Test Task", 1L, LocalDate.now(), 1L, null, 2, false, null, null);
+                "Test Task", 1L, LocalDate.now(), 1L, null, 2, false, null, null, null, null, null);
 
         when(taskListRepository.existsByIdAndUserId(1L, userId)).thenReturn(true);
         when(taskListRepository.getReferenceById(1L)).thenReturn(mockTaskList);
@@ -92,7 +92,7 @@ class TaskServiceTest {
                 LocalDate.of(2026, 1, 1),
                 LocalDate.of(2026, 1, 5));
         TaskDto.Create request = new TaskDto.Create(
-                "Multi Date Task", 1L, null, 1L, null, 1, false, null, dates);
+                "Multi Date Task", 1L, null, 1L, null, 1, false, null, dates, null, null, null);
 
         when(taskListRepository.existsByIdAndUserId(1L, userId)).thenReturn(true);
         when(taskListRepository.getReferenceById(1L)).thenReturn(mockTaskList);
@@ -117,7 +117,7 @@ class TaskServiceTest {
         LocalDate startDate = LocalDate.of(2026, 1, 5); // Monday
 
         TaskDto.Create request = new TaskDto.Create(
-                "Recurring Task", 1L, startDate, 1L, null, 1, true, recurrenceRule, null);
+                "Recurring Task", 1L, startDate, 1L, null, 1, true, recurrenceRule, null, null, null, null);
 
         when(taskListRepository.existsByIdAndUserId(1L, userId)).thenReturn(true);
         when(taskListRepository.getReferenceById(1L)).thenReturn(mockTaskList);
@@ -162,7 +162,7 @@ class TaskServiceTest {
         LocalDate startDate = LocalDate.of(2026, 1, 1);
 
         TaskDto.Create request = new TaskDto.Create(
-                "Daily Task", 1L, startDate, 1L, null, 1, true, recurrenceRule, null);
+                "Daily Task", 1L, startDate, 1L, null, 1, true, recurrenceRule, null, null, null, null);
 
         when(taskListRepository.existsByIdAndUserId(1L, userId)).thenReturn(true);
         when(taskListRepository.getReferenceById(1L)).thenReturn(mockTaskList);
