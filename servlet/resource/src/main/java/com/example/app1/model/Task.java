@@ -92,6 +92,25 @@ public class Task {
     private LocalDate endDate;
 
     /**
+     * Scheduled start datetime for calendar events
+     */
+    @Column(name = "scheduled_start_at")
+    private LocalDateTime scheduledStartAt;
+
+    /**
+     * Scheduled end datetime for calendar events
+     */
+    @Column(name = "scheduled_end_at")
+    private LocalDateTime scheduledEndAt;
+
+    /**
+     * Whether this is an all-day event (no specific time)
+     */
+    @Column(name = "is_all_day")
+    @Builder.Default
+    private Boolean isAllDay = true;
+
+    /**
      * Task description (Markdown supported)
      */
     @Column(name = "description", columnDefinition = "TEXT")

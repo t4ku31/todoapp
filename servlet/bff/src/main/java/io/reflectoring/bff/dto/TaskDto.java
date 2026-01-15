@@ -1,6 +1,7 @@
 package io.reflectoring.bff.dto;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -20,7 +21,10 @@ public class TaskDto {
                         @Schema(description = "Estimated number of pomodoros", example = "2") Integer estimatedPomodoros,
                         @Schema(description = "Whether this is a recurring task") Boolean isRecurring,
                         @Schema(description = "Recurrence rule in JSON format") String recurrenceRule,
-                        @Schema(description = "Custom dates for multi-select mode") List<LocalDate> customDates) {
+                        @Schema(description = "Custom dates for multi-select mode") List<LocalDate> customDates,
+                        @Schema(description = "Scheduled start time") LocalDateTime scheduledStartAt,
+                        @Schema(description = "Scheduled end time") LocalDateTime scheduledEndAt,
+                        @Schema(description = "Whether this is an all-day event") Boolean isAllDay) {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -31,11 +35,14 @@ public class TaskDto {
                         @Schema(description = "Execution date", example = "2023-12-24") LocalDate executionDate,
                         @Schema(description = "Category ID", example = "1") Long categoryId,
                         @Schema(description = "Task list ID", example = "1") Long taskListId,
-                        @Schema(description = "Completed at timestamp", example = "2023-12-24T10:00:00") java.time.LocalDateTime completedAt,
+                        @Schema(description = "Completed at timestamp", example = "2023-12-24T10:00:00") LocalDateTime completedAt,
                         @Schema(description = "Estimated number of pomodoros", example = "2") Integer estimatedPomodoros,
                         @Schema(description = "Whether this is a recurring task") Boolean isRecurring,
                         @Schema(description = "Recurrence rule in JSON format") String recurrenceRule,
-                        @Schema(description = "Task description/notes") String description) {
+                        @Schema(description = "Task description/notes") String description,
+                        @Schema(description = "Scheduled start time") LocalDateTime scheduledStartAt,
+                        @Schema(description = "Scheduled end time") LocalDateTime scheduledEndAt,
+                        @Schema(description = "Whether this is an all-day event") Boolean isAllDay) {
         }
 
         @JsonIgnoreProperties(ignoreUnknown = true)
@@ -49,12 +56,15 @@ public class TaskDto {
                         @Schema(description = "Category details") CategoryDto.Response category,
                         @Schema(description = "Subtasks list") List<SubtaskDto.Summary> subtasks,
                         @Schema(description = "Estimated number of pomodoros", example = "2") Integer estimatedPomodoros,
-                        @Schema(description = "Completed at timestamp") java.time.LocalDateTime completedAt,
+                        @Schema(description = "Completed at timestamp") LocalDateTime completedAt,
                         @Schema(description = "Whether this is a recurring task") Boolean isRecurring,
                         @Schema(description = "Recurrence rule") String recurrenceRule,
                         @Schema(description = "Parent task ID for recurring instances") Long recurrenceParentId,
                         @Schema(description = "Whether the task is in the trash") Boolean isDeleted,
-                        @Schema(description = "Task description/notes") String description) {
+                        @Schema(description = "Task description/notes") String description,
+                        @Schema(description = "Scheduled start time") LocalDateTime scheduledStartAt,
+                        @Schema(description = "Scheduled end time") LocalDateTime scheduledEndAt,
+                        @Schema(description = "Whether this is an all-day event") Boolean isAllDay) {
         }
 
         @Schema(name = "TaskStats")

@@ -1,6 +1,7 @@
 package com.example.app1.dto;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.example.app1.model.TaskStatus;
@@ -17,18 +18,20 @@ public class TaskDto {
         @Schema(name = "TaskCreate")
         public record Create(String title, Long taskListId, LocalDate executionDate,
                         Long categoryId, List<SubtaskDto.Create> subtasks, Integer estimatedPomodoros,
-                        Boolean isRecurring, String recurrenceRule, List<LocalDate> customDates) {
+                        Boolean isRecurring, String recurrenceRule, List<LocalDate> customDates,
+                        LocalDateTime scheduledStartAt, LocalDateTime scheduledEndAt, Boolean isAllDay) {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @Schema(name = "TaskUpdate")
         public record Update(String title, TaskStatus status, LocalDate executionDate,
                         Long categoryId, Long taskListId,
-                        java.time.LocalDateTime completedAt,
+                        LocalDateTime completedAt,
                         Integer estimatedPomodoros,
                         Boolean isRecurring,
                         String recurrenceRule,
-                        String description) {
+                        String description,
+                        LocalDateTime scheduledStartAt, LocalDateTime scheduledEndAt, Boolean isAllDay) {
         }
 
         /**

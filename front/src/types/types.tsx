@@ -27,6 +27,10 @@ export interface Task {
 	recurrenceParentId?: number;
 	isDeleted?: boolean;
 	description?: string;
+	// Calendar scheduling fields
+	scheduledStartAt?: string; // ISO 8601 datetime string
+	scheduledEndAt?: string; // ISO 8601 datetime string
+	isAllDay?: boolean;
 }
 
 export interface Subtask {
