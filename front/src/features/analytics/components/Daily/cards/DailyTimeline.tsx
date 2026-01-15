@@ -27,8 +27,8 @@ export function DailyTimeline({ sessions }: DailyTimelineProps) {
 		if (Number.isNaN(hours)) {
 			const parts = timeString.split(":");
 			if (parts.length >= 2) {
-				hours = parseInt(parts[0]);
-				mins = parseInt(parts[1]);
+				hours = parseInt(parts[0], 10);
+				mins = parseInt(parts[1], 10);
 			}
 		}
 

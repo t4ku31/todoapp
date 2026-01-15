@@ -9,7 +9,7 @@ export function softenColor(hexColor: string): string {
 	try {
 		// Desaturate by 0.5 (make it less vibrant) and brighten by 0.5 (make it more pastel)
 		return chroma(hexColor).desaturate(0.5).brighten(0.5).hex();
-	} catch (e) {
+	} catch (_e) {
 		console.warn("Invalid color:", hexColor);
 		return hexColor;
 	}

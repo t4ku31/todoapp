@@ -606,10 +606,8 @@ export function FilteredTaskView({
 										</div>
 										{/* Completed items for this specific day */}
 										{(() => {
-											const completedForDay = completedWeekTasks.filter(
-												(t) =>
-													t.executionDate &&
-													t.executionDate.startsWith(dateStr),
+											const completedForDay = completedWeekTasks.filter((t) =>
+												t.executionDate?.startsWith(dateStr),
 											);
 											if (completedForDay.length === 0) return null;
 											return (
