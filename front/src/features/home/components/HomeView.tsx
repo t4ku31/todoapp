@@ -81,7 +81,7 @@ export default function HomeView() {
 		estimatedPomodoros?: number;
 		subtasks?: { title: string; description?: string }[];
 	}) => {
-		await createTask(params);
+		return await createTask(params);
 	};
 
 	return (
