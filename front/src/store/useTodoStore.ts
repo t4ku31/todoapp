@@ -6,6 +6,23 @@ import { sortTasks } from "@/features/todo/utils/taskSorter";
 import type { Task, TaskList } from "@/types/types";
 import { normalizeError } from "@/utils/error";
 
+// Parameters for createTask
+export interface CreateTaskParams {
+	taskListId: number;
+	title: string;
+	dueDate?: string | null;
+	executionDate?: string | null;
+	categoryId?: number;
+	estimatedPomodoros?: number;
+	subtasks?: { title: string; description?: string }[];
+	isRecurring?: boolean;
+	recurrenceRule?: string | null;
+	customDates?: string[];
+	scheduledStartAt?: string | null;
+	scheduledEndAt?: string | null;
+	isAllDay?: boolean;
+}
+
 interface TodoState {
 	taskLists: TaskList[];
 	allTasks: Task[]; // Flattened list for optimized access
@@ -28,16 +45,7 @@ interface TodoState {
 	deleteTaskList: (taskListId: number) => Promise<void>;
 	createTaskList: (title: string) => Promise<TaskList>;
 
-	createTask: (
-		taskListId: number,
-		title: string,
-		dueDate?: string | null,
-		executionDate?: string | null,
-		categoryId?: number,
-
-		estimatedPomodoros?: number,
-		subtasks?: { title: string; description?: string }[],
-	) => Promise<void>;
+	createTask: (params: CreateTaskParams) => Promise<Task>;
 	updateTask: (
 		taskId: number,
 		updates: Partial<Task> & { categoryId?: number; taskListId?: number },
@@ -359,25 +367,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		}
 	},
 
-	createTask: async (
-		taskListId,
-		title,
-		dueDate,
-		executionDate,
-		categoryId,
-		estimatedPomodoros,
-		subtasks,
-	) => {
+	createTask: async (params) => {
+		const { taskListId } = params;
 		try {
-			const response = await apiClient.post<Task>("/api/tasks", {
-				title,
-				taskListId,
-				dueDate,
-				executionDate,
-				categoryId,
-				estimatedPomodoros,
-				subtasks,
-			});
+			const response = await apiClient.post<Task>("/api/tasks", params);
 			const newTask = response.data;
 
 			set((state) => ({
@@ -400,6 +393,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 			}));
 
 			toast.success("タスクを追加しました");
+			return newTask;
 		} catch (err) {
 			console.error("Failed to create task:", err);
 			const appError = normalizeError(err);

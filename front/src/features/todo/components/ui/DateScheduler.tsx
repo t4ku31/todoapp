@@ -515,7 +515,7 @@ export function DateScheduler({
 														onChange={(e) =>
 															setValue(
 																"repeatEndCount",
-																Number.parseInt(e.target.value) || 1,
+																Number.parseInt(e.target.value, 10) || 1,
 															)
 														}
 														className="w-16 px-2 py-1 text-sm border rounded text-center focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"

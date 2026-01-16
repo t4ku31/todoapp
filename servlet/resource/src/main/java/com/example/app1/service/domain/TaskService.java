@@ -482,6 +482,17 @@ public class TaskService {
             log.debug("Updated description for task {}", id);
         }
 
+        // Handle schedule update
+        if (request.scheduledStartAt() != null) {
+            existing.setScheduledStartAt(request.scheduledStartAt());
+        }
+        if (request.scheduledEndAt() != null) {
+            existing.setScheduledEndAt(request.scheduledEndAt());
+        }
+        if (request.isAllDay() != null) {
+            existing.setIsAllDay(request.isAllDay());
+        }
+
         // Handle isRecurring and recurrenceRule update
         Boolean wasRecurring = existing.getIsRecurring();
         Boolean isNowRecurring = request.isRecurring();

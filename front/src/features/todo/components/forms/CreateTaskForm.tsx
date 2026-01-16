@@ -11,6 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import type { CreateTaskParams } from "@/store/useTodoStore";
+import type { Task } from "@/types/types";
 import { CategorySelect } from "../ui/CategorySelect";
 import { DateScheduler } from "../ui/DateScheduler";
 import { PomodoroInput } from "../ui/PomodoroInput";
@@ -19,18 +21,7 @@ import { type TaskFormValues, taskSchema } from "./schema";
 
 interface CreateTaskFormProps {
 	taskListId: number;
-	onCreateTask: (
-		taskListId: number,
-		title: string,
-		dueDate?: string | null,
-		executionDate?: string | null,
-		categoryId?: number,
-		estimatedPomodoros?: number,
-		subtasks?: { title: string; description?: string }[],
-		isRecurring?: boolean,
-		recurrenceRule?: string | null,
-		customDates?: string[],
-	) => Promise<void>;
+	onCreateTask: (params: CreateTaskParams) => Promise<Task>;
 	className?: string;
 	placeholder?: string;
 	autoFocus?: boolean;
@@ -124,21 +115,20 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 					}
 				}
 
-				await onCreateTask(
-					selectedTaskListId,
-					data.title,
-					null,
-					data.executionDate
+				await onCreateTask({
+					taskListId: selectedTaskListId,
+					title: data.title,
+					executionDate: data.executionDate
 						? format(data.executionDate, "yyyy-MM-dd")
 						: format(new Date(), "yyyy-MM-dd"),
-					data.categoryId,
-					data.estimatedPomodoros,
+					categoryId: data.categoryId,
+					estimatedPomodoros: data.estimatedPomodoros,
 					// Filter out empty subtasks
-					data.subtasks?.filter((s) => s.title.trim() !== ""),
-					isRecurring,
-					recurrenceRule,
-					customDatesForApi,
-				);
+					subtasks: data.subtasks?.filter((s) => s.title.trim() !== ""),
+					isRecurring: isRecurring,
+					recurrenceRule: recurrenceRule,
+					customDates: customDatesForApi,
+				});
 				form.reset({
 					title: "",
 					dateMode: "single",

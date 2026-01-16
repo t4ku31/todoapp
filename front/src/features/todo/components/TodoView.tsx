@@ -46,13 +46,14 @@ export default function TodoView() {
 		setSelectedTaskId(null);
 	}, [location.pathname]);
 
-	// Responsive Sidebar Handling
+	// Responsive Layout Handling
 	useEffect(() => {
 		const mediaQuery = window.matchMedia("(min-width: 1024px)");
 
 		const handleResize = (e: MediaQueryListEvent | MediaQueryList) => {
 			if (!e.matches) {
 				setIsSidebarOpen(false); // Close on mobile/tablet
+				setSelectedTaskId(null); // Close detail panel on mobile/tablet
 			} else {
 				setIsSidebarOpen(true); // Open on desktop
 			}
@@ -206,9 +207,24 @@ export default function TodoView() {
 					/>
 				</div>
 
-				{/* Task Detail Panel - Overlay */}
+				{/* Task Detail Panel - Overlay (<lg), Side-by-side (>=lg) */}
 				{selectedTaskId && (
-					<div className="absolute right-0 top-0 bottom-0 z-30 h-full w-[400px] shadow-2xl bg-white border-l border-gray-100 animate-in slide-in-from-right duration-300">
+					<div
+						className={cn(
+							// Common
+							"h-full bg-white border-l border-gray-100 z-30",
+							"animate-in slide-in-from-right duration-300",
+
+							// Mobile/Tablet (<lg): Absolute Overlay
+							"absolute inset-y-0 right-0 shadow-2xl",
+
+							// Width: Full on mobile, 400px on tablet/desktop
+							"w-full sm:w-[400px]",
+
+							// Desktop (>=lg): Static (Side-by-side)
+							"lg:static lg:shadow-none lg:z-auto",
+						)}
+					>
 						<TaskDetailPanel
 							taskId={selectedTaskId}
 							onClose={handleCloseDetail}

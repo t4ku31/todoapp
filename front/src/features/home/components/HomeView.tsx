@@ -72,24 +72,16 @@ export default function HomeView() {
 		navigate("/focus");
 	};
 
-	const onCreateTask = async (
-		taskListId: number,
-		title: string,
-		dueDate?: string | null,
-		executionDate?: string | null,
-		categoryId?: number,
-		estimatedPomodoros?: number,
-		subtasks?: { title: string; description?: string }[],
-	) => {
-		await createTask(
-			taskListId,
-			title,
-			dueDate,
-			executionDate,
-			categoryId,
-			estimatedPomodoros,
-			subtasks,
-		);
+	const onCreateTask = async (params: {
+		taskListId: number;
+		title: string;
+		dueDate?: string | null;
+		executionDate?: string | null;
+		categoryId?: number;
+		estimatedPomodoros?: number;
+		subtasks?: { title: string; description?: string }[];
+	}) => {
+		return await createTask(params);
 	};
 
 	return (

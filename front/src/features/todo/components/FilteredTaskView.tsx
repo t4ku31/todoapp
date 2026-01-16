@@ -12,7 +12,7 @@ import { useLocation, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useCategoryStore } from "@/store/useCategoryStore";
-import { useTodoStore } from "@/store/useTodoStore";
+import { type CreateTaskParams, useTodoStore } from "@/store/useTodoStore";
 import type { Task } from "@/types/types";
 import { CreateTaskForm } from "./forms/CreateTaskForm";
 import { TaskItem } from "./TaskItem";
@@ -21,15 +21,7 @@ import { CompletedSection } from "./ui/CompletedSection";
 interface FilteredTaskViewProps {
 	onUpdateTask: (taskId: number, updates: Partial<Task>) => Promise<void>;
 	onDeleteTask: (taskId: number) => Promise<void>;
-	onCreateTask: (
-		taskListId: number,
-		title: string,
-		dueDate?: string | null,
-		executionDate?: string | null,
-		categoryId?: number,
-		estimatedPomodoros?: number,
-		subtasks?: { title: string; description?: string }[],
-	) => Promise<void>;
+	onCreateTask: (params: CreateTaskParams) => Promise<Task>;
 	onTaskSelect?: (taskId: number | null) => void;
 	selectedTaskId?: number | null;
 	// Bulk selection props (controlled from parent for DnD support)
@@ -606,10 +598,8 @@ export function FilteredTaskView({
 										</div>
 										{/* Completed items for this specific day */}
 										{(() => {
-											const completedForDay = completedWeekTasks.filter(
-												(t) =>
-													t.executionDate &&
-													t.executionDate.startsWith(dateStr),
+											const completedForDay = completedWeekTasks.filter((t) =>
+												t.executionDate?.startsWith(dateStr),
 											);
 											if (completedForDay.length === 0) return null;
 											return (
