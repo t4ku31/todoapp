@@ -1,8 +1,3 @@
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { useCategoryStore } from "@/store/useCategoryStore";
-import { type CreateTaskParams, useTodoStore } from "@/store/useTodoStore";
-import type { Task } from "@/types/types";
 import { format } from "date-fns";
 import {
 	CheckCircle2,
@@ -14,6 +9,11 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useSearchParams } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { useCategoryStore } from "@/store/useCategoryStore";
+import { type CreateTaskParams, useTodoStore } from "@/store/useTodoStore";
+import type { Task } from "@/types/types";
 import { CreateTaskForm } from "./forms/CreateTaskForm";
 import { TaskItem } from "./TaskItem";
 import { CompletedSection } from "./ui/CompletedSection";

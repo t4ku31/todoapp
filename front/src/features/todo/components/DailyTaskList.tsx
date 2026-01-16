@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CreateTaskForm } from "@/features/todo/components/forms/CreateTaskForm";
+import type { CreateTaskParams } from "@/store/useTodoStore";
 import type { Task } from "@/types/types";
 import { TaskItem } from "./TaskItem";
 import { CompletedSection } from "./ui/CompletedSection";
@@ -14,15 +15,7 @@ interface DailyTaskListProps {
 	tasks: Task[]; // All tasks - will be filtered by date internally
 	onUpdateTask: (taskId: number, updates: Partial<Task>) => Promise<void>;
 	onDeleteTask: (taskId: number) => Promise<void>;
-	onCreateTask: (
-		taskListId: number,
-		title: string,
-		dueDate?: string | null,
-		executionDate?: string | null,
-		categoryId?: number,
-		estimatedPomodoros?: number,
-		subtasks?: { title: string; description?: string }[],
-	) => Promise<void>;
+	onCreateTask: (params: CreateTaskParams) => Promise<Task>;
 	onPrevDay?: () => void;
 	onNextDay?: () => void;
 	taskListId: number;
