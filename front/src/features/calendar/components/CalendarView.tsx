@@ -1,3 +1,7 @@
+import { Calendar as MiniCalendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { useTodoStore } from "@/store/useTodoStore";
+import type { Task } from "@/types/types";
 import { addHours, format, getDay, parse, startOfWeek } from "date-fns";
 import { ja } from "date-fns/locale";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -10,10 +14,6 @@ import {
 import withDragAndDrop, {
 	type EventInteractionArgs,
 } from "react-big-calendar/lib/addons/dragAndDrop";
-import { Calendar as MiniCalendar } from "@/components/ui/calendar";
-import { Input } from "@/components/ui/input";
-import { useTodoStore } from "@/store/useTodoStore";
-import type { Task } from "@/types/types";
 import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./calendar.css";
@@ -236,18 +236,14 @@ export default function CalendarView() {
 
 		try {
 			// Create task with all schedule info in a single call
-			await createTask(
+			await createTask({
 				taskListId,
 				title,
-				null, // dueDate
-				format(newEventDraft.start, "yyyy-MM-dd"), // executionDate
-				undefined, // categoryId
-				undefined, // estimatedPomodoros
-				undefined, // subtasks
-				newEventDraft.start.toISOString(), // scheduledStartAt
-				newEventDraft.end.toISOString(), // scheduledEndAt
-				newEventDraft.allDay, // isAllDay
-			);
+				executionDate: format(newEventDraft.start, "yyyy-MM-dd"),
+				scheduledStartAt: newEventDraft.start.toISOString(),
+				scheduledEndAt: newEventDraft.end.toISOString(),
+				isAllDay: newEventDraft.allDay,
+			});
 		} catch {
 			// Error is handled in createTask
 		}

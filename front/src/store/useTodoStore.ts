@@ -1,10 +1,27 @@
-import * as React from "react";
-import { toast } from "sonner";
-import { create } from "zustand";
 import { apiClient } from "@/config/env";
 import { sortTasks } from "@/features/todo/utils/taskSorter";
 import type { Task, TaskList } from "@/types/types";
 import { normalizeError } from "@/utils/error";
+import * as React from "react";
+import { toast } from "sonner";
+import { create } from "zustand";
+
+// Parameters for createTask
+export interface CreateTaskParams {
+	taskListId: number;
+	title: string;
+	dueDate?: string | null;
+	executionDate?: string | null;
+	categoryId?: number;
+	estimatedPomodoros?: number;
+	subtasks?: { title: string; description?: string }[];
+	isRecurring?: boolean;
+	recurrenceRule?: string | null;
+	customDates?: string[];
+	scheduledStartAt?: string | null;
+	scheduledEndAt?: string | null;
+	isAllDay?: boolean;
+}
 
 interface TodoState {
 	taskLists: TaskList[];
@@ -28,18 +45,7 @@ interface TodoState {
 	deleteTaskList: (taskListId: number) => Promise<void>;
 	createTaskList: (title: string) => Promise<TaskList>;
 
-	createTask: (
-		taskListId: number,
-		title: string,
-		dueDate?: string | null,
-		executionDate?: string | null,
-		categoryId?: number,
-		estimatedPomodoros?: number,
-		subtasks?: { title: string; description?: string }[],
-		scheduledStartAt?: string | null,
-		scheduledEndAt?: string | null,
-		isAllDay?: boolean,
-	) => Promise<Task>;
+	createTask: (params: CreateTaskParams) => Promise<Task>;
 	updateTask: (
 		taskId: number,
 		updates: Partial<Task> & { categoryId?: number; taskListId?: number },
@@ -361,31 +367,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		}
 	},
 
-	createTask: async (
-		taskListId,
-		title,
-		dueDate,
-		executionDate,
-		categoryId,
-		estimatedPomodoros,
-		subtasks,
-		scheduledStartAt,
-		scheduledEndAt,
-		isAllDay,
-	) => {
+	createTask: async (params) => {
+		const { taskListId } = params;
 		try {
-			const response = await apiClient.post<Task>("/api/tasks", {
-				title,
-				taskListId,
-				dueDate,
-				executionDate,
-				categoryId,
-				estimatedPomodoros,
-				subtasks,
-				scheduledStartAt,
-				scheduledEndAt,
-				isAllDay,
-			});
+			const response = await apiClient.post<Task>("/api/tasks", params);
 			const newTask = response.data;
 
 			set((state) => ({
