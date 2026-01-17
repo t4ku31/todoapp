@@ -130,7 +130,7 @@ export interface WeeklyCategoryAggregation {
 
 /**
  * Task summary for analytics views.
- * Used in both Daily and Weekly task lists.
+ * Represents a single task instance (child of grouped summary).
  */
 export interface TaskSummary {
 	taskId: number;
@@ -138,10 +138,58 @@ export interface TaskSummary {
 	categoryName: string;
 	categoryColor: string;
 	status: string;
-	isCompleted: boolean;
+	completed: boolean;
 	focusMinutes: number;
 	estimatedMinutes?: number | null;
 	progressPercentage: number;
+	parentTaskId?: number | null;
+	executionDate?: string | null;
+}
+
+/**
+ * Daily task summary (flat, no grouping).
+ * Used in DailyView for individual task display.
+ */
+export interface DailyTaskSummary {
+	taskId: number;
+	taskTitle: string;
+	categoryName: string;
+	categoryColor: string;
+	status: string;
+	completed: boolean;
+	focusMinutes: number;
+	estimatedMinutes?: number | null;
+	progressPercentage: number;
+}
+
+/**
+ * Child task instance for grouped summary expansion.
+ */
+export interface TaskSummaryChild {
+	taskId: number;
+	taskTitle: string;
+	status: string;
+	completed: boolean;
+	focusMinutes: number;
+	estimatedMinutes?: number | null;
+	progressPercentage: number;
+	executionDate?: string | null;
+}
+
+/**
+ * Grouped task summary for recurring tasks.
+ * Aggregates multiple child task instances into a single group.
+ */
+export interface GroupedTaskSummary {
+	parentTaskId: number;
+	title: string;
+	categoryName: string;
+	categoryColor: string;
+	totalFocusMinutes: number;
+	completedCount: number;
+	totalCount: number;
+	recurring: boolean;
+	children: TaskSummaryChild[];
 }
 
 // ============================================
@@ -207,8 +255,8 @@ export interface WeeklyAnalyticsData {
 	dailyFocusData: DailyFocusByCategory[];
 	categoryAggregation: CategoryFocusTime[]; // Note: Backend returns list of CategoryData, which matches CategoryFocusTime structure
 
-	// Tasks
-	taskSummaries: TaskSummary[];
+	// Tasks (Grouped - recurring tasks aggregated)
+	taskSummaries: GroupedTaskSummary[];
 }
 
 /**
@@ -232,8 +280,8 @@ export interface DailyAnalyticsData {
 	tasksCompletedCount: number;
 	tasksTotalCount: number;
 
-	// Tasks
-	taskSummaries: TaskSummary[];
+	// Tasks (flat list for daily - no grouping needed)
+	taskSummaries: DailyTaskSummary[];
 
 	// Timeline
 	focusSessions: FocusSessionApiResponse[];

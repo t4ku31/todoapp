@@ -48,8 +48,8 @@ public class WeeklyAnalyticsDto {
     // Chart: Category Aggregation (for pie chart)
     private List<CategoryData> categoryAggregation;
 
-    // List: Task Summaries
-    private List<TaskSummaryData> taskSummaries;
+    // List: Grouped Task Summaries (recurring tasks grouped together)
+    private List<GroupedTaskSummaryData> taskSummaries;
 
     /**
      * Daily focus data for stacked bar chart.
@@ -80,21 +80,39 @@ public class WeeklyAnalyticsDto {
     }
 
     /**
-     * Task summary data.
+     * Grouped task summary data (recurring tasks grouped).
      */
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class TaskSummaryData {
-        private Long taskId;
-        private String taskTitle;
+    public static class GroupedTaskSummaryData {
+        private Long parentTaskId; // Grouping key
+        private String title;
         private String categoryName;
         private String categoryColor;
+        private int totalFocusMinutes; // Sum of all children
+        private int completedCount; // Number of completed children
+        private int totalCount; // Total children in range
+        private boolean isRecurring; // True if grouped recurring task
+        private List<TaskSummaryChildData> children; // Individual task instances
+    }
+
+    /**
+     * Individual task instance (child of grouped summary).
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TaskSummaryChildData {
+        private Long taskId;
+        private String taskTitle;
         private String status;
         private boolean isCompleted;
         private int focusMinutes;
         private Integer estimatedMinutes;
         private int progressPercentage;
+        private LocalDate executionDate;
     }
 }

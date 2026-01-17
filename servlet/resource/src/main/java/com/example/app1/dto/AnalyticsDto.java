@@ -126,7 +126,25 @@ public class AnalyticsDto {
             boolean isCompleted,
             int focusMinutes, // Actual duration in the specified range
             Integer estimatedMinutes,
-            int progressPercentage) {
+            int progressPercentage,
+            Long parentTaskId, // For recurring tasks, links to the parent
+            LocalDate executionDate) { // Date this task instance is for
+    }
+
+    /**
+     * Grouped Task Summary for recurring tasks.
+     * Aggregates multiple child task instances into a single group.
+     */
+    public record GroupedTaskSummary(
+            Long parentTaskId, // Grouping key (parent ID or self ID for non-recurring)
+            String title,
+            String categoryName,
+            String categoryColor,
+            int totalFocusMinutes, // Sum of all children's focus time
+            int completedCount, // Number of completed child tasks
+            int totalCount, // Total number of child tasks in range
+            boolean isRecurring, // True if this is a recurring task group
+            java.util.List<TaskSummary> children) { // Individual task instances for expansion
     }
 
     /**

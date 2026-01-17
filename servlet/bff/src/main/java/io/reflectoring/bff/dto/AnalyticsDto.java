@@ -70,6 +70,20 @@ public class AnalyticsDto {
                         boolean isCompleted,
                         int focusMinutes,
                         Integer estimatedMinutes,
-                        int progressPercentage) {
+                        int progressPercentage,
+                        Long parentTaskId,
+                        LocalDate executionDate) {
+        }
+
+        public record GroupedTaskSummary(
+                        Long parentTaskId,
+                        String title,
+                        String categoryName,
+                        String categoryColor,
+                        int totalFocusMinutes,
+                        int completedCount,
+                        int totalCount,
+                        boolean isRecurring,
+                        java.util.List<TaskSummary> children) {
         }
 }

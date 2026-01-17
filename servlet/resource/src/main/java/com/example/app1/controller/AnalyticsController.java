@@ -110,9 +110,10 @@ public class AnalyticsController {
 
     /**
      * Get task summary for a date range (Daily or Weekly).
+     * Returns grouped task summaries where recurring tasks are aggregated.
      */
     @GetMapping("/task-summary")
-    public ResponseEntity<List<AnalyticsDto.TaskSummary>> getTaskSummary(
+    public ResponseEntity<List<AnalyticsDto.GroupedTaskSummary>> getTaskSummary(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @AuthenticationPrincipal Jwt jwt) {
@@ -123,7 +124,7 @@ public class AnalyticsController {
         }
         log.info("Getting task summary for user {} from {} to {}", userId, startDate, endDate);
 
-        List<AnalyticsDto.TaskSummary> response = analyticsService.getTaskSummary(userId, startDate, endDate);
+        List<AnalyticsDto.GroupedTaskSummary> response = analyticsService.getTaskSummary(userId, startDate, endDate);
         return ResponseEntity.ok(response);
     }
 

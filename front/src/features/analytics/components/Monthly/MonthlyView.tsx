@@ -1,11 +1,13 @@
-import { CalendarDays, CheckCircle2, Clock, TrendingUp } from "lucide-react";
-import { useEffect } from "react";
 import type {
 	CategoryTime,
 	DayActivity,
 	MonthlyAnalyticsData,
 } from "@/features/analytics/types";
-import { KPICard } from "../shared/KPICard";
+import { useEffect } from "react";
+// Shared Cards
+import { AnalyticsEfficiencyCard } from "../shared/cards/AnalyticsEfficiencyCard";
+import { AnalyticsFocusCard } from "../shared/cards/AnalyticsFocusCard";
+import { AnalyticsTasksCard } from "../shared/cards/AnalyticsTasksCard";
 import { HeatmapChart } from "./cards/HeatmapChart";
 import { MonthlySummary } from "./cards/MonthlySummary";
 import { ResourceStack } from "./cards/ResourceStack";
@@ -26,51 +28,28 @@ export default function MonthlyView() {
 		fetchMonthlyAnalytics(month);
 	}, [fetchMonthlyAnalytics]);
 
-	// Format values for display
-	const formatHours = (minutes: number) => {
-		const hours = Math.round(minutes / 6) / 10; // Round to 1 decimal
-		return `${hours}h`;
-	};
-
-	const stats = {
-		totalFocusHours: data ? formatHours(data.totalFocusMinutes) : "—",
-		focusDays: data ? String(data.focusDays) : "—",
-		tasksCompleted: data ? String(data.totalTasksCompleted) : "—",
-		avgDailyFocus: data ? formatHours(data.averageDailyFocusMinutes) : "—",
-	};
-
-	// Get days in current month for "of X days" display
-	const now = new Date();
-	const daysInMonth = new Date(
-		now.getFullYear(),
-		now.getMonth() + 1,
-		0,
-	).getDate();
-
 	return (
 		<div className="h-full flex flex-col gap-3 overflow-hidden">
 			{/* Top Row: KPI Cards */}
-			<div className="shrink-0 grid grid-cols-4 gap-3 h-[110px]">
-				<KPICard
+			<div className="shrink-0 grid grid-cols-4 gap-3 h-[120px]">
+				<AnalyticsFocusCard
 					title="Total Focus Time"
-					value={stats.totalFocusHours}
-					icon={<Clock size={20} />}
+					minutes={data?.totalFocusMinutes ?? 0}
+					isLoading={isLoading}
 				/>
-				<KPICard
-					title="Focus Days"
-					value={stats.focusDays}
-					sub={`of ${daysInMonth} days`}
-					icon={<CalendarDays size={20} />}
+				<AnalyticsEfficiencyCard
+					efficiency={data?.averageEfficiencyScore ?? 0}
+					isLoading={isLoading}
 				/>
-				<KPICard
-					title="Tasks Completed"
-					value={stats.tasksCompleted}
-					icon={<CheckCircle2 size={20} />}
+				<AnalyticsTasksCard
+					completed={data?.totalTasksCompleted ?? 0}
+					isLoading={isLoading}
 				/>
-				<KPICard
+				{/* Use AnalyticsFocusCard for Avg Daily Focus */}
+				<AnalyticsFocusCard
 					title="Avg Daily Focus"
-					value={stats.avgDailyFocus}
-					icon={<TrendingUp size={20} />}
+					minutes={data?.averageDailyFocusMinutes ?? 0}
+					isLoading={isLoading}
 				/>
 			</div>
 

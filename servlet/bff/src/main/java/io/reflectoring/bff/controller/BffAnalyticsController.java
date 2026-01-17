@@ -108,14 +108,14 @@ public class BffAnalyticsController {
     }
 
     @GetMapping("/task-summary")
-    public ResponseEntity<AnalyticsDto.TaskSummary[]> getTaskSummary(
+    public ResponseEntity<AnalyticsDto.GroupedTaskSummary[]> getTaskSummary(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
         log.info("[GET /api/analytics/task-summary] Request by user: {} range: {} - {}", client.getPrincipalName(),
                 startDate, endDate);
         try {
-            AnalyticsDto.TaskSummary[] data = analyticsService.getTaskSummary(
+            AnalyticsDto.GroupedTaskSummary[] data = analyticsService.getTaskSummary(
                     startDate, endDate, client.getAccessToken().getTokenValue());
             return ResponseEntity.ok(data);
         } catch (RestClientResponseException e) {
