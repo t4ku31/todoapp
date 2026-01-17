@@ -1,3 +1,5 @@
+import AppLayout from "@/components/layout/AppLayout";
+import { Toaster } from "@/components/ui/sonner";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import {
@@ -6,8 +8,6 @@ import {
 	BrowserRouter as Router,
 	Routes,
 } from "react-router-dom";
-import AppLayout from "@/components/layout/AppLayout";
-import { Toaster } from "@/components/ui/sonner";
 import "./index.css";
 
 import Analytics from "./pages/analytics/index";

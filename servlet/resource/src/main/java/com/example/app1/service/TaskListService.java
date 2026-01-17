@@ -1,6 +1,5 @@
 package com.example.app1.service;
 
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.app1.dto.TaskDto;
 import com.example.app1.dto.TaskListDto;
-import com.example.app1.exception.TaskListValidationException;
 import com.example.app1.model.Category;
 import com.example.app1.model.Task;
 import com.example.app1.model.TaskList;
@@ -175,24 +173,6 @@ public class TaskListService {
         }
         if (request.dueDate() != null) {
             existing.setDueDate(request.dueDate());
-        }
-        if (request.isCompleted() != null) {
-            // Validation: All tasks must be COMPLETED before marking list as completed
-            if (request.isCompleted() && existing.getTasks() != null && !existing.getTasks().isEmpty()) {
-                boolean allTasksCompleted = existing.getTasks().stream()
-                        .allMatch(task -> task.getStatus() == TaskStatus.COMPLETED);
-
-                if (!allTasksCompleted) {
-                    throw new TaskListValidationException("すべてのタスクを完了してから、タスクリストを完了してください");
-                }
-            }
-
-            existing.setIsCompleted(request.isCompleted());
-            if (request.isCompleted()) {
-                existing.setCompletedAt(LocalDateTime.now());
-            } else {
-                existing.setCompletedAt(null);
-            }
         }
 
         taskListRepository.save(existing);

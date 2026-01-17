@@ -1,4 +1,5 @@
 import axios from "axios";
+import { toast } from "sonner";
 
 /**
  * Environment configuration
@@ -36,13 +37,28 @@ apiClient.interceptors.response.use(
 			if (error.response.status === 401) {
 				// Session expired or unauthorized, redirect to login
 				window.location.href = `${env.bffApiBaseUrl}/oauth2/authorization/bff-client`;
+			} else {
+				// Show formatted error toast
+				const data = error.response.data;
+				const errorType = data?.error || `Error ${error.response.status}`;
+				const errorMessage = data?.message || "エラーが発生しました";
+
+				toast.error(errorType, {
+					description: errorMessage,
+				});
 			}
 		} else if (error.request) {
 			// Request made but no response received
 			console.error("Network Error:", error.message);
+			toast.error("Network Error", {
+				description: "ネットワークエラーが発生しました",
+			});
 		} else {
 			// Something else happened
 			console.error("Error:", error.message);
+			toast.error("Error", {
+				description: "予期せぬエラーが発生しました",
+			});
 		}
 		return Promise.reject(error);
 	},
