@@ -1,14 +1,23 @@
-import { CheckCircle2, Eraser, ListTodo } from "lucide-react";
-import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { TaskSummary } from "@/features/analytics/types";
+import { useAnalyticsStore } from "@/features/analytics/stores/useAnalyticsStore";
+import type { GroupedTaskSummary } from "@/features/analytics/types";
 import { useTodoStore } from "@/store/useTodoStore";
+import { format } from "date-fns";
+import {
+	CheckCircle2,
+	ChevronDown,
+	ChevronRight,
+	Eraser,
+	ListTodo,
+	Repeat,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface TaskSummaryCardProps {
-	data?: TaskSummary[] | null;
+	data?: GroupedTaskSummary[] | null;
 	isLoading?: boolean;
 }
 
@@ -17,43 +26,88 @@ export function TaskSummaryCard({
 	isLoading = false,
 }: TaskSummaryCardProps) {
 	const [showCompleted, setShowCompleted] = useState(true);
-	const [localTasks, setLocalTasks] = useState<TaskSummary[]>(data || []);
+	const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+	const [localGroups, setLocalGroups] = useState<GroupedTaskSummary[]>(
+		data || [],
+	);
 	const { updateTask } = useTodoStore();
+	const { updateWeeklyTaskStatus } = useAnalyticsStore();
 
 	useEffect(() => {
-		setLocalTasks(data || []);
+		setLocalGroups(data || []);
 	}, [data]);
 
-	const handleStatusChange = (taskId: number, checked: boolean) => {
-		// Optimistic update
-		setLocalTasks((prev) =>
-			prev.map((t) =>
-				t.taskId === taskId
-					? {
-							...t,
-							isCompleted: checked,
-							status: checked ? "COMPLETED" : "PENDING",
-						}
-					: t,
-			),
-		);
-
-		// API Call
-		updateTask(taskId, { status: checked ? "COMPLETED" : "PENDING" });
+	const toggleExpand = (parentTaskId: number) => {
+		setExpandedIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(parentTaskId)) {
+				next.delete(parentTaskId);
+			} else {
+				next.add(parentTaskId);
+			}
+			return next;
+		});
 	};
 
-	const visibleTasks = showCompleted
-		? localTasks
-		: localTasks.filter((t) => !t.isCompleted);
+	const handleStatusChange = async (taskId: number, checked: boolean) => {
+		// Store previous state for rollback
+		const prevGroups = localGroups;
 
-	const completedCount = localTasks.filter((t) => t.isCompleted).length;
-	const totalCount = localTasks.length;
+		// Optimistic update - local component state
+		setLocalGroups((prev) =>
+			prev.map((group) => {
+				const updatedChildren = group.children.map((child) =>
+					child.taskId === taskId
+						? {
+								...child,
+								completed: checked,
+								status: checked ? "COMPLETED" : "PENDING",
+							}
+						: child,
+				);
+				const completedCount = updatedChildren.filter(
+					(c) => c.completed,
+				).length;
+				return {
+					...group,
+					children: updatedChildren,
+					completedCount,
+				};
+			}),
+		);
+
+		// Also update the analytics store (for KPI cards)
+		updateWeeklyTaskStatus(taskId, checked);
+
+		// API Call with error handling
+		try {
+			await updateTask(taskId, { status: checked ? "COMPLETED" : "PENDING" });
+		} catch {
+			// Rollback on error
+			setLocalGroups(prevGroups);
+			// Rollback analytics store
+			updateWeeklyTaskStatus(taskId, !checked);
+		}
+	};
+
+	// Filter groups based on showCompleted
+	const visibleGroups = showCompleted
+		? localGroups
+		: localGroups.filter(
+				(g) => g.completedCount < g.totalCount || g.totalCount === 0,
+			);
+
+	const totalCompletedCount = localGroups.reduce(
+		(acc, g) => acc + g.completedCount,
+		0,
+	);
+	const totalCount = localGroups.reduce((acc, g) => acc + g.totalCount, 0);
 	const completionRate =
-		totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+		totalCount > 0 ? Math.round((totalCompletedCount / totalCount) * 100) : 0;
 
 	// Find max focus minutes for proportional bars
 	const maxFocusMinutes = Math.max(
-		...localTasks.map((t) => t.focusMinutes || 0),
+		...localGroups.map((g) => g.totalFocusMinutes || 0),
 		1,
 	);
 
@@ -68,7 +122,7 @@ export function TaskSummaryCard({
 				<div className="flex items-center gap-2">
 					<Badge variant="outline" className="text-xs flex items-center gap-1">
 						<CheckCircle2 size={12} />
-						{completedCount}/{totalCount} ({completionRate}%)
+						{totalCompletedCount}/{totalCount} ({completionRate}%)
 					</Badge>
 					<Button
 						variant="ghost"
@@ -84,66 +138,186 @@ export function TaskSummaryCard({
 				</div>
 			</div>
 
-			<div className="flex-1 overflow-auto space-y-2">
+			<div className="flex-1 overflow-auto space-y-1">
 				{isLoading ? (
 					<div className="flex items-center justify-center h-full text-muted-foreground text-sm">
 						Loading...
 					</div>
-				) : visibleTasks.length === 0 ? (
+				) : visibleGroups.length === 0 ? (
 					<div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-						{localTasks.length > 0 && !showCompleted
+						{localGroups.length > 0 && !showCompleted
 							? "All tasks completed!"
 							: "No tasks scheduled"}
 					</div>
 				) : (
-					visibleTasks.map((task) => (
-						<div
-							key={task.taskId}
-							className="flex items-center gap-3 py-2 border-b last:border-b-0"
-						>
-							<Checkbox
-								checked={task.isCompleted}
-								onCheckedChange={(checked) =>
-									handleStatusChange(task.taskId, checked as boolean)
-								}
-								style={{
-									backgroundColor: task.isCompleted
-										? task.categoryColor || "#8b5cf6"
-										: undefined,
-									borderColor: task.isCompleted
-										? task.categoryColor || "#8b5cf6"
-										: undefined,
-								}}
-								className="data-[state=checked]:text-white"
-							/>
-							<div className="flex-1 min-w-0">
-								<div className="flex items-center justify-between gap-2">
-									<span
-										className={`text-sm truncate ${
-											task.isCompleted
-												? "text-gray-400 line-through"
-												: "text-gray-700"
-										}`}
-									>
-										{task.taskTitle}
-									</span>
-									<span className="text-xs text-gray-500 whitespace-nowrap">
-										{task.focusMinutes}m
-									</span>
+					visibleGroups.map((group) => {
+						const isExpanded = expandedIds.has(group.parentTaskId);
+						const isFullyCompleted =
+							group.completedCount === group.totalCount && group.totalCount > 0;
+						// Show grouping UI for recurring tasks (expand/collapse, badge, etc.)
+						const showGroupingUI = group.recurring;
+
+						return (
+							<div key={group.parentTaskId} className="mb-1">
+								{/* Group Header Row */}
+								<div
+									className={`flex items-center gap-2 py-2 px-2 rounded-lg transition-colors ${
+										showGroupingUI ? "cursor-pointer hover:bg-gray-50" : ""
+									}`}
+									{...(showGroupingUI
+										? {
+												role: "button",
+												tabIndex: 0,
+												onClick: () => toggleExpand(group.parentTaskId),
+												onKeyDown: (e: React.KeyboardEvent) => {
+													if (e.key === "Enter" || e.key === " ") {
+														e.preventDefault();
+														toggleExpand(group.parentTaskId);
+													}
+												},
+											}
+										: {})}
+								>
+									{/* Expand/Collapse Icon (only for grouped/recurring in weekly view) */}
+									{showGroupingUI ? (
+										<button
+											type="button"
+											className="text-gray-400 hover:text-gray-600"
+										>
+											{isExpanded ? (
+												<ChevronDown size={16} />
+											) : (
+												<ChevronRight size={16} />
+											)}
+										</button>
+									) : (
+										// Non-recurring: Show checkbox
+										<Checkbox
+											checked={isFullyCompleted}
+											onCheckedChange={(checked) => {
+												if (group.children.length === 1) {
+													handleStatusChange(
+														group.children[0].taskId,
+														checked as boolean,
+													);
+												}
+											}}
+											style={{
+												backgroundColor: isFullyCompleted
+													? group.categoryColor || "#8b5cf6"
+													: undefined,
+												borderColor: isFullyCompleted
+													? group.categoryColor || "#8b5cf6"
+													: undefined,
+											}}
+											className="data-[state=checked]:text-white"
+										/>
+									)}
+
+									{/* Task Info */}
+									<div className="flex-1 min-w-0">
+										<div className="flex items-center justify-between gap-2">
+											<div className="flex items-center gap-2 min-w-0">
+												{showGroupingUI && (
+													<Repeat
+														size={12}
+														className="text-blue-500 shrink-0"
+													/>
+												)}
+												<span
+													className={`text-sm truncate ${
+														isFullyCompleted
+															? "text-gray-400 line-through"
+															: "text-gray-700"
+													}`}
+												>
+													{group.title}
+												</span>
+												{showGroupingUI && (
+													<Badge
+														variant="secondary"
+														className="text-[10px] px-1.5 py-0 shrink-0"
+													>
+														{group.completedCount}/{group.totalCount}
+													</Badge>
+												)}
+											</div>
+											<span className="text-xs text-gray-500 whitespace-nowrap">
+												{group.totalFocusMinutes}m
+											</span>
+										</div>
+										{/* Progress bar */}
+										<div className="mt-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+											<div
+												className="h-full rounded-full transition-all duration-300"
+												style={{
+													width: `${(group.totalFocusMinutes / maxFocusMinutes) * 100}%`,
+													backgroundColor: group.categoryColor || "#8b5cf6",
+												}}
+											/>
+										</div>
+									</div>
 								</div>
-								{/* Progress bar */}
-								<div className="mt-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-									<div
-										className="h-full rounded-full transition-all duration-300"
-										style={{
-											width: `${(task.focusMinutes / maxFocusMinutes) * 100}%`,
-											backgroundColor: task.categoryColor || "#8b5cf6",
-										}}
-									/>
-								</div>
+
+								{/* Expanded Children (for grouped recurring tasks in weekly view) */}
+								{showGroupingUI && isExpanded && (
+									<div className="ml-6 pl-2 border-l-2 border-gray-200 space-y-1 mt-1">
+										{group.children.map((child) => (
+											<div
+												key={child.taskId}
+												className="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-gray-50"
+											>
+												<Checkbox
+													checked={child.completed}
+													onCheckedChange={(checked) =>
+														handleStatusChange(child.taskId, checked as boolean)
+													}
+													style={{
+														backgroundColor: child.completed
+															? group.categoryColor || "#8b5cf6"
+															: undefined,
+														borderColor: child.completed
+															? group.categoryColor || "#8b5cf6"
+															: undefined,
+													}}
+													className="data-[state=checked]:text-white h-4 w-4"
+												/>
+												<div className="flex-1 flex items-center justify-between min-w-0">
+													<span
+														className={`text-xs ${
+															child.completed
+																? "text-gray-400 line-through"
+																: "text-gray-600"
+														}`}
+													>
+														{child.executionDate
+															? format(
+																	new Date(child.executionDate),
+																	"M/d (EEE)",
+																)
+															: "—"}
+													</span>
+													<div className="flex items-center gap-2">
+														{child.completed ? (
+															<CheckCircle2
+																size={12}
+																className="text-green-500"
+															/>
+														) : (
+															<span className="w-3" />
+														)}
+														<span className="text-xs text-gray-400">
+															{child.focusMinutes}m
+														</span>
+													</div>
+												</div>
+											</div>
+										))}
+									</div>
+								)}
 							</div>
-						</div>
-					))
+						);
+					})
 				)}
 			</div>
 		</Card>

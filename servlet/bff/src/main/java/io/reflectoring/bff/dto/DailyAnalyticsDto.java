@@ -36,14 +36,14 @@ public class DailyAnalyticsDto {
     private int tasksCompletedCount;
     private int tasksTotalCount;
 
-    // Task Summaries
+    // Task Summaries (flat list for daily view - no grouping needed)
     private List<TaskSummaryData> taskSummaries;
 
     // Focus Sessions (for timeline and hourly chart)
     private List<FocusSessionData> focusSessions;
 
     /**
-     * Task summary data.
+     * Task summary data for daily view (flat, no grouping).
      */
     @Data
     @Builder

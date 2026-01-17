@@ -1,14 +1,15 @@
-import { format } from "date-fns";
-import { useEffect, useMemo } from "react";
-import { Card } from "@/components/ui/card";
 import { useAnalyticsStore } from "@/features/analytics/stores/useAnalyticsStore";
 import type { TimelineSession } from "@/features/analytics/types";
-import { FocusCircle } from "@/features/home/components/FocusCircle";
+import { format } from "date-fns";
+import { useEffect, useMemo } from "react";
+// Shared Cards (Unified UX)
+import { AnalyticsEfficiencyCard } from "../shared/cards/AnalyticsEfficiencyCard";
+import { AnalyticsFocusCard } from "../shared/cards/AnalyticsFocusCard";
+import { AnalyticsTasksCard } from "../shared/cards/AnalyticsTasksCard";
 import { EstimationAccuracyCard } from "../shared/EstimationAccuracyCard";
-import { TaskSummaryCard } from "../shared/TaskSummaryCard";
-import { DailyEfficiencyCard } from "./cards/DailyEfficiencyCard";
 import { DailyTimeline } from "./cards/DailyTimeline";
 import { HourlyActivityChart } from "./cards/HourlyActivityChart";
+import { DailyTaskList } from "./DailyTaskList";
 
 // --- Main DailyView Component ---
 export default function DailyView() {
@@ -39,47 +40,61 @@ export default function DailyView() {
 		}));
 	}, [data?.focusSessions]);
 
+	// Estimation Data Prep
+	const estimationData = {
+		startDate: dateStr,
+		endDate: dateStr,
+		completedCount: data?.tasksCompletedCount ?? 0,
+		totalCount: data?.tasksTotalCount ?? 0,
+		totalEstimatedMinutes: data?.totalEstimatedMinutes ?? 0,
+		totalActualMinutes: data?.totalActualMinutes ?? 0,
+	};
+
 	return (
-		<div className="flex flex-row gap-4 h-full pb-4 overflow-hidden w-full">
-			{/* Left Column: Hourly Chart */}
-			<div className="flex-[2] min-w-0 min-h-0 h-full flex flex-col gap-4">
-				<FocusCircle size="md" />
-				<DailyEfficiencyCard data={data} isLoading={isLoading} />
+		<div className="h-full flex flex-col gap-3 overflow-hidden">
+			{/* Top Row: KPI Cards (Consistent across all views) */}
+			<div className="shrink-0 grid grid-cols-4 gap-3 h-[120px]">
+				<AnalyticsFocusCard
+					minutes={data?.totalActualMinutes ?? 0}
+					isLoading={isLoading}
+				/>
+				<AnalyticsEfficiencyCard
+					efficiency={data?.efficiencyScore ?? 0}
+					rhythm={data?.rhythmQuality}
+					volume={data?.volumeBalance}
+					isLoading={isLoading}
+				/>
+				<AnalyticsTasksCard
+					completed={data?.tasksCompletedCount ?? 0}
+					total={data?.tasksTotalCount ?? 0}
+					isLoading={isLoading}
+				/>
+				<EstimationAccuracyCard
+					variant="compact"
+					className="h-full"
+					data={estimationData}
+					isLoading={isLoading}
+				/>
 			</div>
-			<div className="flex-[6] min-w-0 min-h-0 h-full flex flex-col gap-4">
-				<div className="flex-[2] min-h-0 flex gap-4">
-					<div className="flex-[3] min-h-0">
+
+			{/* Main Content Area */}
+			<div className="flex-1 flex gap-3 min-h-0">
+				{/* Left Column: Visuals (Chart + Timeline) */}
+				<div className="flex-[3] flex gap-3 min-w-0">
+					{/* Hourly Chart (Main Visual) */}
+					<div className="flex-[2] min-h-0 h-full">
 						<HourlyActivityChart sessions={sessions} />
 					</div>
-				</div>
-				<div className="flex-[2] min-h-0 flex gap-4">
-					<div className="flex-[1] min-h-0">
-						<EstimationAccuracyCard
-							variant="detailed"
-							data={{
-								startDate: dateStr,
-								endDate: dateStr,
-								completedCount: data?.tasksCompletedCount ?? 0,
-								totalCount: data?.tasksTotalCount ?? 0,
-								totalEstimatedMinutes: data?.totalEstimatedMinutes ?? 0,
-								totalActualMinutes: data?.totalActualMinutes ?? 0,
-							}}
-							isLoading={isLoading}
-						/>
-					</div>
-					<div className="flex-[2] min-h-0">
-						<TaskSummaryCard data={data?.taskSummaries} isLoading={isLoading} />
+					{/* Timeline (Vertical Visual) */}
+					<div className="flex-[1] min-w-0 h-full">
+						<DailyTimeline sessions={sessions} />
 					</div>
 				</div>
-			</div>
-			<div className="flex-[3] min-w-0 min-h-0 h-full flex flex-col gap-4">
-				{isLoading ? (
-					<Card className="h-full flex items-center justify-center">
-						Loading timeline...
-					</Card>
-				) : (
-					<DailyTimeline sessions={sessions} />
-				)}
+
+				{/* Right Column: List (Tasks) */}
+				<div className="flex-[1] min-w-0 h-full">
+					<DailyTaskList data={data?.taskSummaries} isLoading={isLoading} />
+				</div>
 			</div>
 		</div>
 	);

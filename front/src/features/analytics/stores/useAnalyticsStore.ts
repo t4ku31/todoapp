@@ -1,5 +1,5 @@
-import { create } from "zustand";
 import { apiClient } from "@/config/env";
+import { create } from "zustand";
 import type {
 	DailyAnalyticsData,
 	MonthlyAnalyticsData,
@@ -16,9 +16,11 @@ interface AnalyticsState {
 	fetchDailyAnalytics: (date: string) => Promise<void>;
 	fetchWeeklyAnalytics: (startDate: string, endDate: string) => Promise<void>;
 	fetchMonthlyAnalytics: (month: string) => Promise<void>;
+	updateDailyTaskStatus: (taskId: number, completed: boolean) => void;
+	updateWeeklyTaskStatus: (taskId: number, completed: boolean) => void;
 }
 
-export const useAnalyticsStore = create<AnalyticsState>((set) => ({
+export const useAnalyticsStore = create<AnalyticsState>((set, get) => ({
 	dailyData: null,
 	weeklyData: null,
 	monthlyData: null,
@@ -61,6 +63,72 @@ export const useAnalyticsStore = create<AnalyticsState>((set) => ({
 		} catch (error) {
 			console.error("Failed to fetch monthly analytics:", error);
 			set({ error: "Failed to fetch monthly analytics", isLoading: false });
+		}
+	},
+
+	updateDailyTaskStatus: (taskId, completed) => {
+		const { dailyData } = get();
+		if (!dailyData) return;
+
+		// Find the task and check if status changed
+		let statusChanged = false;
+		const updatedTaskSummaries = dailyData.taskSummaries.map((task) => {
+			if (task.taskId === taskId && task.completed !== completed) {
+				statusChanged = true;
+				return {
+					...task,
+					completed,
+					status: completed ? "COMPLETED" : "PENDING",
+				};
+			}
+			return task;
+		});
+
+		if (statusChanged) {
+			// Update tasksCompletedCount based on the change
+			const delta = completed ? 1 : -1;
+			set({
+				dailyData: {
+					...dailyData,
+					tasksCompletedCount: dailyData.tasksCompletedCount + delta,
+					taskSummaries: updatedTaskSummaries,
+				},
+			});
+		}
+	},
+
+	updateWeeklyTaskStatus: (taskId, completed) => {
+		const { weeklyData } = get();
+		if (!weeklyData) return;
+
+		// Find the task in taskSummaries and check if status changed
+		let statusChanged = false;
+		const updatedTaskSummaries = weeklyData.taskSummaries.map((group) => {
+			const updatedChildren = group.children.map((child) => {
+				if (child.taskId === taskId && child.completed !== completed) {
+					statusChanged = true;
+					return {
+						...child,
+						completed,
+						status: completed ? "COMPLETED" : "PENDING",
+					};
+				}
+				return child;
+			});
+			const completedCount = updatedChildren.filter((c) => c.completed).length;
+			return { ...group, children: updatedChildren, completedCount };
+		});
+
+		if (statusChanged) {
+			// Update tasksCompletedCount based on the change
+			const delta = completed ? 1 : -1;
+			set({
+				weeklyData: {
+					...weeklyData,
+					tasksCompletedCount: weeklyData.tasksCompletedCount + delta,
+					taskSummaries: updatedTaskSummaries,
+				},
+			});
 		}
 	},
 }));

@@ -312,16 +312,63 @@ public class AnalyticsService {
      * Get task summary for a specific date range.
      * Integrates logic from DailyTaskSummary and WeeklyFocusTasks.
      */
-    public List<AnalyticsDto.TaskSummary> getTaskSummary(String userId, LocalDate startDate, LocalDate endDate) {
-        log.info("Getting task summary for user {} from {} to {}", userId, startDate, endDate);
+    public List<AnalyticsDto.GroupedTaskSummary> getTaskSummary(String userId, LocalDate startDate, LocalDate endDate) {
+        // Build flat TaskSummary list using common method
+        List<AnalyticsDto.TaskSummary> allTaskSummaries = buildTaskSummaryList(userId, startDate, endDate);
 
-        List<AnalyticsDto.TaskSummary> result = new java.util.ArrayList<>();
+        // Group by parentTaskId (or self ID if no parent)
+        Map<Long, GroupingAccumulator> groupedMap = new java.util.LinkedHashMap<>();
+
+        for (AnalyticsDto.TaskSummary ts : allTaskSummaries) {
+            // Determine grouping key: use parentTaskId if exists, otherwise use taskId
+            Long groupKey = ts.parentTaskId() != null ? ts.parentTaskId() : ts.taskId();
+            boolean isRecurring = ts.parentTaskId() != null;
+
+            if (groupedMap.containsKey(groupKey)) {
+                GroupingAccumulator acc = groupedMap.get(groupKey);
+                acc.addChild(ts);
+            } else {
+                GroupingAccumulator acc = new GroupingAccumulator(
+                        groupKey,
+                        ts.taskTitle(),
+                        ts.categoryName(),
+                        ts.categoryColor(),
+                        isRecurring);
+                acc.addChild(ts);
+                groupedMap.put(groupKey, acc);
+            }
+        }
+
+        // Convert to GroupedTaskSummary list
+        List<AnalyticsDto.GroupedTaskSummary> result = new java.util.ArrayList<>();
+        for (GroupingAccumulator acc : groupedMap.values()) {
+            result.add(acc.toGroupedTaskSummary());
+        }
+
+        // Sort by total focus time descending
+        result.sort((a, b) -> Integer.compare(b.totalFocusMinutes(), a.totalFocusMinutes()));
+
+        return result;
+    }
+
+    /**
+     * Build a flat list of TaskSummary for a specific date range.
+     * This is the common logic used by both Daily (flat) and Weekly (grouped)
+     * analytics.
+     * 
+     * @param userId    User ID
+     * @param startDate Start date (inclusive)
+     * @param endDate   End date (inclusive)
+     * @return List of TaskSummary (flat, not grouped)
+     */
+    private List<AnalyticsDto.TaskSummary> buildTaskSummaryList(String userId, LocalDate startDate, LocalDate endDate) {
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.atTime(23, 59, 59);
 
         // Fetch focus sessions for calculation
         List<FocusSession> sessions = focusSessionRepository.findByUserIdAndStartedAtBetweenWithTask(userId, start,
                 end);
+
         Map<Long, Integer> taskFocusSeconds = new java.util.HashMap<>();
         for (FocusSession session : sessions) {
             if (session.getTask() != null) {
@@ -331,6 +378,13 @@ public class AnalyticsService {
 
         List<Task> tasksToProcess = taskRepository.findByUserIdAndExecutionDateBetween(userId, startDate, endDate);
 
+        // Get pomodoro focus duration setting
+        int focusDuration = pomodoroSettingRepository.findByUserId(userId)
+                .map(s -> s.getFocusDuration())
+                .orElse(25);
+
+        // Build TaskSummary list
+        List<AnalyticsDto.TaskSummary> result = new java.util.ArrayList<>();
         for (Task task : tasksToProcess) {
             String categoryName = "Others";
             String categoryColor = "#94a3b8";
@@ -342,10 +396,6 @@ public class AnalyticsService {
             int focusSeconds = taskFocusSeconds.getOrDefault(task.getId(), 0);
             int focusMinutes = focusSeconds / 60;
 
-            // Calculate estimated minutes based on pomodoros
-            int focusDuration = pomodoroSettingRepository.findByUserId(userId)
-                    .map(s -> s.getFocusDuration())
-                    .orElse(25);
             Integer estimatedMinutes = task.getEstimatedPomodoros() != null
                     ? task.getEstimatedPomodoros() * focusDuration
                     : 0;
@@ -366,13 +416,66 @@ public class AnalyticsService {
                     TaskStatus.COMPLETED.equals(task.getStatus()),
                     focusMinutes,
                     estimatedMinutes,
-                    progress));
+                    progress,
+                    task.getRecurrenceParentId(),
+                    task.getExecutionDate()));
         }
 
-        // Sort by focus time descending
-        result.sort((a, b) -> Integer.compare(b.focusMinutes(), a.focusMinutes()));
-
         return result;
+    }
+
+    // Helper class for grouping accumulation
+    private static class GroupingAccumulator {
+        Long parentTaskId;
+        String title;
+        String categoryName;
+        String categoryColor;
+        boolean isRecurring;
+        int totalFocusMinutes = 0;
+        int completedCount = 0;
+        int totalCount = 0;
+        List<AnalyticsDto.TaskSummary> children = new java.util.ArrayList<>();
+
+        GroupingAccumulator(Long parentTaskId, String title, String categoryName, String categoryColor,
+                boolean isRecurring) {
+            this.parentTaskId = parentTaskId;
+            this.title = title;
+            this.categoryName = categoryName;
+            this.categoryColor = categoryColor;
+            this.isRecurring = isRecurring;
+        }
+
+        void addChild(AnalyticsDto.TaskSummary child) {
+            children.add(child);
+            totalFocusMinutes += child.focusMinutes();
+            totalCount++;
+            if (child.isCompleted()) {
+                completedCount++;
+            }
+        }
+
+        AnalyticsDto.GroupedTaskSummary toGroupedTaskSummary() {
+            // Sort children by execution date
+            children.sort((a, b) -> {
+                if (a.executionDate() == null && b.executionDate() == null)
+                    return 0;
+                if (a.executionDate() == null)
+                    return 1;
+                if (b.executionDate() == null)
+                    return -1;
+                return a.executionDate().compareTo(b.executionDate());
+            });
+            return new AnalyticsDto.GroupedTaskSummary(
+                    parentTaskId,
+                    title,
+                    categoryName,
+                    categoryColor,
+                    totalFocusMinutes,
+                    completedCount,
+                    totalCount,
+                    isRecurring,
+                    children);
+        }
     }
 
     /**
@@ -569,20 +672,34 @@ public class AnalyticsService {
                     .build());
         }
 
-        // 7. Task Summaries
-        List<AnalyticsDto.TaskSummary> taskSummaryList = getTaskSummary(userId, startDate, endDate);
-        List<com.example.app1.dto.WeeklyAnalyticsDto.TaskSummaryData> taskSummaries = new ArrayList<>();
-        for (AnalyticsDto.TaskSummary ts : taskSummaryList) {
-            taskSummaries.add(com.example.app1.dto.WeeklyAnalyticsDto.TaskSummaryData.builder()
-                    .taskId(ts.taskId())
-                    .taskTitle(ts.taskTitle())
-                    .categoryName(ts.categoryName())
-                    .categoryColor(ts.categoryColor())
-                    .status(ts.status())
-                    .isCompleted(ts.isCompleted())
-                    .focusMinutes(ts.focusMinutes())
-                    .estimatedMinutes(ts.estimatedMinutes())
-                    .progressPercentage(ts.progressPercentage())
+        // 7. Task Summaries (Grouped)
+        List<AnalyticsDto.GroupedTaskSummary> groupedTaskList = getTaskSummary(userId, startDate, endDate);
+        List<com.example.app1.dto.WeeklyAnalyticsDto.GroupedTaskSummaryData> taskSummaries = new ArrayList<>();
+        for (AnalyticsDto.GroupedTaskSummary gts : groupedTaskList) {
+            // Convert children
+            List<com.example.app1.dto.WeeklyAnalyticsDto.TaskSummaryChildData> children = new ArrayList<>();
+            for (AnalyticsDto.TaskSummary child : gts.children()) {
+                children.add(com.example.app1.dto.WeeklyAnalyticsDto.TaskSummaryChildData.builder()
+                        .taskId(child.taskId())
+                        .taskTitle(child.taskTitle())
+                        .status(child.status())
+                        .isCompleted(child.isCompleted())
+                        .focusMinutes(child.focusMinutes())
+                        .estimatedMinutes(child.estimatedMinutes())
+                        .progressPercentage(child.progressPercentage())
+                        .executionDate(child.executionDate())
+                        .build());
+            }
+            taskSummaries.add(com.example.app1.dto.WeeklyAnalyticsDto.GroupedTaskSummaryData.builder()
+                    .parentTaskId(gts.parentTaskId())
+                    .title(gts.title())
+                    .categoryName(gts.categoryName())
+                    .categoryColor(gts.categoryColor())
+                    .totalFocusMinutes(gts.totalFocusMinutes())
+                    .completedCount(gts.completedCount())
+                    .totalCount(gts.totalCount())
+                    .isRecurring(gts.isRecurring())
+                    .children(children)
                     .build());
         }
 
@@ -641,10 +758,12 @@ public class AnalyticsService {
                 userId, startDateTime, endDateTime);
         int totalActual = (actualSeconds != null ? actualSeconds : 0) / 60;
 
-        // 3. Task Summaries
-        List<AnalyticsDto.TaskSummary> taskSummaryList = getTaskSummary(userId, date, date);
+        // 3. Task Summaries (Flat list for daily - no grouping needed)
+        // 3. Task Summaries (Flat list for daily - use shared logic)
+        List<AnalyticsDto.TaskSummary> sharedSummaries = buildTaskSummaryList(userId, date, date);
         List<com.example.app1.dto.DailyAnalyticsDto.TaskSummaryData> taskSummaries = new ArrayList<>();
-        for (AnalyticsDto.TaskSummary ts : taskSummaryList) {
+
+        for (AnalyticsDto.TaskSummary ts : sharedSummaries) {
             taskSummaries.add(com.example.app1.dto.DailyAnalyticsDto.TaskSummaryData.builder()
                     .taskId(ts.taskId())
                     .taskTitle(ts.taskTitle())

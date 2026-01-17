@@ -1,14 +1,14 @@
+import { useAnalyticsStore } from "@/features/analytics/stores/useAnalyticsStore";
 import { endOfWeek, format, startOfWeek } from "date-fns";
 import { useEffect } from "react";
-import { useAnalyticsStore } from "@/features/analytics/stores/useAnalyticsStore";
+// Shared Cards (Unified UX)
+import { AnalyticsEfficiencyCard } from "../shared/cards/AnalyticsEfficiencyCard";
+import { AnalyticsFocusCard } from "../shared/cards/AnalyticsFocusCard";
+import { AnalyticsTasksCard } from "../shared/cards/AnalyticsTasksCard";
 import { EstimationAccuracyCard } from "../shared/EstimationAccuracyCard";
 import { TaskSummaryCard } from "../shared/TaskSummaryCard";
 import { CategoryPieChart } from "./cards/CategoryPieChart";
-import { EfficiencyCard } from "./cards/EfficiencyCard";
 import { ProductivityChart } from "./cards/ProductivityChart";
-import { TasksCompletedCard } from "./cards/TasksCompletedCard";
-import { TotalFocusTimeCard } from "./cards/TotalFocusTimeCard";
-// import { WeeklyFocusTasks } from "./cards/WeeklyFocusTasks";
 
 // --- Main WeeklyView Component ---
 export default function WeeklyView() {
@@ -27,28 +27,42 @@ export default function WeeklyView() {
 
 	const data = weeklyData;
 
+	// Estimation Data Prep
+	const estimationData = {
+		startDate: startStr,
+		endDate: endStr,
+		completedCount: data?.tasksCompletedCount ?? 0,
+		totalCount: data?.tasksTotalCount ?? 0,
+		totalEstimatedMinutes: data?.totalEstimatedMinutes ?? 0,
+		totalActualMinutes: data?.totalActualMinutes ?? 0,
+	};
+
 	return (
 		<div className="h-full flex gap-3 overflow-hidden">
 			{/* Left Column: Charts and KPIs (flex-[5]) */}
 			<div className="flex-[5] flex flex-col gap-3 min-w-0">
-				{/* Top Row: KPI Cards (h-[110px]) */}
+				{/* Top Row: KPI Cards (h-[120px] - increased to match Monthly new default) */}
 				<div className="shrink-0 grid grid-cols-4 gap-3 h-[120px]">
-					<TotalFocusTimeCard className="h-full" data={data} />
-					<EfficiencyCard className="h-full" data={data} />
-					<TasksCompletedCard className="h-full" data={data} />
+					<AnalyticsFocusCard
+						minutes={data?.totalFocusMinutes ?? 0}
+						comparisonPercent={data?.focusComparisonPercentage}
+						isLoading={isLoading}
+					/>
+					<AnalyticsEfficiencyCard
+						efficiency={data?.efficiencyScore ?? 0}
+						rhythm={data?.rhythmQuality}
+						volume={data?.volumeBalance}
+						isLoading={isLoading}
+					/>
+					<AnalyticsTasksCard
+						completed={data?.tasksCompletedCount ?? 0}
+						total={data?.tasksTotalCount ?? 0}
+						isLoading={isLoading}
+					/>
 					<EstimationAccuracyCard
-						startDate={weekStart}
-						endDate={weekEnd}
 						variant="compact"
 						className="h-full"
-						data={{
-							startDate: startStr,
-							endDate: endStr,
-							completedCount: data?.tasksCompletedCount ?? 0,
-							totalCount: data?.tasksTotalCount ?? 0,
-							totalEstimatedMinutes: data?.totalEstimatedMinutes ?? 0,
-							totalActualMinutes: data?.totalActualMinutes ?? 0,
-						}}
+						data={estimationData}
 						isLoading={isLoading}
 					/>
 				</div>
