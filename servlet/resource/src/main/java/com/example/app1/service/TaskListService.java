@@ -38,6 +38,7 @@ public class TaskListService {
 
     /**
      * Get all task lists for a specific user.
+     * Ensures an Inbox task list always exists.
      * 
      * @param userId Auth0 sub claim identifying the user
      * @return List of task lists owned by the user
@@ -47,14 +48,42 @@ public class TaskListService {
         log.info("Getting task lists for user: {}", userId);
         List<TaskList> taskLists = taskListRepository.findByUserId(userId);
 
-        if (taskLists.isEmpty()) {
-            log.info("No task lists found for user: {}. Creating default Inbox.", userId);
-            TaskList inbox = createInbox(userId);
-            return List.of(inbox);
+        // Check if Inbox exists
+        boolean hasInbox = taskLists.stream()
+                .anyMatch(tl -> "Inbox".equals(tl.getTitle()));
+
+        if (!hasInbox) {
+            log.info("No Inbox found for user: {}. Creating default Inbox.", userId);
+            createInbox(userId);
+            // Re-fetch to get updated list with Inbox
+            taskLists = taskListRepository.findByUserId(userId);
         }
 
         log.info("Found {}", taskLists);
         return taskLists;
+    }
+
+    /**
+     * Get or create the Inbox task list for a user.
+     * 
+     * @param userId Auth0 sub claim identifying the user
+     * @return The user's Inbox task list
+     */
+    @Transactional
+    public TaskList getOrCreateInbox(String userId) {
+        log.info("Getting or creating Inbox for user: {}", userId);
+
+        // Try to find existing Inbox
+        List<TaskList> taskLists = taskListRepository.findByUserId(userId);
+        for (TaskList taskList : taskLists) {
+            if ("Inbox".equals(taskList.getTitle())) {
+                log.info("Found existing Inbox {} for user: {}", taskList.getId(), userId);
+                return taskList;
+            }
+        }
+
+        // Create new Inbox if not found
+        return createInbox(userId);
     }
 
     private TaskList createInbox(String userId) {
@@ -71,6 +100,28 @@ public class TaskListService {
             log.error("Failed to create Inbox for user: {}", userId, e);
             throw e;
         }
+    }
+
+    /**
+     * Get or create a task list by title for a user.
+     * 
+     * @param title  Task list title
+     * @param userId Auth0 sub claim identifying the user
+     * @return The task list
+     */
+    @Transactional
+    public TaskList getOrCreateTaskList(String title, String userId) {
+        log.info("Getting or creating task list '{}' for user: {}", title, userId);
+
+        return taskListRepository.findByTitleAndUserId(title, userId)
+                .orElseGet(() -> {
+                    log.info("Task list '{}' not found for user: {}. Creating new.", title, userId);
+                    TaskList newTaskList = TaskList.builder()
+                            .title(title)
+                            .userId(userId)
+                            .build();
+                    return taskListRepository.save(newTaskList);
+                });
     }
 
     /**

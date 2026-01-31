@@ -1,5 +1,7 @@
 package com.example.app1.service.domain;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -7,14 +9,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.app1.dto.RecurrenceRuleDto;
+import com.example.app1.dto.SubtaskDto;
 import com.example.app1.dto.TaskDto;
+import com.example.app1.dto.TaskDto.SyncResult;
+import com.example.app1.dto.TaskDto.SyncTaskDto;
 import com.example.app1.model.Category;
 import com.example.app1.model.Subtask;
 import com.example.app1.model.Task;
 import com.example.app1.model.TaskList;
 import com.example.app1.model.TaskStatus;
+import com.example.app1.repository.CategoryRepository;
+import com.example.app1.repository.FocusSessionRepository;
+import com.example.app1.repository.PomodoroSettingRepository;
 import com.example.app1.repository.TaskListRepository;
 import com.example.app1.repository.TaskRepository;
+import com.example.app1.service.TaskListService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
@@ -31,10 +40,11 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final TaskListRepository taskListRepository;
-    private final com.example.app1.repository.CategoryRepository categoryRepository;
+    private final CategoryRepository categoryRepository;
     private final CategoryService categoryService; // Injected
-    private final com.example.app1.repository.PomodoroSettingRepository pomodoroSettingRepository;
-    private final com.example.app1.repository.FocusSessionRepository focusSessionRepository;
+    private final PomodoroSettingRepository pomodoroSettingRepository;
+    private final FocusSessionRepository focusSessionRepository;
+    private final TaskListService taskListService;
 
     /**
      * Get all tasks for a specific task list.
@@ -107,10 +117,27 @@ public class TaskService {
     public Task createTask(TaskDto.Create taskCreateRequest, String userId) {
         log.info("Creating task for user: {}", userId);
 
+        // Resolve taskListId - if null or 0, use user's Inbox
+        // Resolve taskListId - if null or 0, use user's Inbox
+        Long taskListId = taskCreateRequest.taskListId();
+
+        // If taskListTitle is provided, use it to resolve/create TaskList
+        if (taskCreateRequest.taskListTitle() != null && !taskCreateRequest.taskListTitle().isBlank()) {
+            TaskList targetList = taskListService
+                    .getOrCreateTaskList(taskCreateRequest.taskListTitle(), userId);
+            taskListId = targetList.getId();
+            log.info("Resolved task list by title '{}' to id: {}", taskCreateRequest.taskListTitle(), taskListId);
+        } else if (taskListId == null || taskListId == 0) {
+            log.info("TaskListId is {} - resolving to user's Inbox", taskListId);
+            com.example.app1.model.TaskList inbox = taskListService.getOrCreateInbox(userId);
+            taskListId = inbox.getId();
+            log.info("Resolved to Inbox with id: {}", taskListId);
+        }
+
         // Verify user owns the task list
-        if (!taskListRepository.existsByIdAndUserId(taskCreateRequest.taskListId(), userId)) {
-            log.warn("Task list {} not found for user: {}", taskCreateRequest.taskListId(),
-                    userId);
+        final Long finalTaskListId = taskListId;
+        if (!taskListRepository.existsByIdAndUserId(finalTaskListId, userId)) {
+            log.warn("Task list {} not found for user: {}", finalTaskListId, userId);
             throw new IllegalArgumentException("Task list not found or access denied");
         }
 
@@ -120,8 +147,8 @@ public class TaskService {
                     taskCreateRequest.customDates().size(), userId);
 
             Task firstTask = null;
-            for (java.time.LocalDate date : taskCreateRequest.customDates()) {
-                Task task = createSingleTask(taskCreateRequest, userId, date, false, null, null);
+            for (LocalDate date : taskCreateRequest.customDates()) {
+                Task task = createSimpleTask(taskCreateRequest, userId, date, finalTaskListId);
                 if (firstTask == null) {
                     firstTask = task;
                 }
@@ -134,18 +161,34 @@ public class TaskService {
         String recurrenceRule = taskCreateRequest.recurrenceRule();
 
         if (isRecurring != null && isRecurring && recurrenceRule != null) {
-            return createRecurringTasks(taskCreateRequest, userId, recurrenceRule);
+            return createRecurringTasks(taskCreateRequest, userId, recurrenceRule, finalTaskListId);
         }
 
-        return createSingleTask(taskCreateRequest, userId, taskCreateRequest.executionDate(),
-                false, null, null);
+        return createSimpleTask(taskCreateRequest, userId, taskCreateRequest.executionDate(),
+                finalTaskListId);
+    }
+
+    /**
+     * Bulk create tasks.
+     * 
+     * @param tasks  List of task creation requests
+     * @param userId Auth0 sub claim identifying the user
+     * @return List of created tasks
+     */
+    @Transactional
+    public List<Task> bulkCreateTasks(List<TaskDto.Create> tasks, String userId) {
+        log.info("Bulk creating {} tasks for user: {}", tasks.size(), userId);
+        return tasks.stream()
+                .map(request -> createTask(request, userId))
+                .toList();
     }
 
     /**
      * Create recurring task instances based on recurrence rule.
      * Generates all instances immediately based on the rule's end condition.
      */
-    private Task createRecurringTasks(TaskDto.Create taskCreateRequest, String userId, String recurrenceRule) {
+    private Task createRecurringTasks(TaskDto.Create taskCreateRequest, String userId, String recurrenceRule,
+            Long resolvedTaskListId) {
         log.info("Creating recurring tasks for user: {} with rule: {}", userId, recurrenceRule);
 
         // Parse recurrence rule JSON
@@ -228,34 +271,68 @@ public class TaskService {
         log.info("Generated {} dates for recurring task", dates.size());
 
         // Create parent task first
-        Task parentTask = createSingleTask(taskCreateRequest, userId, dates.get(0), true, recurrenceRule, null);
+        Task parentTask = createRecurringParent(taskCreateRequest, userId, dates.get(0), recurrenceRule,
+                resolvedTaskListId);
 
         // Create child tasks for remaining dates
         for (int i = 1; i < dates.size(); i++) {
-            createSingleTask(taskCreateRequest, userId, dates.get(i), false, null, parentTask.getId());
+            createRecurringChild(taskCreateRequest, userId, dates.get(i), parentTask.getId(),
+                    resolvedTaskListId);
         }
 
         return parentTask;
     }
 
     /**
+     * Internal method to create a simple standalone task.
+     */
+    private Task createSimpleTask(TaskDto.Create request, String userId, LocalDate executionDate, Long taskListId) {
+        return createSingleTask(request, userId, executionDate, false, null, null, taskListId);
+    }
+
+    /**
+     * Internal method to create the parent instance of a recurring task.
+     */
+    private Task createRecurringParent(TaskDto.Create request, String userId, LocalDate executionDate,
+            String rule, Long taskListId) {
+        return createSingleTask(request, userId, executionDate, true, rule, null, taskListId);
+    }
+
+    /**
+     * Internal method to create a linked child instance of a recurring task.
+     */
+    private Task createRecurringChild(TaskDto.Create request, String userId, LocalDate executionDate,
+            Long parentId, Long taskListId) {
+        return createSingleTask(request, userId, executionDate, false, null, parentId, taskListId);
+    }
+
+    /**
      * Internal method to create a single task.
      */
     private Task createSingleTask(TaskDto.Create taskCreateRequest, String userId,
-            java.time.LocalDate executionDate, boolean isRecurring, String recurrenceRule, Long recurrenceParentId) {
+            java.time.LocalDate executionDate, boolean isRecurring, String recurrenceRule, Long recurrenceParentId,
+            Long resolvedTaskListId) {
 
         // Set default status
-        TaskStatus status = TaskStatus.PENDING;
+        TaskStatus status = taskCreateRequest.status() != null ? taskCreateRequest.status() : TaskStatus.PENDING;
 
         // Fetch TaskList reference
-        TaskList taskList = taskListRepository.getReferenceById(taskCreateRequest.taskListId());
+        TaskList taskList = taskListRepository.getReferenceById(resolvedTaskListId);
 
         Task.TaskBuilder taskBuilder = Task.builder()
                 .title(taskCreateRequest.title())
                 .status(status)
                 .executionDate(executionDate)
                 .userId(userId)
-                .taskList(taskList);
+                .taskList(taskList)
+                .scheduledStartAt(taskCreateRequest.scheduledStartAt() != null && executionDate != null
+                        ? taskCreateRequest.scheduledStartAt().with(executionDate)
+                        : taskCreateRequest.scheduledStartAt())
+                .scheduledEndAt(taskCreateRequest.scheduledEndAt() != null && executionDate != null
+                        ? taskCreateRequest.scheduledEndAt().with(executionDate)
+                        : taskCreateRequest.scheduledEndAt())
+                .isAllDay(taskCreateRequest.isAllDay())
+                .description(taskCreateRequest.description());
 
         // Set recurring fields
         if (isRecurring) {
@@ -270,15 +347,7 @@ public class TaskService {
             taskBuilder.recurrenceParentId(recurrenceParentId);
         }
 
-        if (taskCreateRequest.categoryId() != null) {
-            Category category = categoryRepository.findById(taskCreateRequest.categoryId())
-                    .orElseThrow(() -> new IllegalArgumentException("Category not found"));
-            taskBuilder.category(category);
-        } else {
-            // Default to "Others" category
-            Category others = categoryService.getOrCreateCategory(userId, "その他", "#94a3b8");
-            taskBuilder.category(others);
-        }
+        taskBuilder.category(resolveCategory(taskCreateRequest, userId));
 
         if (taskCreateRequest.estimatedPomodoros() != null) {
             taskBuilder.estimatedPomodoros(taskCreateRequest.estimatedPomodoros());
@@ -290,20 +359,36 @@ public class TaskService {
         // instances)
         if (recurrenceParentId == null && taskCreateRequest.subtasks() != null
                 && !taskCreateRequest.subtasks().isEmpty()) {
-            List<Subtask> subtasks = taskCreateRequest.subtasks().stream()
-                    .map(subtaskDto -> Subtask.builder()
-                            .title(subtaskDto.title())
-                            .description(subtaskDto.description())
-                            .task(task)
-                            .isCompleted(false)
-                            .build())
-                    .toList();
-            task.getSubtasks().addAll(subtasks);
+            createSubtasks(task, taskCreateRequest.subtasks());
         }
 
         Task saved = taskRepository.save(task);
         log.info("Created task {} for user: {}", saved.getId(), saved.getUserId());
         return saved;
+    }
+
+    private Category resolveCategory(TaskDto.Create request, String userId) {
+        if (request.categoryId() != null) {
+            return categoryRepository.findById(request.categoryId())
+                    .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+        } else if (request.categoryName() != null && !request.categoryName().isBlank()) {
+            return categoryRepository.findByUserIdAndName(userId, request.categoryName())
+                    .orElseGet(() -> categoryService.getOrCreateCategory(userId, "その他", "#94a3b8"));
+        } else {
+            return categoryService.getOrCreateCategory(userId, "その他", "#94a3b8");
+        }
+    }
+
+    private void createSubtasks(Task task, List<SubtaskDto.Create> subtasks) {
+        List<Subtask> entities = subtasks.stream()
+                .map(dto -> Subtask.builder()
+                        .title(dto.title())
+                        .description(dto.description())
+                        .task(task)
+                        .isCompleted(false)
+                        .build())
+                .toList();
+        task.getSubtasks().addAll(entities);
     }
 
     /**
@@ -457,8 +542,16 @@ public class TaskService {
             Category category = categoryRepository.findById(request.categoryId())
                     .orElseThrow(() -> new IllegalArgumentException("Category not found"));
             existing.setCategory(category);
+        } else if (request.categoryName() != null && !request.categoryName().isBlank()) {
+            Category category = categoryRepository.findByUserIdAndName(userId, request.categoryName())
+                    .orElseGet(() -> categoryService.getOrCreateCategory(userId, "その他", "#94a3b8"));
+            existing.setCategory(category);
         }
-        if (request.taskListId() != null) {
+        if (request.taskListTitle() != null && !request.taskListTitle().isBlank()) {
+            TaskList targetList = taskListService.getOrCreateTaskList(request.taskListTitle(), userId);
+            existing.setTaskList(targetList);
+            log.info("Moving task {} to task list '{}' (id: {})", id, request.taskListTitle(), targetList.getId());
+        } else if (request.taskListId() != null) {
             // Verify user owns the target task list
             TaskList targetList = taskListRepository.findByIdAndUserId(request.taskListId(), userId)
                     .orElseThrow(() -> new IllegalArgumentException("Target task list not found or access denied"));
@@ -599,6 +692,26 @@ public class TaskService {
                 updated = true;
             }
 
+            // Propagate description
+            if (request.description() != null) {
+                child.setDescription(request.description());
+                updated = true;
+            }
+
+            // Propagate scheduling (keep the child's execution date, but update the time)
+            if (request.scheduledStartAt() != null && child.getExecutionDate() != null) {
+                child.setScheduledStartAt(request.scheduledStartAt().with(child.getExecutionDate()));
+                updated = true;
+            }
+            if (request.scheduledEndAt() != null && child.getExecutionDate() != null) {
+                child.setScheduledEndAt(request.scheduledEndAt().with(child.getExecutionDate()));
+                updated = true;
+            }
+            if (request.isAllDay() != null) {
+                child.setIsAllDay(request.isAllDay());
+                updated = true;
+            }
+
             if (updated) {
                 taskRepository.save(child);
             }
@@ -680,7 +793,7 @@ public class TaskService {
         log.info("Generating {} recurring instances for task {}", dates.size(), parentTask.getId());
 
         // Create child tasks for each date
-        for (java.time.LocalDate date : dates) {
+        for (LocalDate date : dates) {
             Task childTask = Task.builder()
                     .title(parentTask.getTitle())
                     .status(TaskStatus.PENDING)
@@ -700,8 +813,8 @@ public class TaskService {
     /**
      * Advance the date based on frequency.
      */
-    private java.time.LocalDate advanceDate(java.time.LocalDate date, String frequency,
-            java.util.List<String> daysOfWeek) {
+    private LocalDate advanceDate(LocalDate date, String frequency,
+            List<String> daysOfWeek) {
         return switch (frequency) {
             case "daily" -> date.plusDays(1);
             case "weekly" -> {
@@ -720,8 +833,8 @@ public class TaskService {
      * Get task statistics for a specific range.
      */
     @Transactional(readOnly = true)
-    public com.example.app1.dto.TaskDto.Stats getTaskStatsInRange(String userId, java.time.LocalDate startDate,
-            java.time.LocalDate endDate) {
+    public TaskDto.Stats getTaskStatsInRange(String userId, LocalDate startDate,
+            LocalDate endDate) {
         Long completedCount = taskRepository.countCompletedByUserIdAndExecutionDateBetween(
                 userId, startDate, endDate);
         Long totalCount = taskRepository.countByUserIdAndExecutionDateBetween(
@@ -754,7 +867,7 @@ public class TaskService {
         log.info("Task stats for user {} from {} to {}: {} / {} completed. Est: {}m, Act: {}m",
                 userId, startDate, endDate, completedCount, totalCount, totalEstimatedMinutes, totalActualMinutes);
 
-        return com.example.app1.dto.TaskDto.Stats.builder()
+        return TaskDto.Stats.builder()
                 .startDate(startDate)
                 .endDate(endDate)
                 .completedCount(completedCount != null ? completedCount : 0L)
@@ -841,6 +954,10 @@ public class TaskService {
                     return buildBulkResult(0, allFailed);
                 }
                 category = categoryOpt.get();
+            } else if (request.categoryName() != null && !request.categoryName().isBlank()) {
+                // Try to find by name, otherwise fallback to "Others"
+                category = categoryRepository.findByUserIdAndName(userId, request.categoryName())
+                        .orElseGet(() -> categoryService.getOrCreateCategory(userId, "その他", "#94a3b8"));
             }
 
             // Resolve task list if provided
@@ -899,6 +1016,27 @@ public class TaskService {
                 }
                 if (request.executionDate() != null) {
                     task.setExecutionDate(request.executionDate());
+                }
+                if (request.estimatedPomodoros() != null) {
+                    task.setEstimatedPomodoros(request.estimatedPomodoros());
+                }
+                if (request.description() != null) {
+                    task.setDescription(request.description());
+                }
+                if (request.scheduledStartAt() != null) {
+                    task.setScheduledStartAt(request.scheduledStartAt());
+                }
+                if (request.scheduledEndAt() != null) {
+                    task.setScheduledEndAt(request.scheduledEndAt());
+                }
+                if (request.isAllDay() != null) {
+                    task.setIsAllDay(request.isAllDay());
+                }
+                if (request.isRecurring() != null) {
+                    task.setIsRecurring(request.isRecurring());
+                }
+                if (request.recurrenceRule() != null) {
+                    task.setRecurrenceRule(request.recurrenceRule());
                 }
             }
 
@@ -978,5 +1116,181 @@ public class TaskService {
                     .toList();
             return buildBulkResult(0, allFailed);
         }
+    }
+
+    /**
+     * Sync tasks (Create, Update, Delete) in a single transaction.
+     * Uses SyncTaskDto which is a unified model for AI and Sync.
+     */
+    /**
+     * Sync tasks (Create, Update, Delete) in a single transaction.
+     * Uses SyncTaskDto which is a unified model for AI and Sync.
+     */
+    @Transactional
+    public SyncResult syncTasks(List<SyncTaskDto> tasks,
+            String userId) {
+        log.info("Syncing {} tasks for user: {}", tasks != null ? tasks.size() : 0, userId);
+        if (tasks != null) {
+            tasks.forEach(t -> log.info("Task to sync: id={}, title={}, startAt={}, endAt={}", t.id(), t.title(),
+                    t.scheduledStartAt(), t.scheduledEndAt()));
+        }
+
+        if (tasks == null || tasks.isEmpty()) {
+            return new SyncResult(true, "No tasks to sync", 0, 0, 0);
+        }
+
+        int createdCount = 0;
+        int updatedCount = 0;
+        int deletedCount = 0;
+
+        for (SyncTaskDto req : tasks) {
+            try {
+                if (Boolean.TRUE.equals(req.isDeleted()) && req.id() != null) {
+                    // Delete
+                    deleteTask(req.id(), userId);
+                    deletedCount++;
+                } else if (req.id() == null || req.id() <= 0) {
+                    // Createc
+                    TaskDto.Create create = convertToCreate(req);
+                    createTask(create, userId);
+                    createdCount++;
+                } else {
+                    // Update
+                    TaskDto.Update update = convertToUpdate(req);
+                    updateTask(req.id(), update, userId);
+                    updatedCount++;
+                }
+            } catch (Exception e) {
+                log.error("Failed to sync task: {}", req, e);
+                // Continue with other tasks or throw?
+                // For batch sync, it might be better to fail all or continue?
+                // Given the transactional nature if we throw, everything rolls back.
+                // The prompt/plan implied full success or fail.
+                throw e;
+            }
+        }
+
+        String message = String.format("Sync completed: Created %d, Updated %d, Deleted %d",
+                createdCount, updatedCount, deletedCount);
+        return new SyncResult(true, message, createdCount, updatedCount, deletedCount);
+    }
+
+    private TaskDto.Create convertToCreate(TaskDto.SyncTaskDto req) {
+        LocalDate executionDate = null;
+        if (req.executionDate() != null) {
+            try {
+                executionDate = LocalDate.parse(req.executionDate());
+            } catch (Exception e) {
+                log.warn("Invalid executionDate format: {}", req.executionDate());
+            }
+        }
+
+        LocalDateTime startAt = null;
+        if (req.scheduledStartAt() != null) {
+            try {
+                startAt = LocalDateTime.parse(req.scheduledStartAt());
+            } catch (Exception e) {
+                log.warn("Invalid scheduledStartAt format: {}", req.scheduledStartAt());
+            }
+        }
+
+        LocalDateTime endAt = null;
+        if (req.scheduledEndAt() != null) {
+            try {
+                endAt = LocalDateTime.parse(req.scheduledEndAt());
+            } catch (Exception e) {
+                log.warn("Invalid scheduledEndAt format: {}", req.scheduledEndAt());
+            }
+        }
+
+        List<SubtaskDto.Create> subtasks = null;
+        if (req.subtasks() != null) {
+            subtasks = req.subtasks().stream()
+                    .map(title -> new SubtaskDto.Create(null, title, null))
+                    .toList();
+        }
+
+        TaskStatus status = null;
+        if (req.status() != null && !req.status().isBlank()) {
+            try {
+                status = TaskStatus.valueOf(req.status().trim().toUpperCase());
+            } catch (Exception e) {
+                log.warn("Invalid status value: {}", req.status());
+            }
+        }
+
+        return new TaskDto.Create(
+                req.title(),
+                null, // taskListId (resolved by title or default)
+                req.taskListTitle(),
+                executionDate,
+                null, // categoryId
+                req.categoryName(),
+                subtasks,
+                req.estimatedPomodoros(),
+                req.isRecurring(),
+                req.recurrencePattern(),
+                null, // customDates
+                startAt,
+                endAt,
+                req.isAllDay(),
+                req.description(),
+                status);
+    }
+
+    private TaskDto.Update convertToUpdate(TaskDto.SyncTaskDto req) {
+        LocalDate executionDate = null;
+        if (req.executionDate() != null) {
+            try {
+                executionDate = LocalDate.parse(req.executionDate());
+            } catch (Exception e) {
+                log.warn("Invalid executionDate format: {}", req.executionDate());
+            }
+        }
+
+        LocalDateTime startAt = null;
+        if (req.scheduledStartAt() != null) {
+            try {
+                startAt = LocalDateTime.parse(req.scheduledStartAt());
+            } catch (Exception e) {
+                log.warn("Invalid scheduledStartAt format: {}", req.scheduledStartAt());
+            }
+        }
+
+        LocalDateTime endAt = null;
+        if (req.scheduledEndAt() != null) {
+            try {
+                endAt = LocalDateTime.parse(req.scheduledEndAt());
+            } catch (Exception e) {
+                log.warn("Invalid scheduledEndAt format: {}", req.scheduledEndAt());
+            }
+        }
+
+        TaskStatus status = null;
+        if (req.status() != null && !req.status().isBlank()) {
+            try {
+                status = TaskStatus.valueOf(req.status().trim().toUpperCase());
+            } catch (Exception e) {
+                log.warn("Invalid status value: {}", req.status());
+            }
+        }
+        TaskDto.Update update = new TaskDto.Update(
+                req.title(),
+                status,
+                executionDate,
+                null, // categoryId
+                req.categoryName(),
+                null, // taskListId
+                req.taskListTitle(),
+                null, // completedAt
+                req.estimatedPomodoros(),
+                req.isRecurring(),
+                req.recurrencePattern(),
+                req.description(),
+                startAt,
+                endAt,
+                req.isAllDay());
+        log.info("Update task: {}", update);
+        return update;
     }
 }

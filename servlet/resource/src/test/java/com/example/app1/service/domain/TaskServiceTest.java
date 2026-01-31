@@ -64,7 +64,8 @@ class TaskServiceTest {
     void createTask_Basic() {
         // Arrange
         TaskDto.Create request = new TaskDto.Create(
-                "Test Task", 1L, LocalDate.now(), 1L, null, 2, false, null, null, null, null, null);
+                "Test Task", 1L, null, LocalDate.now(), 1L, null, null, 2, false, null, null, null, null, null, null,
+                null);
 
         when(taskListRepository.existsByIdAndUserId(1L, userId)).thenReturn(true);
         when(taskListRepository.getReferenceById(1L)).thenReturn(mockTaskList);
@@ -92,7 +93,7 @@ class TaskServiceTest {
                 LocalDate.of(2026, 1, 1),
                 LocalDate.of(2026, 1, 5));
         TaskDto.Create request = new TaskDto.Create(
-                "Multi Date Task", 1L, null, 1L, null, 1, false, null, dates, null, null, null);
+                "Multi Date Task", 1L, null, null, 1L, null, null, 1, false, null, dates, null, null, null, null, null);
 
         when(taskListRepository.existsByIdAndUserId(1L, userId)).thenReturn(true);
         when(taskListRepository.getReferenceById(1L)).thenReturn(mockTaskList);
@@ -117,7 +118,8 @@ class TaskServiceTest {
         LocalDate startDate = LocalDate.of(2026, 1, 5); // Monday
 
         TaskDto.Create request = new TaskDto.Create(
-                "Recurring Task", 1L, startDate, 1L, null, 1, true, recurrenceRule, null, null, null, null);
+                "Recurring Task", 1L, null, startDate, 1L, null, null, 1, true, recurrenceRule, null, null, null, null,
+                null, null);
 
         when(taskListRepository.existsByIdAndUserId(1L, userId)).thenReturn(true);
         when(taskListRepository.getReferenceById(1L)).thenReturn(mockTaskList);
@@ -130,7 +132,7 @@ class TaskServiceTest {
         });
 
         // Act
-        Task parentTask = taskService.createTask(request, userId);
+        taskService.createTask(request, userId);
 
         // Assert
         // Expected dates: 1/5(Mon), 1/7(Wed), 1/12(Mon), 1/14(Wed) -> Total 4 tasks
@@ -162,7 +164,8 @@ class TaskServiceTest {
         LocalDate startDate = LocalDate.of(2026, 1, 1);
 
         TaskDto.Create request = new TaskDto.Create(
-                "Daily Task", 1L, startDate, 1L, null, 1, true, recurrenceRule, null, null, null, null);
+                "Daily Task", 1L, null, startDate, 1L, null, null, 1, true, recurrenceRule, null, null, null, null,
+                null, null);
 
         when(taskListRepository.existsByIdAndUserId(1L, userId)).thenReturn(true);
         when(taskListRepository.getReferenceById(1L)).thenReturn(mockTaskList);
@@ -179,5 +182,33 @@ class TaskServiceTest {
         // Assert
         // Expected: 1/1, 1/2, 1/3, 1/4 -> 4 tasks
         verify(taskRepository, times(4)).save(any(Task.class));
+    }
+
+    @Test
+    void bulkCreateTasks() {
+        // Arrange
+        TaskDto.Create request1 = new TaskDto.Create(
+                "Task 1", 1L, null, LocalDate.now(), 1L, null, null, 1, false, null, null, null, null, null, null,
+                null);
+        TaskDto.Create request2 = new TaskDto.Create(
+                "Task 2", 1L, null, LocalDate.now(), 1L, null, null, 1, false, null, null, null, null, null, null,
+                null);
+        List<TaskDto.Create> requests = Arrays.asList(request1, request2);
+
+        when(taskListRepository.existsByIdAndUserId(1L, userId)).thenReturn(true);
+        when(taskListRepository.getReferenceById(1L)).thenReturn(mockTaskList);
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(mockCategory));
+        when(taskRepository.save(any(Task.class))).thenAnswer(i -> {
+            Task t = i.getArgument(0);
+            t.setId(System.nanoTime());
+            return t;
+        });
+
+        // Act
+        List<Task> results = taskService.bulkCreateTasks(requests, userId);
+
+        // Assert
+        assertEquals(2, results.size());
+        verify(taskRepository, times(2)).save(any(Task.class));
     }
 }

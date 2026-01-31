@@ -212,4 +212,30 @@ public class BffTaskService {
         return result;
     }
 
+    public TaskDto.BulkCreateResult bulkCreateTasks(TaskDto.BulkCreate request, String token) {
+        log.info("Bulk creating {} tasks", request.tasks() != null ? request.tasks().size() : 0);
+        TaskDto.BulkCreateResult result = restClient.post()
+                .uri(resourceUrl + "/tasks/batch")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(request)
+                .retrieve()
+                .body(TaskDto.BulkCreateResult.class);
+        log.info("Bulk create result: {} tasks created", result != null ? result.successCount() : 0);
+        return result;
+    }
+
+    public TaskDto.SyncResult syncTasks(
+            List<TaskDto.SyncTaskDto> tasks, String token) {
+        log.info("Syncing {} tasks via Resource Server", tasks != null ? tasks.size() : 0);
+        TaskDto.SyncResult result = restClient.post()
+                .uri(resourceUrl + "/tasks/sync")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(tasks)
+                .retrieve()
+                .body(io.reflectoring.bff.dto.TaskDto.SyncResult.class);
+        log.info("Sync result: {}", result);
+        return result;
+    }
 }

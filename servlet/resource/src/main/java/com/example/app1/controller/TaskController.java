@@ -128,6 +128,43 @@ public class TaskController {
     }
 
     /**
+     * Bulk create multiple tasks at once.
+     * Uses transaction to ensure all tasks are created atomically.
+     * 
+     * @param request List of tasks to create
+     * @param jwt     JWT token containing user information
+     * @return Result with created task IDs
+     */
+    @PostMapping("/tasks/batch")
+    public ResponseEntity<TaskDto.BulkCreateResult> bulkCreateTasks(
+            @RequestBody TaskDto.BulkCreate request,
+            @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getSubject();
+        log.info("Received bulk create request for {} tasks for user: {}",
+                request.tasks() != null ? request.tasks().size() : 0, userId);
+
+        if (request.tasks() == null || request.tasks().isEmpty()) {
+            return ResponseEntity.badRequest().body(
+                    TaskDto.BulkCreateResult.error("No tasks provided"));
+        }
+
+        try {
+            java.util.List<Long> createdIds = new java.util.ArrayList<>();
+            for (TaskDto.Create taskCreate : request.tasks()) {
+                Task created = taskService.createTask(taskCreate, userId);
+                createdIds.add(created.getId());
+            }
+            log.info("Successfully created {} tasks for user: {}", createdIds.size(), userId);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(TaskDto.BulkCreateResult.success(createdIds));
+        } catch (Exception e) {
+            log.error("Error bulk creating tasks for user {}: {}", userId, e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(TaskDto.BulkCreateResult.error("タスクの作成に失敗しました: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Patch an existing task.
      * 
      * @param id      Task ID
@@ -302,5 +339,25 @@ public class TaskController {
         } else {
             return ResponseEntity.status(org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY).body(result);
         }
+    }
+
+    /**
+     * Sync tasks (Create, Update, Delete) in a single transaction.
+     * Uses SyncTaskDto which is a unified model.
+     * 
+     * @param tasks List of tasks to sync
+     * @param jwt   Authenticated user's JWT
+     * @return Sync result
+     */
+    @PostMapping("/tasks/sync")
+    public ResponseEntity<TaskDto.SyncResult> syncTasks(
+            @RequestBody List<TaskDto.SyncTaskDto> tasks,
+            @AuthenticationPrincipal Jwt jwt) {
+        log.info("[TaskController] POST /api/tasks/sync - user: {}, tasks: {}",
+                jwt.getSubject(), tasks != null ? tasks.size() : 0);
+        String userId = jwt.getSubject();
+
+        TaskDto.SyncResult result = taskService.syncTasks(tasks, userId);
+        return ResponseEntity.ok(result);
     }
 }
