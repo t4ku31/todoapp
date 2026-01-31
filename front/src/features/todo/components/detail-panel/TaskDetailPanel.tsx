@@ -4,6 +4,7 @@ import {
 	Calendar,
 	ChevronRight,
 	Clock,
+	Folder,
 	ListTree,
 	Tag,
 	Trash2,
@@ -17,13 +18,13 @@ import { Input } from "@/components/ui/input";
 // import { Textarea } from "@/components/ui/textarea"; // Removed
 import { cn } from "@/lib/utils";
 import { useTodoStore } from "@/store/useTodoStore";
-import { CategorySelect } from "./ui/CategorySelect";
-import { DeleteButton } from "./ui/DeleteButton";
-import { EditableDate } from "./ui/EditableDate";
-import { EditableDescription } from "./ui/EditableDescription";
-import { EditableDuration } from "./ui/EditableDuration";
-import { TaskItemSubtaskList } from "./ui/TaskItemSubtaskList";
-import { TaskListSelector } from "./ui/TaskListSelector";
+import { CategorySelect } from "../ui/CategorySelect";
+import { DeleteButton } from "../ui/DeleteButton";
+import { EditableDate } from "../ui/EditableDate";
+import { EditableDescription } from "../ui/EditableDescription";
+import { EditableDuration } from "../ui/EditableDuration";
+import { TaskItemSubtaskList } from "../ui/TaskItemSubtaskList";
+import { TaskListSelector } from "../ui/TaskListSelector";
 
 interface TaskDetailPanelProps {
 	taskId: number;
@@ -225,7 +226,7 @@ export function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProps) {
 					{/* Task List */}
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-2 text-sm text-gray-500">
-							<ListTree className="w-4 h-4" />
+							<Folder className="w-4 h-4" />
 							<span>リスト</span>
 						</div>
 						<TaskListSelector

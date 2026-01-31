@@ -18,7 +18,7 @@ import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./calendar.css";
 
-import { TaskDetailPanel } from "@/features/todo/components/TaskDetailPanel";
+import { TaskDetailPanel } from "@/features/todo/components/detail-panel/TaskDetailPanel";
 import ScheduleView from "./ScheduleView";
 
 // Configure date-fns localizer for react-big-calendar

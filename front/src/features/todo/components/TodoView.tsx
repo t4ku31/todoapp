@@ -1,35 +1,22 @@
-import {
-	DndContext,
-	type DragEndEvent,
-	DragOverlay,
-	type DragStartEvent,
-} from "@dnd-kit/core";
+import { DndContext, DragOverlay } from "@dnd-kit/core";
 import { Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { AiChatPanel } from "@/features/ai/components/AiChatPanel";
-import { useAiChatContextStore } from "@/features/ai/stores/useAiChatContextStore";
-import type { Task } from "@/features/todo/types";
+import { useTaskDragAndDrop } from "@/features/todo/hooks/useTaskDragAndDrop";
 import { cn } from "@/lib/utils";
 import { useCategoryStore } from "@/store/useCategoryStore";
 import { useTodoStore } from "@/store/useTodoStore";
-import { FilteredTaskView } from "./FilteredTaskView";
-import { TaskDetailPanel } from "./TaskDetailPanel";
-import { TaskSidebar } from "./TaskSidebar";
+import { TaskDetailPanel } from "./detail-panel/TaskDetailPanel";
+import { FilteredTaskView } from "./list-view/FilteredTaskView";
+import { TaskSidebar } from "./sidebar/TaskSidebar";
 
 export default function TodoView() {
 	const location = useLocation();
 	const fetchCategories = useCategoryStore((state) => state.fetchCategories);
-	const {
-		fetchTaskLists,
-		createTask,
-		updateTask,
-		deleteTask,
-		bulkUpdateTasks,
-		taskLists,
-	} = useTodoStore();
+	const { fetchTaskLists, createTask, updateTask, deleteTask, taskLists } =
+		useTodoStore();
 
-	const [activeTask, setActiveTask] = useState<Task | null>(null);
 	const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
 	const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
@@ -41,6 +28,16 @@ export default function TodoView() {
 
 	// AI Chat dialog state
 	const [isAiChatOpen, setIsAiChatOpen] = useState(false);
+
+	// DnD Hook
+	const { activeTask, handleDragStart, handleDragEnd } = useTaskDragAndDrop({
+		taskLists,
+		isSelectionMode,
+		setIsSelectionMode,
+		selectedTaskIds,
+		setSelectedTaskIds,
+		setIsAiChatOpen,
+	});
 
 	useEffect(() => {
 		fetchTaskLists();
@@ -73,103 +70,6 @@ export default function TodoView() {
 		mediaQuery.addEventListener("change", handleResize);
 		return () => mediaQuery.removeEventListener("change", handleResize);
 	}, []);
-
-	const handleDragStart = (event: DragStartEvent) => {
-		if (event.active.data.current?.task) {
-			const draggedTask = event.active.data.current.task as Task;
-			setActiveTask(draggedTask);
-			// If dragging a selected task in selection mode, keep selection
-			// If dragging unselected task, add it to selection temporarily
-			if (isSelectionMode && !selectedTaskIds.has(draggedTask.id)) {
-				setSelectedTaskIds((prev) => new Set(prev).add(draggedTask.id));
-			}
-		}
-	};
-
-	const handleDragEnd = (event: DragEndEvent) => {
-		const { active, over } = event;
-
-		if (!over) {
-			setActiveTask(null);
-			return;
-		}
-
-		const task = active.data.current?.task as Task;
-		const targetId = over.id as string;
-
-		if (!task) {
-			setActiveTask(null);
-			return;
-		}
-
-		// Determine which tasks to move
-		const tasksToMove =
-			isSelectionMode && selectedTaskIds.size > 0
-				? Array.from(selectedTaskIds)
-				: [task.id];
-
-		// Handle different drop targets
-		if (targetId === "ai-context-drop-zone") {
-			// AIコンテキストへのドロップ
-			const { addTask } = useAiChatContextStore.getState();
-			const allTasks = useTodoStore.getState().allTasks;
-
-			// 選択されたタスクまたはドラッグしたタスクを追加
-			for (const taskId of tasksToMove) {
-				const taskToAdd = allTasks.find((t) => t.id === taskId);
-				if (taskToAdd) {
-					addTask(taskToAdd);
-				}
-			}
-			// AIチャットパネルを開く
-			setIsAiChatOpen(true);
-		} else if (targetId === "today") {
-			const today = new Date().toISOString().split("T")[0];
-			if (tasksToMove.length > 1) {
-				bulkUpdateTasks(tasksToMove, { executionDate: today });
-			} else if (task.executionDate !== today) {
-				updateTask(task.id, { executionDate: today });
-			}
-		} else if (targetId === "inbox") {
-			const inboxList = useTodoStore
-				.getState()
-				.taskLists.find((l) => l.title === "Inbox");
-			if (inboxList) {
-				if (tasksToMove.length > 1) {
-					bulkUpdateTasks(tasksToMove, { taskListId: inboxList.id });
-				} else if (task.taskListId !== inboxList.id) {
-					updateTask(task.id, { taskListId: inboxList.id });
-				}
-			}
-		} else if (targetId.startsWith("tasklist-")) {
-			const newTaskListId = Number.parseInt(
-				targetId.replace("tasklist-", ""),
-				10,
-			);
-			if (tasksToMove.length > 1) {
-				bulkUpdateTasks(tasksToMove, { taskListId: newTaskListId });
-			} else if (task.taskListId !== newTaskListId) {
-				updateTask(task.id, { taskListId: newTaskListId });
-			}
-		} else if (targetId.startsWith("category-")) {
-			const newCategoryId = Number.parseInt(
-				targetId.replace("category-", ""),
-				10,
-			);
-			if (tasksToMove.length > 1) {
-				bulkUpdateTasks(tasksToMove, { categoryId: newCategoryId });
-			} else if (task.category?.id !== newCategoryId) {
-				updateTask(task.id, { categoryId: newCategoryId });
-			}
-		}
-
-		setActiveTask(null);
-		// Clear selection after bulk move
-		if (isSelectionMode && tasksToMove.length > 1) {
-			setSelectedTaskIds(new Set());
-			setIsSelectionMode(false);
-		}
-	};
 
 	const handleTaskSelect = (taskId: number | null) => {
 		setSelectedTaskId(taskId);
