@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -10,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useEffect, useState } from "react";
 
 interface CreateListDialogProps {
 	isOpen: boolean;
@@ -95,6 +95,7 @@ export function CreateListDialog({
 					<Button
 						onClick={() => handleSubmit()}
 						disabled={!title.trim() || isSubmitting}
+						className="bg-indigo-600 text-white hover:bg-indigo-700"
 					>
 						{mode === "create" ? "作成" : "保存"}
 					</Button>
