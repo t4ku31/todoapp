@@ -1,8 +1,8 @@
+import { format } from "date-fns";
+import { useEffect, useMemo } from "react";
 import { useAiChatContextStore } from "@/features/ai/stores/useAiChatContextStore";
 import type { Task } from "@/features/todo/types";
 import { useTodoStore } from "@/store/useTodoStore";
-import { format } from "date-fns";
-import { useEffect, useMemo } from "react";
 import type { ViewType } from "./useTaskViewParams";
 
 export function useTaskFilter(

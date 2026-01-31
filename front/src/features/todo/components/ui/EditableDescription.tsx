@@ -1,7 +1,7 @@
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronUp, Pencil } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 interface EditableDescriptionProps {
 	id: number | string;

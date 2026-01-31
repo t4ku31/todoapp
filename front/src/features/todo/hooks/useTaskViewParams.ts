@@ -1,6 +1,6 @@
+import { useLocation, useSearchParams } from "react-router-dom";
 import { useCategoryStore } from "@/store/useCategoryStore";
 import { useTodoStore } from "@/store/useTodoStore";
-import { useLocation, useSearchParams } from "react-router-dom";
 
 export type ViewType =
 	| "today"

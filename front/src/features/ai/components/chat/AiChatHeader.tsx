@@ -1,13 +1,3 @@
-import { Button } from "@/components/ui/button";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { DeleteButton } from "@/features/todo/components/ui/DeleteButton";
-import { cn } from "@/lib/utils";
 import {
 	Check,
 	ChevronDown,
@@ -19,6 +9,16 @@ import {
 	X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { DeleteButton } from "@/features/todo/components/ui/DeleteButton";
+import { cn } from "@/lib/utils";
 
 // 会話メタデータ型 (useAiChat.ts と重複しているため、types/index.ts などに移動すべきだが、一旦ここで定義)
 // TODO: Shared interfaces should be in features/ai/types/index.ts
