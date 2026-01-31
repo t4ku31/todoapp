@@ -3,6 +3,10 @@
 .env.local
 .env.*.local
 
+# Frontend environment files
+front/.env.development
+front/.env.production
+
 # IDE
 .idea/
 *.iml

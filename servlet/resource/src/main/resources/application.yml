@@ -7,8 +7,8 @@ spring:
             initialize-schema: never
     google:
       genai:
-        api-key: ${SPRING_AI_GOOGLE_GENAI_API_KEY}
-        project-id: ${SPRING_AI_GOOGLE_GENAI_PROJECT_ID}
+        api-key: ${SPRING_AI_GOOGLE_GENAI_API_KEY:dummy-api-key}
+        project-id: ${SPRING_AI_GOOGLE_GENAI_PROJECT_ID:not-used-api-key-mode}
         chat:
           options:
             include-thoughts: true
@@ -38,7 +38,7 @@ server:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://dev-1jp2ogye74qnxdfh.jp.auth0.com/
+          issuer-uri: ${OAUTH2_ISSUER_URI:https://dev-1jp2ogye74qnxdfh.jp.auth0.com/}
        
 
 logging:
