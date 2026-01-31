@@ -1,18 +1,16 @@
-import { format } from "date-fns";
 import {
 	CalendarDays,
 	CalendarRange,
 	CheckSquare,
-	ChevronDown,
 	Inbox,
 	MoreHorizontal,
 	Pencil,
-	Plus,
 	Search,
+	Tag,
 	Trash2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -32,142 +30,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { useAiPreviewStore } from "@/features/ai/stores/useAiPreviewStore";
+import { useSidebarStats } from "@/features/todo/hooks/useSidebarStats";
 import { cn } from "@/lib/utils";
 import { useCategoryStore } from "@/store/useCategoryStore";
 import { useTodoStore } from "@/store/useTodoStore";
 
-import { CreateCategoryDialog } from "./forms/CreateCategoryDialog";
-import { CreateListDialog } from "./forms/CreateListDialog";
-import { DroppableNavItem } from "./ui/DroppableNavItem";
+import { CreateCategoryDialog } from "../forms/CreateCategoryDialog";
+import { CreateListDialog } from "../forms/CreateListDialog";
+import { DroppableNavItem } from "./DroppableNavItem";
+import { SidebarNavItem } from "./SidebarNavItem";
+import { SidebarSection } from "./SidebarSection";
 
 interface TaskSidebarProps {
 	className?: string;
-}
-
-interface NavItemProps {
-	icon: React.ElementType;
-	label: string;
-	path: string;
-	count?: number;
-	color?: string;
-	actions?: React.ReactNode;
-	aiCount?: number;
-}
-
-function NavItem({
-	icon: Icon,
-	label,
-	path,
-	count,
-	color,
-	actions,
-	aiCount,
-}: NavItemProps) {
-	const location = useLocation();
-	const isActive = location.pathname === path;
-
-	return (
-		<Link
-			to={path}
-			className={cn(
-				"flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all duration-200 group/item",
-				isActive
-					? "bg-indigo-50 text-indigo-700 font-medium shadow-sm ring-1 ring-indigo-200"
-					: "text-gray-600 hover:bg-indigo-50 hover:text-indigo-900",
-			)}
-		>
-			<div className="flex items-center gap-3 min-w-0 flex-1">
-				{color ? (
-					<div
-						className="h-4 w-4 rounded flex-shrink-0"
-						style={{ backgroundColor: color }}
-					/>
-				) : (
-					<Icon className="h-4 w-4 flex-shrink-0" />
-				)}
-				<span className="truncate">{label}</span>
-			</div>
-			<div className="flex items-center gap-1">
-				{count !== undefined && count > 0 && (
-					<span
-						className={cn(
-							"text-xs font-medium px-1.5 py-0.5 rounded-full",
-							isActive
-								? "bg-indigo-100 text-indigo-600"
-								: "bg-gray-100 text-gray-500",
-						)}
-					>
-						{count}
-					</span>
-				)}
-				{aiCount !== undefined && aiCount > 0 && (
-					<span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-600 animate-pulse">
-						+{aiCount}
-					</span>
-				)}
-				{actions && (
-					<div
-						className="opacity-0 group-hover/item:opacity-100 transition-opacity"
-						role="presentation"
-						onClickCapture={(e) => e.stopPropagation()}
-					>
-						{actions}
-					</div>
-				)}
-			</div>
-		</Link>
-	);
-}
-
-interface SectionProps {
-	title: string;
-	children: React.ReactNode;
-	defaultOpen?: boolean;
-	onAdd?: () => void;
-}
-
-function Section({ title, children, defaultOpen = true, onAdd }: SectionProps) {
-	const [isOpen, setIsOpen] = useState(defaultOpen);
-
-	return (
-		<div className="mt-6">
-			<div className="flex items-center justify-between pr-2 group/section">
-				<button
-					type="button"
-					onClick={() => setIsOpen(!isOpen)}
-					className="flex-1 flex items-center gap-2 px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 group"
-				>
-					<ChevronDown
-						className={cn(
-							"h-3.5 w-3.5 transition-transform duration-200 opacity-50 group-hover:opacity-100",
-							!isOpen && "-rotate-90",
-						)}
-					/>
-					<span>{title}</span>
-				</button>
-				{onAdd && (
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							onAdd();
-						}}
-						className="p-1 rounded hover:bg-black/5 text-gray-400 hover:text-gray-600 opacity-0 group-hover/section:opacity-100 transition-opacity"
-					>
-						<Plus className="h-3.5 w-3.5" />
-					</button>
-				)}
-			</div>
-			<div
-				className={cn(
-					"overflow-hidden transition-all duration-200",
-					isOpen ? "max-h-[500px] opacity-100 py-2" : "max-h-0 opacity-0",
-				)}
-			>
-				{children}
-			</div>
-		</div>
-	);
 }
 
 export function TaskSidebar({ className }: TaskSidebarProps) {
@@ -192,6 +67,10 @@ export function TaskSidebar({ className }: TaskSidebarProps) {
 		color: string;
 	} | null>(null);
 	const [deleteCategoryId, setDeleteCategoryId] = useState<number | null>(null);
+
+	// Stats Hook
+	const { getTodayCount, getNext7DaysCount, getInboxCount, getListTaskCount } =
+		useSidebarStats(taskLists);
 
 	// List Handlers
 	const handleListSubmit = async (title: string) => {
@@ -243,57 +122,6 @@ export function TaskSidebar({ className }: TaskSidebarProps) {
 		if (!open) setEditingCategory(null);
 	};
 
-	// Calculate counts
-	// Use date-fns format to get local date string (yyyy-MM-dd)
-	const getTodayCount = () => {
-		// Use date-fns format to get local date string (yyyy-MM-dd)
-		const today = format(new Date(), "yyyy-MM-dd");
-		return taskLists.reduce((count, list) => {
-			return (
-				count +
-				(list.tasks?.filter(
-					(t) =>
-						!t.isDeleted &&
-						t.status !== "COMPLETED" &&
-						t.executionDate &&
-						t.executionDate.startsWith(today),
-				).length || 0)
-			);
-		}, 0);
-	};
-
-	const getNext7DaysCount = () => {
-		const today = new Date();
-		const next7Days = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-		return taskLists.reduce((count, list) => {
-			return (
-				count +
-				(list.tasks?.filter((t) => {
-					if (t.isDeleted || t.status === "COMPLETED" || !t.executionDate)
-						return false;
-					const execDate = new Date(t.executionDate);
-					return execDate >= today && execDate <= next7Days;
-				}).length || 0)
-			);
-		}, 0);
-	};
-
-	const getInboxCount = () => {
-		const inboxList = taskLists.find((l) => l.title === "Inbox");
-		return (
-			inboxList?.tasks?.filter((t) => !t.isDeleted && t.status !== "COMPLETED")
-				.length || 0
-		);
-	};
-
-	const getListTaskCount = (listId: number) => {
-		const list = taskLists.find((l) => l.id === listId);
-		return (
-			list?.tasks?.filter((t) => !t.isDeleted && t.status !== "COMPLETED")
-				.length || 0
-		);
-	};
-
 	const aiCountsByListTitle = useMemo(() => {
 		const counts = new Map<string, number>();
 		for (const task of aiPreviewTasks) {
@@ -329,7 +157,9 @@ export function TaskSidebar({ className }: TaskSidebarProps) {
 						className="pl-8"
 						onKeyDown={(e) => {
 							if (e.key === "Enter") {
-								const query = (e.target as HTMLInputElement).value.trim();
+								const query = (
+									e.currentTarget as HTMLInputElement
+								).value.trim();
 								if (query) {
 									navigate(`/tasks/search?q=${encodeURIComponent(query)}`);
 								}
@@ -349,7 +179,7 @@ export function TaskSidebar({ className }: TaskSidebarProps) {
 						path="/tasks/today"
 						count={getTodayCount()}
 					/>
-					<NavItem
+					<SidebarNavItem
 						icon={CalendarRange}
 						label="次の7日間"
 						path="/tasks/week"
@@ -365,7 +195,7 @@ export function TaskSidebar({ className }: TaskSidebarProps) {
 				</div>
 
 				{/* Lists Section */}
-				<Section title="リスト" onAdd={() => setIsListDialogOpen(true)}>
+				<SidebarSection title="リスト" onAdd={() => setIsListDialogOpen(true)}>
 					<div className="px-2 space-y-2">
 						{taskLists
 							.filter((list) => list.title !== "Inbox")
@@ -427,16 +257,19 @@ export function TaskSidebar({ className }: TaskSidebarProps) {
 							</div>
 						))}
 					</div>
-				</Section>
+				</SidebarSection>
 
 				{/* Tags Section */}
-				<Section title="タグ" onAdd={() => setIsCategoryDialogOpen(true)}>
+				<SidebarSection
+					title="タグ"
+					onAdd={() => setIsCategoryDialogOpen(true)}
+				>
 					<div className="px-2 space-y-1 mt-1">
 						{categories.map((category) => (
 							<DroppableNavItem
 								key={category.id}
 								droppableId={`category-${category.id}`}
-								icon={CheckSquare}
+								icon={Tag}
 								label={category.name}
 								path={`/tasks/category/${category.id}`}
 								color={category.color}
@@ -476,7 +309,7 @@ export function TaskSidebar({ className }: TaskSidebarProps) {
 							</p>
 						)}
 					</div>
-				</Section>
+				</SidebarSection>
 
 				{/* Spacer */}
 				<div className="h-4" />
@@ -484,10 +317,15 @@ export function TaskSidebar({ className }: TaskSidebarProps) {
 
 			{/* Bottom Section */}
 			<div className="px-2 pb-4 space-y-1 border-t border-gray-100 pt-4">
-				<NavItem icon={CheckSquare} label="完了" path="/tasks/completed" />
-				<NavItem icon={Trash2} label="ゴミ箱" path="/tasks/trash" />
+				<SidebarNavItem
+					icon={CheckSquare}
+					label="完了"
+					path="/tasks/completed"
+				/>
+				<SidebarNavItem icon={Trash2} label="ゴミ箱" path="/tasks/trash" />
 			</div>
 
+			{/* Dialogs */}
 			<CreateListDialog
 				isOpen={isListDialogOpen}
 				onOpenChange={onListDialogOpenChange}

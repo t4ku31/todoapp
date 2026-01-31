@@ -1,7 +1,7 @@
 import { addDays, format, isSameDay, parseISO, startOfDay } from "date-fns";
 import { ja } from "date-fns/locale";
 import type { Task } from "@/features/todo/types";
-import { TaskItem } from "../TaskItem";
+import { TaskItem } from "../../TaskItem";
 
 interface WeekTaskViewProps {
 	filteredTasks: Task[];

@@ -6,7 +6,7 @@ import { useTaskFilter } from "@/features/todo/hooks/useTaskFilter";
 import { useTaskViewParams } from "@/features/todo/hooks/useTaskViewParams";
 import type { Task } from "@/features/todo/types";
 import { type CreateTaskParams, useTodoStore } from "@/store/useTodoStore";
-import { CreateTaskForm } from "./forms/CreateTaskForm";
+import { CreateTaskForm } from "../forms/CreateTaskForm";
 import { FilterHeader } from "./parts/FilterHeader";
 import { CompletedTaskView } from "./views/CompletedTaskView";
 import { StandardTaskView } from "./views/StandardTaskView";

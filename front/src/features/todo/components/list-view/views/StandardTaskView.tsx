@@ -1,7 +1,7 @@
 import { AiPreviewTaskItem } from "@/features/ai/components/preview/AiPreviewTaskItem";
 import type { ParsedTask } from "@/features/ai/types";
 import type { Task } from "@/features/todo/types";
-import { TaskItem } from "../TaskItem";
+import { TaskItem } from "../../TaskItem";
 
 interface StandardTaskViewProps {
 	aiNewTaskPreviews: ParsedTask[];

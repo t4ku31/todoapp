@@ -44,14 +44,10 @@ export function DroppableNavItem({
 				)}
 			>
 				<div className="flex items-center gap-3 min-w-0 flex-1">
-					{color ? (
-						<div
-							className="h-4 w-4 rounded flex-shrink-0"
-							style={{ backgroundColor: color }}
-						/>
-					) : (
-						<Icon className="h-4 w-4 flex-shrink-0" />
-					)}
+					<Icon
+						className="h-4 w-4 flex-shrink-0"
+						style={color ? { color } : undefined}
+					/>
 					<span className="truncate">{label}</span>
 				</div>
 				<div className="flex items-center gap-1">

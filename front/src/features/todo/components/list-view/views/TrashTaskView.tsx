@@ -1,5 +1,5 @@
 import type { Task } from "@/features/todo/types";
-import { TaskItem } from "../TaskItem";
+import { TaskItem } from "../../TaskItem";
 
 interface TrashTaskViewProps {
 	tasks: Task[];
