@@ -12,8 +12,8 @@ import withDragAndDrop, {
 } from "react-big-calendar/lib/addons/dragAndDrop";
 import { Calendar as MiniCalendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
+import type { Task } from "@/features/todo/types";
 import { useTodoStore } from "@/store/useTodoStore";
-import type { Task } from "@/types/types";
 import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./calendar.css";

@@ -24,7 +24,8 @@ public class TaskDto {
                         @Schema(description = "Custom dates for multi-select mode") List<LocalDate> customDates,
                         @Schema(description = "Scheduled start time") LocalDateTime scheduledStartAt,
                         @Schema(description = "Scheduled end time") LocalDateTime scheduledEndAt,
-                        @Schema(description = "Whether this is an all-day event") Boolean isAllDay) {
+                        @Schema(description = "Whether this is an all-day event") Boolean isAllDay,
+                        @Schema(description = "Task status", example = "PENDING") TaskStatus status) {
         }
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -67,6 +68,32 @@ public class TaskDto {
                         @Schema(description = "Whether this is an all-day event") Boolean isAllDay) {
         }
 
+        public record Entity(
+                        Long id,
+                        String userId,
+                        String title,
+                        LocalDate executionDate,
+                        LocalDateTime completedAt,
+                        Integer estimatedPomodoros,
+                        LocalDate startDate,
+                        LocalDate endDate,
+                        LocalDateTime scheduledStartAt,
+                        LocalDateTime scheduledEndAt,
+                        Boolean isAllDay,
+                        String description,
+                        Boolean isRecurring,
+                        String recurrenceRule,
+                        Long recurrenceParentId,
+                        Integer orderIndex,
+                        TaskStatus status,
+                        Boolean isDeleted,
+                        LocalDateTime createdAt,
+                        LocalDateTime updatedAt,
+                        Long taskListId,
+                        CategoryDto.Entity category,
+                        List<SubtaskDto.Entity> subtasks) {
+        }
+
         @Schema(name = "TaskStats")
         public record Stats(
                         @Schema(description = "Start date") LocalDate startDate,
@@ -107,6 +134,50 @@ public class TaskDto {
                                 @Schema(description = "Error code: UNAUTHORIZED, NOT_FOUND, INVALID_REQUEST, DATABASE_ERROR") String errorCode,
                                 @Schema(description = "Pre-formatted display message for UI") String displayMessage) {
                 }
+        }
+
+        @Schema(name = "TaskBulkCreate")
+        public record BulkCreate(
+                        @Schema(description = "List of tasks to create") List<Create> tasks) {
+        }
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        @Schema(name = "TaskBulkCreateResult")
+        public record BulkCreateResult(
+                        @Schema(description = "Number of successfully created tasks") int successCount,
+                        @Schema(description = "List of created task IDs") List<Long> createdTaskIds,
+                        @Schema(description = "Whether all tasks were created successfully") boolean allSucceeded,
+                        @Schema(description = "Error message if any") String errorMessage) {
+        }
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        @Schema(name = "SyncTaskDto")
+        public record SyncTaskDto(
+                        Long id,
+                        String title,
+                        String description,
+                        String executionDate,
+                        String scheduledStartAt,
+                        String scheduledEndAt,
+                        Boolean isAllDay,
+                        Integer estimatedPomodoros,
+                        String categoryName,
+                        String taskListTitle,
+                        Boolean isRecurring,
+                        String recurrencePattern,
+                        Boolean isDeleted,
+                        List<String> subtasks,
+                        TaskStatus status) {
+        }
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        @Schema(name = "SyncResult")
+        public record SyncResult(
+                        boolean success,
+                        String message,
+                        int createdCount,
+                        int updatedCount,
+                        int deletedCount) {
         }
 
 }

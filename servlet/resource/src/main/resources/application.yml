@@ -1,4 +1,17 @@
 spring:
+  ai:
+    chat:
+      memory:
+        repository:
+          jdbc:
+            initialize-schema: never
+    google:
+      genai:
+        api-key: ${SPRING_AI_GOOGLE_GENAI_API_KEY}
+        project-id: ${SPRING_AI_GOOGLE_GENAI_PROJECT_ID}
+        chat:
+          options:
+            include-thoughts: true
   application:
     name: app1
   datasource:

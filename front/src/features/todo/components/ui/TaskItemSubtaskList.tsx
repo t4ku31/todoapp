@@ -19,8 +19,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import type { Subtask } from "@/features/todo/types";
 import { useTodoStore } from "@/store/useTodoStore";
-import type { Subtask } from "@/types/types";
 
 interface TaskItemSubtaskListProps {
 	taskId: number;

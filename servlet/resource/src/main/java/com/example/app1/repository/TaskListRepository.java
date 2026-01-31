@@ -70,4 +70,13 @@ public interface TaskListRepository extends JpaRepository<TaskList, Long> {
      */
     @Query("SELECT CASE WHEN COUNT(tl) > 0 THEN true ELSE false END FROM TaskList tl WHERE tl.id = :id AND tl.userId = :userId")
     boolean existsByIdAndUserId(@Param("id") Long id, @Param("userId") String userId);
+
+    /**
+     * Find a specific task list by title and user ID.
+     * 
+     * @param title  Task list title
+     * @param userId Auth0 sub claim identifying the user
+     * @return Optional containing the task list if found
+     */
+    Optional<TaskList> findByTitleAndUserId(String title, String userId);
 }

@@ -1,27 +1,18 @@
 import * as React from "react";
 import { toast } from "sonner";
 import { create } from "zustand";
-import { apiClient } from "@/config/env";
+import type { BackendSyncTask, SyncResult } from "@/features/ai/types";
+import {
+	type BulkOperationResult,
+	type CreateTaskParams,
+	taskApi,
+} from "@/features/todo/api/taskApi";
+import type { Task, TaskList } from "@/features/todo/types";
 import { sortTasks } from "@/features/todo/utils/taskSorter";
-import type { Task, TaskList } from "@/types/types";
 import { normalizeError } from "@/utils/error";
 
 // Parameters for createTask
-export interface CreateTaskParams {
-	taskListId: number;
-	title: string;
-	dueDate?: string | null;
-	executionDate?: string | null;
-	categoryId?: number;
-	estimatedPomodoros?: number;
-	subtasks?: { title: string; description?: string }[];
-	isRecurring?: boolean;
-	recurrenceRule?: string | null;
-	customDates?: string[];
-	scheduledStartAt?: string | null;
-	scheduledEndAt?: string | null;
-	isAllDay?: boolean;
-}
+export type { CreateTaskParams };
 
 interface TodoState {
 	taskLists: TaskList[];
@@ -43,14 +34,25 @@ interface TodoState {
 		isCompleted: boolean,
 	) => Promise<void>;
 	deleteTaskList: (taskListId: number) => Promise<void>;
-	createTaskList: (title: string) => Promise<TaskList>;
+	createTaskList: (
+		params:
+			| string
+			| { title: string; tasks?: Omit<CreateTaskParams, "taskListId">[] },
+	) => Promise<TaskList>;
 
 	createTask: (params: CreateTaskParams) => Promise<Task>;
 	updateTask: (
 		taskId: number,
-		updates: Partial<Task> & { categoryId?: number; taskListId?: number },
+		updates: Partial<Task> & {
+			categoryId?: number;
+			taskListId?: number;
+			taskListTitle?: string;
+		},
 	) => Promise<void>;
 	deleteTask: (taskId: number) => Promise<void>;
+
+	// AI Tasks merge (楽観的更新用)
+	mergeTasksFromAi: (aiTasks: Partial<Task>[]) => void;
 
 	// Bulk Operations
 	bulkUpdateTasks: (
@@ -63,6 +65,8 @@ interface TodoState {
 		},
 	) => Promise<void>;
 	bulkDeleteTasks: (taskIds: number[]) => Promise<void>;
+	bulkCreateTasks: (tasks: CreateTaskParams[]) => Promise<number[]>;
+	syncTasks: (tasks: BackendSyncTask[]) => Promise<SyncResult>;
 
 	// Subtask Actions
 	createSubtask: (
@@ -90,18 +94,6 @@ const multiLineDescription = (lines: string[]): React.ReactNode => {
 };
 
 // Helper: Bulk操作の結果をtoastで表示
-interface BulkOperationResult {
-	successCount: number;
-	failedCount: number;
-	allSucceeded: boolean;
-	displayMessages?: string[]; // Pre-formatted from backend
-	failedTasks?: {
-		taskId: number;
-		reason: string;
-		errorCode: string;
-		displayMessage?: string;
-	}[];
-}
 
 const showBulkOperationToast = (
 	result: BulkOperationResult,
@@ -184,35 +176,74 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 	loading: false,
 	error: null,
 
+	fetchTaskLists: async () => {
+		set({ loading: true, error: null });
+		try {
+			const data = await taskApi.fetchTaskLists();
+			// Ensure tasks are sorted
+			const taskLists = data.map((list) => ({
+				...list,
+				tasks: sortTasks(list.tasks || []),
+			}));
+			const allTasks = taskLists.flatMap((list) => list.tasks || []);
+			set({ taskLists, allTasks, loading: false });
+		} catch (err) {
+			console.error("Failed to fetch task lists:", err);
+			set({ error: "タスクリストの取得に失敗しました", loading: false });
+		}
+	},
+
 	fetchTrashTasks: async () => {
 		set({ loading: true, error: null });
 		try {
-			const response = await apiClient.get<Task[]>("/api/tasks/trash");
-			set({ trashTasks: response.data, loading: false });
+			const data = await taskApi.fetchTrashTasks();
+			const trashTasks = data.map((t) => ({ ...t, isDeleted: true }));
+			set({ trashTasks, loading: false });
 		} catch (err) {
 			console.error("Failed to fetch trash tasks:", err);
-			set({ loading: false });
+			set({ error: "ゴミ箱の取得に失敗しました", loading: false });
 		}
 	},
 
 	restoreTask: async (id) => {
+		const originalLists = get().taskLists;
+		const originalTasks = get().allTasks;
 		const originalTrash = get().trashTasks;
 
-		set((state) => ({
-			trashTasks: state.trashTasks.filter((t) => t.id !== id),
-			// Optimistically add back to allTasks/taskLists is tricky without knowing where it belongs in the sorted order.
-			// Ideally we refetch lists.
-		}));
+		// Optimistic update
+		const taskToRestore = originalTrash.find((t) => t.id === id);
+		if (taskToRestore) {
+			set((state) => ({
+				trashTasks: state.trashTasks.filter((t) => t.id !== id),
+				allTasks: [...state.allTasks, { ...taskToRestore, isDeleted: false }],
+				taskLists: state.taskLists.map((list) =>
+					list.id === taskToRestore.taskListId
+						? {
+								...list,
+								tasks: sortTasks([
+									...(list.tasks || []),
+									{ ...taskToRestore, isDeleted: false },
+								]),
+							}
+						: list,
+				),
+			}));
+		}
 
 		try {
-			await apiClient.post(`/api/tasks/${id}/restore`);
+			await taskApi.restoreTask(id);
 			toast.success("タスクを復元しました");
+			// Refetch to be sure we have correct state
 			await get().fetchTaskLists();
 		} catch (err) {
 			console.error("Failed to restore task:", err);
 			const appError = normalizeError(err);
 			toast.error("復元失敗", { description: appError.message });
-			set({ trashTasks: originalTrash }); // Revert
+			set({
+				taskLists: originalLists,
+				allTasks: originalTasks,
+				trashTasks: originalTrash,
+			});
 		}
 	},
 
@@ -221,37 +252,20 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		set((state) => ({
 			trashTasks: state.trashTasks.filter((t) => t.id !== id),
 		}));
+
 		try {
-			await apiClient.delete(`/api/tasks/${id}/permanent`);
+			await taskApi.deleteTaskPermanently(id);
 			toast.success("完全に削除しました");
 		} catch (err) {
 			console.error("Failed to delete task permanently:", err);
 			const appError = normalizeError(err);
 			toast.error("削除失敗", { description: appError.message });
-			set({ trashTasks: originalTrash }); // Revert
-		}
-	},
-
-	fetchTaskLists: async () => {
-		set({ loading: true, error: null });
-		try {
-			const response = await apiClient.get<TaskList[]>("/api/tasklists");
-			const sortedLists = response.data.map((list) => ({
-				...list,
-				tasks: sortTasks(list.tasks || []),
-			}));
-			const allTasks = sortedLists.flatMap((list) => list.tasks || []);
-			set({ taskLists: sortedLists, allTasks, loading: false });
-		} catch (err) {
-			console.error("Failed to fetch tasklists:", err);
-			const appError = normalizeError(err);
-			set({ error: appError.message, loading: false });
+			set({ trashTasks: originalTrash });
 		}
 	},
 
 	getInboxList: () => {
-		const taskLists = get().taskLists;
-		return taskLists.find((list) => list.title === "Inbox");
+		return get().taskLists.find((list) => list.title === "Inbox");
 	},
 
 	getTasksForDate: (date: string) => {
@@ -276,9 +290,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		}));
 
 		try {
-			await apiClient.patch(`/api/tasklists/${taskListId}`, {
-				title: newTitle,
-			});
+			await taskApi.updateTaskListTitle(taskListId, newTitle);
 		} catch (err) {
 			console.error("Failed to update task list title:", err);
 			const appError = normalizeError(err);
@@ -298,9 +310,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		}));
 
 		try {
-			await apiClient.patch(`/api/tasklists/${taskListId}`, {
-				dueDate: newDate,
-			});
+			await taskApi.updateTaskListDate(taskListId, newDate);
 		} catch (err) {
 			console.error("Failed to update task list date:", err);
 			const appError = normalizeError(err);
@@ -320,7 +330,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		}));
 
 		try {
-			await apiClient.patch(`/api/tasklists/${taskListId}`, { isCompleted });
+			await taskApi.updateTaskListCompletion(taskListId, isCompleted);
 		} catch (err) {
 			console.error("Failed to update task list completion:", err);
 			const appError = normalizeError(err);
@@ -334,7 +344,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
 	deleteTaskList: async (taskListId) => {
 		try {
-			await apiClient.delete(`/api/tasklists/${taskListId}`);
+			await taskApi.deleteTaskList(taskListId);
 			set((state) => ({
 				taskLists: state.taskLists.filter((list) => list.id !== taskListId),
 				allTasks: state.allTasks.filter((t) => t.taskListId !== taskListId),
@@ -347,15 +357,23 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		}
 	},
 
-	createTaskList: async (title: string) => {
+	createTaskList: async (
+		params:
+			| string
+			| { title: string; tasks?: Omit<CreateTaskParams, "taskListId">[] },
+	) => {
 		try {
-			const response = await apiClient.post<TaskList>("/api/tasklists", {
-				title,
-				tasks: [],
-			});
-			const newList = response.data;
+			const newList = await taskApi.createTaskList(params);
+
+			// Tasks returned in newList might need sorting
+			if (newList.tasks) {
+				newList.tasks = sortTasks(newList.tasks);
+			}
+
 			set((state) => ({
-				taskLists: [...state.taskLists, { ...newList, tasks: [] }],
+				taskLists: [...state.taskLists, newList],
+				// Add new tasks to allTasks as well
+				allTasks: [...state.allTasks, ...(newList.tasks || [])],
 			}));
 			toast.success("リストを作成しました");
 			return newList;
@@ -370,8 +388,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 	createTask: async (params) => {
 		const { taskListId } = params;
 		try {
-			const response = await apiClient.post<Task>("/api/tasks", params);
-			const newTask = response.data;
+			const newTask = await taskApi.createTask(params);
 
 			set((state) => ({
 				taskLists: state.taskLists.map((list) => {
@@ -448,7 +465,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		}));
 
 		try {
-			await apiClient.patch(`/api/tasks/${taskId}`, updates);
+			await taskApi.updateTask(taskId, updates);
 
 			// If taskListId, categoryId, or isRecurring was updated, refetch to get the correct state
 			// isRecurring generates new task instances on the backend
@@ -466,6 +483,59 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 			set({ taskLists: originalLists, allTasks: originalTasks }); // Revert
 			throw err;
 		}
+	},
+
+	mergeTasksFromAi: (aiTasks) => {
+		if (!aiTasks || aiTasks.length === 0) return;
+
+		// AIから返されたタスクのIDセットを作成
+		const updatedMap = new Map<number, Partial<Task>>();
+
+		for (const t of aiTasks) {
+			if (t.id) {
+				updatedMap.set(t.id, t);
+			}
+		}
+
+		set((state) => {
+			const updateTaskInList = (task: Task) => {
+				const aiTask = updatedMap.get(task.id);
+				if (aiTask) {
+					// マージ（isDeleted も含む）
+					return {
+						...task,
+						...aiTask,
+					};
+				}
+				return task;
+			};
+
+			return {
+				taskLists: state.taskLists.map((list) => ({
+					...list,
+					tasks: list.tasks?.map(updateTaskInList),
+				})),
+				allTasks: state.allTasks.map(updateTaskInList),
+				// ゴミ箱ステートも同期（もし既に存在していれば更新、なければ追加）
+				trashTasks: [
+					...state.trashTasks,
+					...aiTasks
+						.filter(
+							(t) =>
+								t.id &&
+								t.isDeleted &&
+								!state.trashTasks.some((prev) => prev.id === t.id),
+						)
+						.map((t) => {
+							const original = state.allTasks.find((at) => at.id === t.id);
+							return { ...original, ...t } as Task;
+						}),
+				].map((t) => {
+					const aiTask = updatedMap.get(t.id);
+					return aiTask ? { ...t, ...aiTask } : t;
+				}),
+			};
+		});
 	},
 
 	deleteTask: async (taskId) => {
@@ -486,7 +556,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		}));
 
 		try {
-			await apiClient.delete(`/api/tasks/${taskId}`);
+			await taskApi.deleteTask(taskId);
 			toast.success("ゴミ箱に移動しました");
 		} catch (err) {
 			console.error("Failed to delete task:", err);
@@ -518,17 +588,11 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		}));
 
 		try {
-			const response = await apiClient.patch<BulkOperationResult>(
-				"/api/tasks/bulk",
-				{
-					taskIds,
-					...updates,
-				},
-			);
+			const result = await taskApi.bulkUpdateTasks(taskIds, updates);
 
 			const success = showBulkOperationToast(
-				response.data,
-				`${response.data.successCount}件のタスクを更新しました`,
+				result,
+				`${result.successCount}件のタスクを更新しました`,
 				"件更新",
 				"一括更新失敗",
 			);
@@ -565,16 +629,11 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		}));
 
 		try {
-			const response = await apiClient.delete<BulkOperationResult>(
-				"/api/tasks/bulk",
-				{
-					data: { taskIds },
-				},
-			);
+			const result = await taskApi.bulkDeleteTasks(taskIds);
 
 			const success = showBulkOperationToast(
-				response.data,
-				`${response.data.successCount}件のタスクをゴミ箱に移動しました`,
+				result,
+				`${result.successCount}件のタスクをゴミ箱に移動しました`,
 				"件削除",
 				"一括削除失敗",
 			);
@@ -592,18 +651,48 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		}
 	},
 
+	bulkCreateTasks: async (tasks) => {
+		try {
+			const data = await taskApi.bulkCreateTasks(tasks);
+
+			if (data.allSucceeded) {
+				toast.success(`${data.successCount}件のタスクを追加しました`);
+				// Refetch to get the created tasks
+				await get().fetchTaskLists();
+				return data.createdTaskIds;
+			} else {
+				toast.error(data.errorMessage || "タスクの一括作成に失敗しました");
+				return [];
+			}
+		} catch (err) {
+			console.error("Failed to bulk create tasks:", err);
+			const appError = normalizeError(err);
+			toast.error("一括作成失敗", { description: appError.message });
+			return [];
+		}
+	},
+
+	syncTasks: async (tasks) => {
+		try {
+			const data = await taskApi.syncTasks(tasks);
+			if (data.success) {
+				toast.success(data.message || "同期完了しました");
+				await get().fetchTaskLists();
+			} else {
+				toast.error(data.message || "同期に失敗しました");
+			}
+			return data;
+		} catch (err) {
+			console.error("Failed to sync tasks:", err);
+			const appError = normalizeError(err);
+			toast.error("同期失敗", { description: appError.message });
+			throw err;
+		}
+	},
+
 	createSubtask: async (taskId, subtask) => {
 		try {
-			const response = await apiClient.post<{
-				id: number;
-				taskId: number;
-				title: string;
-				description: string | null;
-				isCompleted: boolean;
-				orderIndex: number;
-			}>(`/api/tasks/${taskId}/subtasks`, subtask);
-
-			const apiSubtask = response.data;
+			const apiSubtask = await taskApi.createSubtask(taskId, subtask);
 			// Convert API response to match Subtask interface (null -> undefined)
 			const newSubtask = {
 				id: apiSubtask.id,
@@ -664,7 +753,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		});
 
 		try {
-			await apiClient.patch(`/api/subtasks/${subtaskId}`, updates);
+			await taskApi.updateSubtask(subtaskId, updates);
 		} catch (err) {
 			console.error("Failed to update subtask:", err);
 			toast.error("サブタスク更新失敗");
@@ -695,7 +784,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		});
 
 		try {
-			await apiClient.delete(`/api/subtasks/${subtaskId}`);
+			await taskApi.deleteSubtask(subtaskId);
 		} catch (err) {
 			console.error("Failed to delete subtask:", err);
 			toast.error("サブタスク削除失敗");

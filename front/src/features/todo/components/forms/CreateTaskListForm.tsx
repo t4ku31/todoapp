@@ -11,9 +11,9 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { apiClient } from "@/config/env";
+import type { TaskList } from "@/features/todo/types";
 import { cn } from "@/lib/utils";
 import { useCategoryStore } from "@/store/useCategoryStore";
-import type { TaskList } from "@/types/types";
 import { type TaskListFormValues, taskListSchema } from "./schema";
 import { TaskInput } from "./TaskInput";
 

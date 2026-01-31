@@ -8,7 +8,7 @@ import {
 } from "date-fns";
 import { ja } from "date-fns/locale";
 import type { DateLocalizer } from "react-big-calendar";
-import type { Task } from "@/types/types";
+import type { Task } from "@/features/todo/types";
 
 // Navigation action type
 type NavigateAction = "PREV" | "NEXT" | "TODAY" | "DATE";

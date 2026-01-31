@@ -4,8 +4,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CreateTaskForm } from "@/features/todo/components/forms/CreateTaskForm";
+import type { Task } from "@/features/todo/types";
 import type { CreateTaskParams } from "@/store/useTodoStore";
-import type { Task } from "@/types/types";
 import { TaskItem } from "./TaskItem";
 import { CompletedSection } from "./ui/CompletedSection";
 import { CompletionBadge } from "./ui/CompletionBadge";
@@ -90,10 +90,9 @@ export function DailyTaskList({
 					<CompletionBadge tasks={tasksForDate} />
 				</div>
 				<CreateTaskForm
-					taskListId={taskListId}
+					defaultTaskListId={taskListId}
 					onCreateTask={onCreateTask}
 					defaultExecutionDate={isValidDate ? parsedDate : new Date()}
-					showListSelector={true}
 				/>
 			</div>
 

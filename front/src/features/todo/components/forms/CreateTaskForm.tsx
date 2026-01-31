@@ -10,9 +10,9 @@ import {
 } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { Task } from "@/features/todo/types";
 import { cn } from "@/lib/utils";
 import type { CreateTaskParams } from "@/store/useTodoStore";
-import type { Task } from "@/types/types";
 import { CategorySelect } from "../ui/CategorySelect";
 import { DateScheduler } from "../ui/DateScheduler";
 import { PomodoroInput } from "../ui/PomodoroInput";
@@ -20,14 +20,14 @@ import { SubtaskList } from "../ui/SubtaskList";
 import { type TaskFormValues, taskSchema } from "./schema";
 
 interface CreateTaskFormProps {
-	taskListId: number;
 	onCreateTask: (params: CreateTaskParams) => Promise<Task>;
+	defaultTaskListId: number;
 	className?: string;
 	placeholder?: string;
 	autoFocus?: boolean;
 	disabled?: boolean;
 	defaultExecutionDate?: Date;
-	showListSelector?: boolean;
+	defaultCategoryId?: number;
 	showExecutionDate?: boolean;
 }
 
@@ -37,33 +37,36 @@ interface CreateTaskFormProps {
 export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 	(
 		{
-			taskListId,
 			onCreateTask,
+			defaultTaskListId,
 			className,
 			placeholder,
 			autoFocus,
 			disabled,
+			defaultExecutionDate,
+			defaultCategoryId,
 			showExecutionDate = true,
 		},
 		_ref,
 	) => {
-		const [selectedTaskListId, setSelectedTaskListId] = useState(taskListId);
+		const [selectedTaskListId, setSelectedTaskListId] =
+			useState(defaultTaskListId);
 		const [, setOnOpen] = useState(false);
 		// Sync local state if prop changes
 		useEffect(() => {
-			setSelectedTaskListId(taskListId);
-		}, [taskListId]);
+			setSelectedTaskListId(defaultTaskListId);
+		}, [defaultTaskListId]);
 
 		const form = useForm<TaskFormValues>({
 			resolver: zodResolver(taskSchema),
 			defaultValues: {
 				title: "",
 				dateMode: "single",
-				executionDate: new Date(),
+				executionDate: defaultExecutionDate || new Date(),
 				startDate: undefined,
 				endDate: undefined,
 				repeatFrequency: undefined,
-				categoryId: undefined,
+				categoryId: defaultCategoryId || undefined,
 				estimatedPomodoros: 0,
 				subtasks: [],
 			},

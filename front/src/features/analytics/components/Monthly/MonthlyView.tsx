@@ -1,9 +1,9 @@
+import { useEffect } from "react";
 import type {
 	CategoryTime,
 	DayActivity,
 	MonthlyAnalyticsData,
 } from "@/features/analytics/types";
-import { useEffect } from "react";
 // Shared Cards
 import { AnalyticsEfficiencyCard } from "../shared/cards/AnalyticsEfficiencyCard";
 import { AnalyticsFocusCard } from "../shared/cards/AnalyticsFocusCard";

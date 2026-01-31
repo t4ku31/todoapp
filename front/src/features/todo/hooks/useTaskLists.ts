@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { apiClient } from "@/config/env";
+import type { Task, TaskList } from "@/features/todo/types";
 import { sortTasks } from "@/features/todo/utils/taskSorter";
-import type { Task, TaskList } from "@/types/types";
 import { normalizeError } from "@/utils/error";
 
 export const useTaskLists = () => {

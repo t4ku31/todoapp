@@ -1,4 +1,4 @@
-import type { Task } from "@/types/types";
+import type { Task } from "@/features/todo/types";
 
 interface CompletionBadgeProps {
 	tasks: Task[];

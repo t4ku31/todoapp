@@ -1,7 +1,7 @@
 import { toast } from "sonner";
 import { create } from "zustand";
 import { apiClient } from "@/config/env";
-import type { Category } from "@/types/types";
+import type { Category } from "@/features/todo/types";
 import { normalizeError } from "@/utils/error";
 
 interface CategoryState {

@@ -8,6 +8,7 @@ interface DroppableNavItemProps {
 	label: string;
 	path: string;
 	count?: number;
+	aiCount?: number;
 	color?: string;
 	actions?: React.ReactNode;
 }
@@ -18,6 +19,7 @@ export function DroppableNavItem({
 	label,
 	path,
 	count,
+	aiCount,
 	color,
 	actions,
 }: DroppableNavItemProps) {
@@ -63,6 +65,11 @@ export function DroppableNavItem({
 							)}
 						>
 							{count}
+						</span>
+					)}
+					{aiCount !== undefined && aiCount > 0 && (
+						<span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-600 animate-pulse">
+							+{aiCount}
 						</span>
 					)}
 					{actions && (

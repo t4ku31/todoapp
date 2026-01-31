@@ -279,4 +279,58 @@ public class BffTaskController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    @PostMapping("/tasks/batch")
+    public ResponseEntity<TaskDto.BulkCreateResult> bulkCreateTasks(
+            @RequestBody TaskDto.BulkCreate request,
+            @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
+        log.info("[POST /api/tasks/batch] Request by user: {} for {} tasks",
+                client.getPrincipalName(), request.tasks() != null ? request.tasks().size() : 0);
+
+        if (request.tasks() == null || request.tasks().isEmpty()) {
+            return ResponseEntity.badRequest().body(
+                    new TaskDto.BulkCreateResult(0, java.util.Collections.emptyList(), false, "No tasks provided"));
+        }
+
+        try {
+            TaskDto.BulkCreateResult result = taskService.bulkCreateTasks(request,
+                    client.getAccessToken().getTokenValue());
+            if (result == null) {
+                return ResponseEntity.internalServerError().body(
+                        new TaskDto.BulkCreateResult(0, java.util.Collections.emptyList(), false, "Unknown error"));
+            }
+            if (result.allSucceeded()) {
+                return ResponseEntity.status(HttpStatus.CREATED).body(result);
+            } else {
+                return ResponseEntity.internalServerError().body(result);
+            }
+        } catch (RestClientResponseException e) {
+            log.error("[POST /api/tasks/batch] Error: {}", e.getMessage());
+            return ResponseEntity.status(e.getStatusCode()).body(
+                    new TaskDto.BulkCreateResult(0, java.util.Collections.emptyList(), false, e.getMessage()));
+        } catch (Exception e) {
+            log.error("[POST /api/tasks/batch] Error: {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(
+                    new TaskDto.BulkCreateResult(0, java.util.Collections.emptyList(), false, e.getMessage()));
+        }
+    }
+
+    @PostMapping("/tasks/sync")
+    public ResponseEntity<TaskDto.SyncResult> syncTasks(
+            @RequestBody List<TaskDto.SyncTaskDto> tasks,
+            @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
+        log.info("[POST /api/tasks/sync] Request by user: {} for {} tasks",
+                client.getPrincipalName(), tasks != null ? tasks.size() : 0);
+        try {
+            TaskDto.SyncResult result = taskService.syncTasks(tasks,
+                    client.getAccessToken().getTokenValue());
+            return ResponseEntity.ok(result);
+        } catch (RestClientResponseException e) {
+            log.error("[POST /api/tasks/sync] Error: {}", e.getMessage());
+            return ResponseEntity.status(e.getStatusCode()).build();
+        } catch (Exception e) {
+            log.error("[POST /api/tasks/sync] Error: {}", e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }

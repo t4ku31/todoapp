@@ -4,12 +4,15 @@ import {
 	DragOverlay,
 	type DragStartEvent,
 } from "@dnd-kit/core";
+import { Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { AiChatPanel } from "@/features/ai/components/AiChatPanel";
+import { useAiChatContextStore } from "@/features/ai/stores/useAiChatContextStore";
+import type { Task } from "@/features/todo/types";
 import { cn } from "@/lib/utils";
 import { useCategoryStore } from "@/store/useCategoryStore";
 import { useTodoStore } from "@/store/useTodoStore";
-import type { Task } from "@/types/types";
 import { FilteredTaskView } from "./FilteredTaskView";
 import { TaskDetailPanel } from "./TaskDetailPanel";
 import { TaskSidebar } from "./TaskSidebar";
@@ -23,6 +26,7 @@ export default function TodoView() {
 		updateTask,
 		deleteTask,
 		bulkUpdateTasks,
+		taskLists,
 	} = useTodoStore();
 
 	const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -34,6 +38,9 @@ export default function TodoView() {
 	const [selectedTaskIds, setSelectedTaskIds] = useState<Set<number>>(
 		new Set(),
 	);
+
+	// AI Chat dialog state
+	const [isAiChatOpen, setIsAiChatOpen] = useState(false);
 
 	useEffect(() => {
 		fetchTaskLists();
@@ -102,7 +109,21 @@ export default function TodoView() {
 				: [task.id];
 
 		// Handle different drop targets
-		if (targetId === "today") {
+		if (targetId === "ai-context-drop-zone") {
+			// AIコンテキストへのドロップ
+			const { addTask } = useAiChatContextStore.getState();
+			const allTasks = useTodoStore.getState().allTasks;
+
+			// 選択されたタスクまたはドラッグしたタスクを追加
+			for (const taskId of tasksToMove) {
+				const taskToAdd = allTasks.find((t) => t.id === taskId);
+				if (taskToAdd) {
+					addTask(taskToAdd);
+				}
+			}
+			// AIチャットパネルを開く
+			setIsAiChatOpen(true);
+		} else if (targetId === "today") {
 			const today = new Date().toISOString().split("T")[0];
 			if (tasksToMove.length > 1) {
 				bulkUpdateTasks(tasksToMove, { executionDate: today });
@@ -198,10 +219,6 @@ export default function TodoView() {
 						onCreateTask={createTask}
 						onTaskSelect={handleTaskSelect}
 						selectedTaskId={selectedTaskId}
-						isSelectionMode={isSelectionMode}
-						setIsSelectionMode={setIsSelectionMode}
-						selectedTaskIds={selectedTaskIds}
-						setSelectedTaskIds={setSelectedTaskIds}
 						onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
 						isSidebarOpen={isSidebarOpen}
 					/>
@@ -251,6 +268,37 @@ export default function TodoView() {
 						</div>
 					) : null}
 				</DragOverlay>
+
+				{/* AI Chat Floating Button - always visible */}
+				<button
+					type="button"
+					onClick={() => setIsAiChatOpen(true)}
+					className={cn(
+						"fixed bottom-6 right-6 z-50",
+						"flex items-center justify-center",
+						"w-14 h-14 rounded-full",
+						"bg-gradient-to-br from-indigo-500 to-purple-600",
+						"text-white shadow-lg shadow-indigo-500/30",
+						"hover:shadow-xl hover:shadow-indigo-500/40",
+						"hover:scale-105 active:scale-95",
+						"transition-all duration-200",
+						// Hide when chat panel is visible
+						isAiChatOpen && "hidden",
+					)}
+					title="AIアシスタント"
+				>
+					<Sparkles className="w-6 h-6" />
+				</button>
+
+				{/* AI Chat Panel */}
+				<AiChatPanel
+					isOpen={isAiChatOpen}
+					onClose={() => setIsAiChatOpen(false)}
+					taskLists={taskLists}
+					defaultTaskListId={
+						taskLists.find((l) => l.title === "Inbox")?.id ?? 0
+					}
+				/>
 			</div>
 		</DndContext>
 	);

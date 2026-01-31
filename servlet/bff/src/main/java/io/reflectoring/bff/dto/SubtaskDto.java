@@ -20,4 +20,14 @@ public class SubtaskDto {
             boolean isCompleted,
             Integer orderIndex) {
     }
+
+    public record Entity(
+            Long id,
+            String title,
+            String description,
+            Boolean isCompleted,
+            Integer orderIndex,
+            java.time.LocalDateTime createdAt,
+            java.time.LocalDateTime updatedAt) {
+    }
 }
