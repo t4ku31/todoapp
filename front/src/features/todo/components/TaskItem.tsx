@@ -1,6 +1,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { GripVertical, ListTree, Trash2, Undo2 } from "lucide-react";
 import { memo, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { Task } from "@/features/todo/types";
@@ -114,10 +115,22 @@ export const TaskItem = memo(function TaskItem({
 					<Checkbox
 						checked={isChecked}
 						onCheckedChange={(checked) => {
+							const newStatus = checked ? "COMPLETED" : "PENDING";
 							setIsChecked(!!checked);
 							onUpdateTask(task.id, {
-								status: checked ? "COMPLETED" : "PENDING",
+								status: newStatus,
 							});
+							if (checked) {
+								toast.success("タスクを完了しました", {
+									action: {
+										label: "元に戻す",
+										onClick: () => {
+											setIsChecked(false);
+											onUpdateTask(task.id, { status: "PENDING" });
+										},
+									},
+								});
+							}
 						}}
 						onPointerDown={(e) => e.stopPropagation()}
 						className="h-5 w-5 rounded-md border-gray-300 data-[state=checked]:bg-teal-500 data-[state=checked]:border-teal-500 transition-colors"

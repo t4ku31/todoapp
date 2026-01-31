@@ -20,7 +20,7 @@ interface FilteredTaskViewProps {
 	onTaskSelect?: (taskId: number | null) => void;
 	selectedTaskId?: number | null;
 	onToggleSidebar?: () => void;
-	isSidebarOpen?: boolean;
+	isSidebarOpen: boolean;
 }
 
 export function FilteredTaskView({
@@ -30,7 +30,7 @@ export function FilteredTaskView({
 	onTaskSelect,
 	selectedTaskId,
 	onToggleSidebar,
-	isSidebarOpen = true,
+	isSidebarOpen,
 }: FilteredTaskViewProps) {
 	// 1. Hooks
 	const { viewType, pathId, searchQuery, defaultTaskListId } =
@@ -86,8 +86,8 @@ export function FilteredTaskView({
 		>
 			<FilterHeader
 				taskCount={filteredTasks.length}
-				isSidebarOpen={isSidebarOpen}
 				onToggleSidebar={onToggleSidebar}
+				isSidebarOpen={isSidebarOpen}
 			/>
 
 			{showCreateTaskForm && (
