@@ -1,10 +1,10 @@
+import { CheckCircle2, Clock, ListTodo } from "lucide-react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAnalyticsStore } from "@/features/analytics/stores/useAnalyticsStore";
 import type { DailyTaskSummary } from "@/features/analytics/types";
 import { useTodoStore } from "@/store/useTodoStore";
-import { CheckCircle2, Clock, ListTodo } from "lucide-react";
-import { useState } from "react";
 
 interface DailyTaskListProps {
 	data?: DailyTaskSummary[] | null;

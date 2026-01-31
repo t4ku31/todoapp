@@ -10,9 +10,9 @@ import {
 } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { Task } from "@/features/todo/types";
 import { cn } from "@/lib/utils";
 import type { CreateTaskParams } from "@/store/useTodoStore";
-import type { Task } from "@/types/types";
 import { CategorySelect } from "../ui/CategorySelect";
 import { DateScheduler } from "../ui/DateScheduler";
 import { PomodoroInput } from "../ui/PomodoroInput";
@@ -27,6 +27,8 @@ interface CreateTaskFormProps {
 	autoFocus?: boolean;
 	disabled?: boolean;
 	defaultExecutionDate?: Date;
+	defaultTaskListId?: number;
+	defaultCategoryId?: number;
 	showListSelector?: boolean;
 	showExecutionDate?: boolean;
 }
@@ -43,6 +45,10 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 			placeholder,
 			autoFocus,
 			disabled,
+			defaultExecutionDate,
+			defaultTaskListId,
+			defaultCategoryId,
+			showListSelector = true,
 			showExecutionDate = true,
 		},
 		_ref,
@@ -59,11 +65,11 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 			defaultValues: {
 				title: "",
 				dateMode: "single",
-				executionDate: new Date(),
+				executionDate: defaultExecutionDate || new Date(),
 				startDate: undefined,
 				endDate: undefined,
 				repeatFrequency: undefined,
-				categoryId: undefined,
+				categoryId: defaultCategoryId || undefined,
 				estimatedPomodoros: 0,
 				subtasks: [],
 			},

@@ -1,3 +1,6 @@
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { format, isValid, parseISO } from "date-fns";
 import { ja } from "date-fns/locale";
 import {
@@ -11,15 +14,13 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+// import { Textarea } from "@/components/ui/textarea"; // Removed
 import { cn } from "@/lib/utils";
 import { useTodoStore } from "@/store/useTodoStore";
 import { CategorySelect } from "./ui/CategorySelect";
 import { DeleteButton } from "./ui/DeleteButton";
 import { EditableDate } from "./ui/EditableDate";
+import { EditableDescription } from "./ui/EditableDescription";
 import { EditableDuration } from "./ui/EditableDuration";
 import { TaskItemSubtaskList } from "./ui/TaskItemSubtaskList";
 import { TaskListSelector } from "./ui/TaskListSelector";
@@ -34,14 +35,12 @@ export function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProps) {
 	const task = allTasks.find((t) => t.id === taskId);
 
 	const [title, setTitle] = useState(task?.title || "");
-	const [description, setDescription] = useState(task?.description || "");
 	const [isChecked, setIsChecked] = useState(task?.status === "COMPLETED");
 
 	// Sync local state with task changes
 	useEffect(() => {
 		if (task) {
 			setTitle(task.title);
-			setDescription(task.description || "");
 			setIsChecked(task.status === "COMPLETED");
 		}
 	}, [task]);
@@ -52,16 +51,21 @@ export function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProps) {
 		}
 	}, [task, title, updateTask]);
 
-	const handleDescriptionBlur = useCallback(async () => {
-		if (task && description !== (task.description || "")) {
-			try {
-				await updateTask(task.id, { description });
-				toast.success("メモを保存しました");
-			} catch {
-				// Error handling is done in updateTask
+	const handleDescriptionChange = useCallback(
+		async (_: number | string, newDescription: string) => {
+			if (task && newDescription !== (task.description || "")) {
+				try {
+					await updateTask(task.id, { description: newDescription });
+					toast.success("メモを保存しました");
+				} catch {
+					// Error handling is somewhat handled in updateTask, but toast helps
+				}
 			}
-		}
-	}, [task, description, updateTask]);
+		},
+		[task, updateTask],
+	);
+
+	/* Removed handleDescriptionBlur */
 
 	const handleStatusChange = useCallback(
 		(checked: boolean) => {
@@ -174,15 +178,13 @@ export function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProps) {
 					>
 						メモ
 					</label>
-					<Textarea
-						id="task-description"
-						value={description}
-						onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-							setDescription(e.target.value)
-						}
-						onBlur={handleDescriptionBlur}
+					<EditableDescription
+						id={task.id}
+						description={task.description}
+						onDescriptionChange={handleDescriptionChange}
 						placeholder="メモを追加..."
-						className="min-h-[100px] resize-none"
+						className="min-h-[100px] text-base"
+						initialMaxLines={5}
 					/>
 				</div>
 

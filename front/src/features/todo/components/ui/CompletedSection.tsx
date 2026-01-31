@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import type { Task } from "@/types/types";
+import type { Task } from "@/features/todo/types";
 import { TaskItem } from "../TaskItem";
 
 interface CompletedSectionProps {

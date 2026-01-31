@@ -1,10 +1,3 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useAnalyticsStore } from "@/features/analytics/stores/useAnalyticsStore";
-import type { GroupedTaskSummary } from "@/features/analytics/types";
-import { useTodoStore } from "@/store/useTodoStore";
 import { format } from "date-fns";
 import {
 	CheckCircle2,
@@ -15,6 +8,13 @@ import {
 	Repeat,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useAnalyticsStore } from "@/features/analytics/stores/useAnalyticsStore";
+import type { GroupedTaskSummary } from "@/features/analytics/types";
+import { useTodoStore } from "@/store/useTodoStore";
 
 interface TaskSummaryCardProps {
 	data?: GroupedTaskSummary[] | null;

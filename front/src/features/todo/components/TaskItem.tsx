@@ -3,8 +3,8 @@ import { GripVertical, ListTree, Trash2, Undo2 } from "lucide-react";
 import { memo, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import type { Task } from "@/features/todo/types";
 import { usePomodoroStore } from "@/store/usePomodoroStore";
-import type { Task } from "@/types/types";
 
 import { CategorySelect } from "./ui/CategorySelect";
 import { DeleteButton } from "./ui/DeleteButton";
@@ -85,7 +85,8 @@ export const TaskItem = memo(function TaskItem({
 				? "border-2 border-indigo-500 ring-2 ring-indigo-500 shadow-indigo-500"
 				: "border border-gray-100"
 		}
-		${(isFocusSelector || onSelect) && !isHighlighted ? "hover:border-indigo-200" : ""}`; // Purple -> Indigo
+		${(isFocusSelector || onSelect) && !isHighlighted ? "hover:border-indigo-200" : ""}
+		${(isFocusSelector || onSelect) && !isHighlighted ? "hover:border-indigo-200" : ""}`;
 
 	const baseStyle = {
 		...style,

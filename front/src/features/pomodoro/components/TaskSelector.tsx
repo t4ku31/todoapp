@@ -1,7 +1,7 @@
 import { Check, ChevronDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { CompletedSection } from "@/features/todo/components/ui/CompletedSection";
-import type { Task } from "@/types/types";
+import type { Task } from "@/features/todo/types";
 
 interface TaskSelectorProps {
 	isOpen: boolean;

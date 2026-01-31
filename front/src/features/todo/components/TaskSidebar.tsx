@@ -11,7 +11,7 @@ import {
 	Search,
 	Trash2,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
 	AlertDialog,
@@ -31,6 +31,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { useAiPreviewStore } from "@/features/ai/stores/useAiPreviewStore";
 import { cn } from "@/lib/utils";
 import { useCategoryStore } from "@/store/useCategoryStore";
 import { useTodoStore } from "@/store/useTodoStore";
@@ -50,6 +51,7 @@ interface NavItemProps {
 	count?: number;
 	color?: string;
 	actions?: React.ReactNode;
+	aiCount?: number;
 }
 
 function NavItem({
@@ -59,6 +61,7 @@ function NavItem({
 	count,
 	color,
 	actions,
+	aiCount,
 }: NavItemProps) {
 	const location = useLocation();
 	const isActive = location.pathname === path;
@@ -95,6 +98,11 @@ function NavItem({
 						)}
 					>
 						{count}
+					</span>
+				)}
+				{aiCount !== undefined && aiCount > 0 && (
+					<span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-600 animate-pulse">
+						+{aiCount}
 					</span>
 				)}
 				{actions && (
@@ -168,6 +176,7 @@ export function TaskSidebar({ className }: TaskSidebarProps) {
 		useTodoStore();
 	const { categories, createCategory, updateCategory, deleteCategory } =
 		useCategoryStore();
+	const { aiPreviewTasks } = useAiPreviewStore();
 
 	const [isListDialogOpen, setIsListDialogOpen] = useState(false);
 	const [editingList, setEditingList] = useState<{
@@ -244,6 +253,7 @@ export function TaskSidebar({ className }: TaskSidebarProps) {
 				count +
 				(list.tasks?.filter(
 					(t) =>
+						!t.isDeleted &&
 						t.status !== "COMPLETED" &&
 						t.executionDate &&
 						t.executionDate.startsWith(today),
@@ -259,7 +269,8 @@ export function TaskSidebar({ className }: TaskSidebarProps) {
 			return (
 				count +
 				(list.tasks?.filter((t) => {
-					if (t.status === "COMPLETED" || !t.executionDate) return false;
+					if (t.isDeleted || t.status === "COMPLETED" || !t.executionDate)
+						return false;
 					const execDate = new Date(t.executionDate);
 					return execDate >= today && execDate <= next7Days;
 				}).length || 0)
@@ -270,14 +281,35 @@ export function TaskSidebar({ className }: TaskSidebarProps) {
 	const getInboxCount = () => {
 		const inboxList = taskLists.find((l) => l.title === "Inbox");
 		return (
-			inboxList?.tasks?.filter((t) => t.status !== "COMPLETED").length || 0
+			inboxList?.tasks?.filter((t) => !t.isDeleted && t.status !== "COMPLETED")
+				.length || 0
 		);
 	};
 
 	const getListTaskCount = (listId: number) => {
 		const list = taskLists.find((l) => l.id === listId);
-		return list?.tasks?.filter((t) => t.status !== "COMPLETED").length || 0;
+		return (
+			list?.tasks?.filter((t) => !t.isDeleted && t.status !== "COMPLETED")
+				.length || 0
+		);
 	};
+
+	const aiCountsByListTitle = useMemo(() => {
+		const counts = new Map<string, number>();
+		for (const task of aiPreviewTasks) {
+			const title = task.taskListTitle;
+			if (title) {
+				counts.set(title, (counts.get(title) || 0) + 1);
+			}
+		}
+		return counts;
+	}, [aiPreviewTasks]);
+
+	const newAiLists = useMemo(() => {
+		return Array.from(aiCountsByListTitle.entries())
+			.filter(([title]) => !taskLists.some((l) => l.title === title))
+			.map(([title, count]) => ({ title, count }));
+	}, [aiCountsByListTitle, taskLists]);
 
 	return (
 		<div
@@ -345,6 +377,7 @@ export function TaskSidebar({ className }: TaskSidebarProps) {
 									label={list.title}
 									path={`/tasks/list/${list.id}`}
 									count={getListTaskCount(list.id)}
+									aiCount={aiCountsByListTitle.get(list.title)}
 									actions={
 										<DropdownMenu>
 											<DropdownMenuTrigger asChild>
@@ -373,11 +406,26 @@ export function TaskSidebar({ className }: TaskSidebarProps) {
 									}
 								/>
 							))}
-						{taskLists.filter((l) => l.title !== "Inbox").length === 0 && (
-							<p className="text-xs text-gray-400 px-3 py-2">
-								リストがありません
-							</p>
-						)}
+						{taskLists.filter((l) => l.title !== "Inbox").length === 0 &&
+							newAiLists.length === 0 && (
+								<p className="text-xs text-gray-400 px-3 py-2">
+									リストがありません
+								</p>
+							)}
+						{newAiLists.map(({ title, count }) => (
+							<div
+								key={`new-list-${title}`}
+								className="px-3 py-2 rounded-lg text-sm text-gray-400 italic flex justify-between items-center group/item hover:bg-slate-50 transition-colors"
+							>
+								<div className="flex items-center gap-3 min-w-0 flex-1">
+									<CheckSquare className="h-4 w-4 flex-shrink-0 opacity-50" />
+									<span className="truncate">{title}</span>
+								</div>
+								<span className="text-xs font-medium px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-600 animate-pulse">
+									+{count}
+								</span>
+							</div>
+						))}
 					</div>
 				</Section>
 
