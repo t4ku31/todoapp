@@ -1,4 +1,4 @@
-import type { Task, TaskStatus } from "@/types/types";
+import type { Task, TaskStatus } from "@/features/todo/types";
 
 const statusOrder: Record<TaskStatus, number> = {
 	IN_PROGRESS: 0,
