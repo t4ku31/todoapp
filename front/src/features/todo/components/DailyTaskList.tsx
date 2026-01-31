@@ -90,10 +90,9 @@ export function DailyTaskList({
 					<CompletionBadge tasks={tasksForDate} />
 				</div>
 				<CreateTaskForm
-					taskListId={taskListId}
+					defaultTaskListId={taskListId}
 					onCreateTask={onCreateTask}
 					defaultExecutionDate={isValidDate ? parsedDate : new Date()}
-					showListSelector={true}
 				/>
 			</div>
 

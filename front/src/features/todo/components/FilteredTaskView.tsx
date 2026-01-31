@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { AiSaveButton } from "@/features/ai/components/preview/AiSaveButton";
 import { useAiPreviewStore } from "@/features/ai/stores/useAiPreviewStore";
 import type { ParsedTask } from "@/features/ai/types";
@@ -5,7 +6,6 @@ import { useTaskFilter } from "@/features/todo/hooks/useTaskFilter";
 import { useTaskViewParams } from "@/features/todo/hooks/useTaskViewParams";
 import type { Task } from "@/features/todo/types";
 import { type CreateTaskParams, useTodoStore } from "@/store/useTodoStore";
-import { useMemo } from "react";
 import { CreateTaskForm } from "./forms/CreateTaskForm";
 import { FilterHeader } from "./parts/FilterHeader";
 import { CompletedTaskView } from "./views/CompletedTaskView";
@@ -93,10 +93,9 @@ export function FilteredTaskView({
 			{showCreateTaskForm && (
 				<div className="shrink-0 space-y-3">
 					<CreateTaskForm
-						taskListId={defaultTaskListId}
+						defaultTaskListId={defaultTaskListId}
 						defaultCategoryId={defaultCategoryId}
 						onCreateTask={onCreateTask}
-						showListSelector={viewType === "today" || viewType === "week"}
 					/>
 				</div>
 			)}

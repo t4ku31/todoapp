@@ -20,16 +20,14 @@ import { SubtaskList } from "../ui/SubtaskList";
 import { type TaskFormValues, taskSchema } from "./schema";
 
 interface CreateTaskFormProps {
-	taskListId: number;
 	onCreateTask: (params: CreateTaskParams) => Promise<Task>;
+	defaultTaskListId: number;
 	className?: string;
 	placeholder?: string;
 	autoFocus?: boolean;
 	disabled?: boolean;
 	defaultExecutionDate?: Date;
-	defaultTaskListId?: number;
 	defaultCategoryId?: number;
-	showListSelector?: boolean;
 	showExecutionDate?: boolean;
 }
 
@@ -39,26 +37,25 @@ interface CreateTaskFormProps {
 export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 	(
 		{
-			taskListId,
 			onCreateTask,
+			defaultTaskListId,
 			className,
 			placeholder,
 			autoFocus,
 			disabled,
 			defaultExecutionDate,
-			defaultTaskListId,
 			defaultCategoryId,
-			showListSelector = true,
 			showExecutionDate = true,
 		},
 		_ref,
 	) => {
-		const [selectedTaskListId, setSelectedTaskListId] = useState(taskListId);
+		const [selectedTaskListId, setSelectedTaskListId] =
+			useState(defaultTaskListId);
 		const [, setOnOpen] = useState(false);
 		// Sync local state if prop changes
 		useEffect(() => {
-			setSelectedTaskListId(taskListId);
-		}, [taskListId]);
+			setSelectedTaskListId(defaultTaskListId);
+		}, [defaultTaskListId]);
 
 		const form = useForm<TaskFormValues>({
 			resolver: zodResolver(taskSchema),

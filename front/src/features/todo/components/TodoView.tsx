@@ -219,10 +219,6 @@ export default function TodoView() {
 						onCreateTask={createTask}
 						onTaskSelect={handleTaskSelect}
 						selectedTaskId={selectedTaskId}
-						isSelectionMode={isSelectionMode}
-						setIsSelectionMode={setIsSelectionMode}
-						selectedTaskIds={selectedTaskIds}
-						setSelectedTaskIds={setSelectedTaskIds}
 						onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
 						isSidebarOpen={isSidebarOpen}
 					/>
