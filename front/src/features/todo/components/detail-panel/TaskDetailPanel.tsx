@@ -73,6 +73,17 @@ export function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProps) {
 			if (task) {
 				setIsChecked(checked);
 				updateTask(task.id, { status: checked ? "COMPLETED" : "PENDING" });
+				if (checked) {
+					toast.success("タスクを完了しました", {
+						action: {
+							label: "元に戻す",
+							onClick: () => {
+								setIsChecked(false);
+								updateTask(task.id, { status: "PENDING" });
+							},
+						},
+					});
+				}
 			}
 		},
 		[task, updateTask],

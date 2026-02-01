@@ -138,6 +138,7 @@ export function CreateCategoryDialog({
 					<Button
 						onClick={() => handleSubmit()}
 						disabled={!name.trim() || isSubmitting}
+						className="bg-indigo-600 text-white hover:bg-indigo-700"
 					>
 						{mode === "create" ? "作成" : "保存"}
 					</Button>

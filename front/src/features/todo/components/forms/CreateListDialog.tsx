@@ -95,6 +95,7 @@ export function CreateListDialog({
 					<Button
 						onClick={() => handleSubmit()}
 						disabled={!title.trim() || isSubmitting}
+						className="bg-indigo-600 text-white hover:bg-indigo-700"
 					>
 						{mode === "create" ? "作成" : "保存"}
 					</Button>
