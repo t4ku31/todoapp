@@ -1,6 +1,15 @@
+import Logo from "@/components/Logo";
+import {
+	Sidebar,
+	SidebarContent,
+	SidebarMenu,
+	SidebarMenuButton,
+	SidebarMenuItem,
+} from "@/components/ui/sidebar";
+import { env } from "@/config/env";
+import { cn } from "@/lib/utils";
 import {
 	Calendar,
-	Check,
 	CheckSquare,
 	Home,
 	LogOut,
@@ -8,16 +17,6 @@ import {
 	TrendingUp,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import {
-	Sidebar,
-	SidebarContent,
-	SidebarHeader,
-	SidebarMenu,
-	SidebarMenuButton,
-	SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import { env } from "@/config/env";
-import { cn } from "@/lib/utils";
 
 type AppSidebarProps = React.HTMLAttributes<HTMLDivElement>;
 
@@ -37,21 +36,12 @@ export function AppSidebar({ className, ...props }: AppSidebarProps) {
 		<Sidebar
 			collapsible="none"
 			className={cn(
-				"border-none bg-gradient-to-b from-blue-50 to-indigo-100",
+				"flex flex-col items-center border-none bg-gradient-to-b from-blue-50 to-indigo-100 w-25",
 				className,
 			)}
 			{...props}
 		>
-			<SidebarHeader className="flex items-center justify-center pt-8 pb-8">
-				<div className="relative">
-					<div className="h-12 w-12 bg-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30 transform rotate-12">
-						<Check className="h-8 w-8 text-white" strokeWidth={3} />
-					</div>
-					<div className="absolute -bottom-2 -left-2">
-						<div className="h-4 w-4 bg-orange-400 rounded-full blur-[2px]" />
-					</div>
-				</div>
-			</SidebarHeader>
+			<Logo className="w-25 h-25" />
 			<SidebarContent className="flex flex-col items-center gap-4 px-4 overflow-visible">
 				<SidebarMenu className="gap-4">
 					{menuItems.map((item) => (
@@ -107,7 +97,7 @@ export function AppSidebar({ className, ...props }: AppSidebarProps) {
 			</SidebarContent>
 
 			{/* Custom Footer for Avatar */}
-			<div className="pb-8 px-4 flex flex-col items-center gap-6">
+			{/* <div className="pb-8 px-4 flex flex-col items-center gap-6">
 				<div className="h-10 w-10 rounded-full overflow-hidden border-2 border-white shadow-md cursor-pointer hover:scale-105 transition-transform">
 					<img
 						src="https://github.com/shadcn.png"
@@ -115,7 +105,7 @@ export function AppSidebar({ className, ...props }: AppSidebarProps) {
 						className="h-full w-full object-cover"
 					/>
 				</div>
-			</div>
+			</div> */}
 		</Sidebar>
 	);
 }
