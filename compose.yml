@@ -5,8 +5,8 @@ services:
     image: mysql:8.0
     container_name: db
     environment:
-      MYSQL_ROOT_PASSWORD: secret
-      MYSQL_DATABASE: todoapp
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
     ports:
       - "3306:3306"
     volumes:
@@ -53,11 +53,16 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/todoapp
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: secret
-      APP_BASE_URL: https://resource-server:8080
-      APP_BFF_SERVER_URL: http://bff-server:7070
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      APP_BASE_URL: ${APP_API_URL}
+      APP_BFF_SERVER_URL: ${APP_FRONT_URL}
+      OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI}
+      OAUTH2_AUDIENCE: ${OAUTH2_AUDIENCE}
+      SPRING_AI_GOOGLE_GENAI_API_KEY: ${SPRING_AI_GOOGLE_GENAI_API_KEY}
+      SPRING_AI_GOOGLE_GENAI_PROJECT_ID: ${SPRING_AI_GOOGLE_GENAI_PROJECT_ID}
+      TZ: ${TZ}
     networks:
       - app-net
 
@@ -72,12 +77,17 @@ services:
     ports:
       - "7070:7070"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/todoapp
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: secret
-      APP_BASE_URL: http://bff-server:7070
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      APP_BASE_URL: ${APP_API_URL}
       RESOURCE_SERVER_URL: http://resource-server:8080
-      FRONT_SERVER_URL: http://localhost:5173
+      FRONT_SERVER_URL: ${APP_FRONT_URL}
+      OAUTH2_CLIENT_ID: ${OAUTH2_CLIENT_ID}
+      OAUTH2_CLIENT_SECRET: ${OAUTH2_CLIENT_SECRET}
+      OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI}
+      OAUTH2_AUDIENCE: ${OAUTH2_AUDIENCE}
+      TZ: ${TZ}
 
     networks:
       - app-net

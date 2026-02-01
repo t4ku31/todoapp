@@ -30,7 +30,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "tasklists")
+@Table(name = "tasklists", uniqueConstraints = {
+        @jakarta.persistence.UniqueConstraint(columnNames = { "user_id", "title" })
+})
 public class TaskList {
 
     @Id

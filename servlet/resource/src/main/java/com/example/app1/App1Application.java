@@ -14,4 +14,9 @@ public class App1Application {
     public static void main(String[] args) {
         SpringApplication.run(App1Application.class, args);
     }
+
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("Asia/Tokyo"));
+    }
 }

@@ -1,17 +1,24 @@
 package com.example.app1.service;
 
-import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.app1.dto.TaskDto;
 import com.example.app1.dto.TaskListDto;
-import com.example.app1.exception.TaskListValidationException;
+import com.example.app1.model.Category;
 import com.example.app1.model.Task;
 import com.example.app1.model.TaskList;
 import com.example.app1.model.TaskStatus;
+import com.example.app1.repository.CategoryRepository;
 import com.example.app1.repository.TaskListRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -27,19 +34,94 @@ import lombok.extern.slf4j.Slf4j;
 public class TaskListService {
 
     private final TaskListRepository taskListRepository;
+    private final CategoryRepository categoryRepository;
 
     /**
      * Get all task lists for a specific user.
+     * Ensures an Inbox task list always exists.
      * 
      * @param userId Auth0 sub claim identifying the user
      * @return List of task lists owned by the user
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<TaskList> getUserTaskLists(String userId) {
         log.info("Getting task lists for user: {}", userId);
         List<TaskList> taskLists = taskListRepository.findByUserId(userId);
-        log.info("Found {} task lists for user: {}", taskLists.size(), userId);
+
+        // Check if Inbox exists
+        boolean hasInbox = taskLists.stream()
+                .anyMatch(tl -> "Inbox".equals(tl.getTitle()));
+
+        if (!hasInbox) {
+            log.info("No Inbox found for user: {}. Creating default Inbox.", userId);
+            createInbox(userId);
+            // Re-fetch to get updated list with Inbox
+            taskLists = taskListRepository.findByUserId(userId);
+        }
+
+        log.info("Found {}", taskLists);
         return taskLists;
+    }
+
+    /**
+     * Get or create the Inbox task list for a user.
+     * 
+     * @param userId Auth0 sub claim identifying the user
+     * @return The user's Inbox task list
+     */
+    @Transactional
+    public TaskList getOrCreateInbox(String userId) {
+        log.info("Getting or creating Inbox for user: {}", userId);
+
+        // Try to find existing Inbox
+        List<TaskList> taskLists = taskListRepository.findByUserId(userId);
+        for (TaskList taskList : taskLists) {
+            if ("Inbox".equals(taskList.getTitle())) {
+                log.info("Found existing Inbox {} for user: {}", taskList.getId(), userId);
+                return taskList;
+            }
+        }
+
+        // Create new Inbox if not found
+        return createInbox(userId);
+    }
+
+    private TaskList createInbox(String userId) {
+        TaskList inbox = TaskList.builder()
+                .title("Inbox")
+                .userId(userId)
+                .build();
+
+        try {
+            TaskList saved = taskListRepository.save(inbox);
+            log.info("Created Inbox task list {} for user: {}", saved.getId(), userId);
+            return saved;
+        } catch (DataAccessException e) {
+            log.error("Failed to create Inbox for user: {}", userId, e);
+            throw e;
+        }
+    }
+
+    /**
+     * Get or create a task list by title for a user.
+     * 
+     * @param title  Task list title
+     * @param userId Auth0 sub claim identifying the user
+     * @return The task list
+     */
+    @Transactional
+    public TaskList getOrCreateTaskList(String title, String userId) {
+        log.info("Getting or creating task list '{}' for user: {}", title, userId);
+
+        return taskListRepository.findByTitleAndUserId(title, userId)
+                .orElseGet(() -> {
+                    log.info("Task list '{}' not found for user: {}. Creating new.", title, userId);
+                    TaskList newTaskList = TaskList.builder()
+                            .title(title)
+                            .userId(userId)
+                            .build();
+                    return taskListRepository.save(newTaskList);
+                });
     }
 
     /**
@@ -80,10 +162,26 @@ public class TaskListService {
                 .userId(userId)
                 .build();
 
+        // Ensure categories exist
+        Set<Long> categoryIds = request.tasks().stream()
+                .map(TaskDto.Create::categoryId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<Long, Category> categoryMap;
+        if (categoryIds.isEmpty()) {
+            categoryMap = Collections.emptyMap();
+        } else {
+            categoryMap = categoryRepository.findAllById(categoryIds).stream()
+                    .collect(Collectors.toMap(Category::getId, Function.identity()));
+        }
+
         List<Task> tasks = request.tasks().stream()
                 .map(req -> Task.builder()
                         .title(req.title())
                         .status(TaskStatus.PENDING)
+                        .executionDate(req.executionDate())
+                        .category(req.categoryId() != null ? categoryMap.get(req.categoryId()) : null)
                         .userId(userId)
                         .taskList(taskList)
                         .build())
@@ -126,24 +224,6 @@ public class TaskListService {
         }
         if (request.dueDate() != null) {
             existing.setDueDate(request.dueDate());
-        }
-        if (request.isCompleted() != null) {
-            // Validation: All tasks must be COMPLETED before marking list as completed
-            if (request.isCompleted() && existing.getTasks() != null && !existing.getTasks().isEmpty()) {
-                boolean allTasksCompleted = existing.getTasks().stream()
-                        .allMatch(task -> task.getStatus() == TaskStatus.COMPLETED);
-
-                if (!allTasksCompleted) {
-                    throw new TaskListValidationException("すべてのタスクを完了してから、タスクリストを完了してください");
-                }
-            }
-
-            existing.setIsCompleted(request.isCompleted());
-            if (request.isCompleted()) {
-                existing.setCompletedAt(LocalDateTime.now());
-            } else {
-                existing.setCompletedAt(null);
-            }
         }
 
         taskListRepository.save(existing);

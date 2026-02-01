@@ -1,0 +1,25 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Frontend environment files
+front/.env.development
+front/.env.production
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+bff.log
+resource.log
+
+# Agent reports
+.agent/reports/
