@@ -1,4 +1,4 @@
-import logoSrc from "@/image/todo-app-logo.jpg";
+import logoSrc from "@/image/Logo.png";
 import { cn } from "@/lib/utils";
 
 type LogoProps = {
