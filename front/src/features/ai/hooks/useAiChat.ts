@@ -1,8 +1,8 @@
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { apiClient } from "@/config/env";
 import type { TaskList } from "@/features/todo/types";
 import { useTodoStore } from "@/store/useTodoStore";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
 import { useAiChatContextStore } from "../stores/useAiChatContextStore";
 import { useAiPreviewStore } from "../stores/useAiPreviewStore";
 import type {
@@ -12,7 +12,13 @@ import type {
 	ChatMessage,
 	ParsedTask,
 } from "../types";
-import { getUserId, taskToParsedTask } from "../utils/aiUtils";
+import {
+	getUserId,
+	isExistingTask,
+	mergeTasks,
+	taskToParsedTask,
+	toSyncTask,
+} from "../utils/aiUtils";
 
 // 会話メタデータ型
 interface Conversation {
@@ -304,7 +310,7 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 
 	// タスクの選択状態をトグル
 	const toggleTaskSelection = useCallback(
-		(taskId: string) => {
+		(taskId: number) => {
 			toggleAiPreviewSelection(taskId);
 		},
 		[toggleAiPreviewSelection],
@@ -312,7 +318,7 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 
 	// ドラフトタスクを更新
 	const updateDraftTask = useCallback(
-		(taskId: string, updates: Partial<ParsedTask>) => {
+		(taskId: number, updates: Partial<ParsedTask>) => {
 			updateAiPreviewTask(taskId, updates);
 		},
 		[updateAiPreviewTask],
@@ -328,9 +334,15 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 		setIsLoading(true);
 		console.log("selectedTasks", selectedTasks);
 		try {
-			// Convert ParsedTask to BackendSyncTask
-			const syncTasks = selectedTasks.map((t) => ({
-				id: t.originalId && t.originalId > 0 ? t.originalId : undefined,
+			// Use helper to prepare payload
+			// Note: prepareTasksForSave generates CreateTaskParams. syncTasks expects SyncTaskDto-like structure.
+			// However, useTodoStore.syncTasks handles the payload.
+			// Let's manually construct payload to be safe and consistent with useAiPreviewStore logic for now,
+			// or use `prepareTasksForSave` if we were using separate create/update endpoints.
+			// Since we use `syncTasks`, we need a uniform list.
+
+			const syncPayload = selectedTasks.map((t) => ({
+				id: t.id > 0 ? t.id : undefined, // Positive = update, Negative/Undefined = create
 				title: t.title,
 				description: t.description,
 				executionDate: t.executionDate,
@@ -347,8 +359,8 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 				status: t.status,
 			}));
 
-			console.log("syncTasks", syncTasks);
-			const result = await useTodoStore.getState().syncTasks(syncTasks);
+			console.log("syncPayload", syncPayload);
+			const result = await useTodoStore.getState().syncTasks(syncPayload);
 
 			console.log("result", result);
 			if (result.success) {
@@ -414,22 +426,18 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 			const currentPreviewTasks = useAiPreviewStore.getState().aiPreviewTasks;
 
 			// Merge tasks: Preview tasks take precedence if they modify an existing task
-			// We can simply pass all of them; the backend agent should handle duplicates or we filter here.
-			// Let's filter: if a task is in preview, use that version.
-			// contextTasks are Task[] (number IDs). aiPreviewTasks are ParsedTask[] (string or number ID).
+			// We prioritize preview tasks if they share same ID (positive) with context tasks
 
 			const blendedTasks = [...contextTasksList];
 
-			//get original id from preview tasks
-			const previewOriginalIds = new Set(
-				currentPreviewTasks
-					.map((t) => t.originalId)
-					.filter((id): id is number => typeof id === "number"),
+			// get IDs from preview tasks that are existing tasks
+			const previewExistingIds = new Set(
+				currentPreviewTasks.filter((t) => isExistingTask(t)).map((t) => t.id),
 			);
-			//only context task that is not in preview
+
 			// Filter out context tasks that are currently being previewed (modified)
 			const nonOverlappingContext = blendedTasks.filter(
-				(t) => !previewOriginalIds.has(t.id),
+				(t) => !previewExistingIds.has(t.id),
 			);
 
 			const finalContextTasks = [
@@ -437,13 +445,14 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 				...currentPreviewTasks,
 			];
 			console.log("~~~~~~~~~~~~~~~~~~~~finalContextTasks", finalContextTasks);
+
+			// Transform tasks to match backend contract (SyncTask)
+			const syncTasksPayload = finalContextTasks.map(toSyncTask);
+
 			const request: ChatAnalysisRequest = {
 				conversationId,
 				prompt: userInput,
-				currentTasks: finalContextTasks.map((t) => ({
-					...t,
-					id: "originalId" in t ? (t.originalId ?? t.id) : t.id,
-				})) as any[],
+				currentTasks: syncTasksPayload,
 				projectTitle,
 			};
 			console.log("~~~~~~~~~~~~~~~~~~~~request", request);
@@ -459,81 +468,11 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 
 				// 提案されたタスクをセット
 				if (result.result?.tasks) {
-					// Use current aiPreviewTasks state
-					const currentTasks = useAiPreviewStore.getState().aiPreviewTasks;
-					// Shallow copy for mutation
-					const nextTasks = [...currentTasks];
-					console.log("nextTasks", nextTasks);
+					// Use aiUtils.mergeTasks to handle merging logic
+					const currentStoreTasks = useAiPreviewStore.getState().aiPreviewTasks;
 
-					result.result.tasks.forEach((t) => {
-						// 既存タスクの判定
-						// 1. BackendSyncTask has ID (could be number '1' or string 'preview-...')
-						// 2. Try to find match in current preview tasks (nextTasks) by:
-						//    a. originalId (if t.id is number) -> matches DB task
-						//    b. id (if t.id is string) -> matches previously generated preview task
-						const existingIndex = nextTasks.findIndex((pt) => {
-							if (!t.id) return false;
+					const nextTasks = mergeTasks(currentStoreTasks, result.result.tasks);
 
-							// Check if t.id matches the task's original DB ID (if t.id is a number)
-							if (typeof t.id === "number" && pt.originalId === t.id) {
-								return true;
-							}
-
-							// Check if t.id matches the preview task's frontend ID (string match)
-							// This handles the case where AI returns the same ID we generated for the preview
-							if (pt.id === t.id) {
-								return true;
-							}
-
-							return false;
-						});
-
-						// console.log("existingIndex", existingIndex);
-						// console.log("t", t);
-
-						const mappedTask: ParsedTask = {
-							id:
-								existingIndex >= 0
-									? nextTasks[existingIndex].id
-									: `preview-${Date.now()}-${Math.random()}`,
-							// originalId should be set only if it's a real DB ID (number)
-							originalId: typeof t.id === "number" ? t.id : undefined,
-							title: t.title,
-							description: t.description,
-							executionDate: t.executionDate,
-							scheduledStartAt: t.scheduledStartAt,
-							scheduledEndAt: t.scheduledEndAt,
-							isAllDay: t.isAllDay,
-							estimatedPomodoros: t.estimatedPomodoros,
-							categoryName: t.categoryName,
-							taskListTitle: t.taskListTitle,
-							isRecurring: t.isRecurring,
-							recurrencePattern: t.recurrencePattern,
-							isDeleted: t.isDeleted,
-							subtasks: t.subtasks,
-							status:
-								t.status ??
-								(existingIndex >= 0
-									? nextTasks[existingIndex].status
-									: "PENDING"),
-							selected: true,
-							originalTask:
-								t.id && typeof t.id === "number"
-									? useTodoStore
-											.getState()
-											.allTasks.find((task) => task.id === t.id)
-									: undefined,
-						};
-
-						if (existingIndex >= 0) {
-							// 更新: Merge with existing to keep other props if any (though mappedTask overwrites most)
-							// We strictly overwrite with AI's latest suggestion but keep the ID.
-							nextTasks[existingIndex] = mappedTask;
-						} else {
-							// 新規追加
-							nextTasks.push(mappedTask);
-						}
-					});
 					console.log("nextTasks", nextTasks);
 					setAiPreviewTasks(nextTasks);
 					setIsTaskListExpanded(true);
