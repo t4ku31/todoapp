@@ -12,7 +12,7 @@ public class AiTaskDto {
          * AIチャットと同期APIで共通使用するタスクモデル
          */
         public record SyncTaskDto(
-                        Long id,
+                        Object id,
                         String title,
                         String description,
                         String executionDate,
@@ -25,7 +25,7 @@ public class AiTaskDto {
                         Boolean isRecurring,
                         String recurrencePattern,
                         Boolean isDeleted,
-                        List<String> subtasks,
+                        List<SubtaskDto.Summary> subtasks,
                         String status) {
         }
 
@@ -55,8 +55,29 @@ public class AiTaskDto {
         public record ChatAnalysisRequest(
                         String conversationId,
                         String prompt,
-                        List<TaskDto.Entity> currentTasks,
+                        List<AiContextTask> currentTasks,
                         String projectTitle) {
+        }
+
+        /**
+         * AIコンテキスト用のタスクDTO
+         * IDをObject型(String/Long)で受け入れるために定義
+         */
+        @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+        public record AiContextTask(
+                        Object id,
+                        String title,
+                        String status,
+                        Long taskListId,
+                        String executionDate,
+                        String estimatedPomodoros,
+                        String description,
+                        Boolean isAllDay,
+                        String scheduledStartAt,
+                        String scheduledEndAt,
+                        Boolean isRecurring,
+                        String recurrenceRule,
+                        List<SubtaskDto.Summary> subtasks) {
         }
 
         // Deprecated or removed? Kept for compatibility if needed, but SyncTaskDto

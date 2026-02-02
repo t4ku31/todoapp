@@ -1145,19 +1145,31 @@ public class TaskService {
 
         for (SyncTaskDto req : tasks) {
             try {
-                if (Boolean.TRUE.equals(req.isDeleted()) && req.id() != null) {
+                Long taskId = null;
+                if (req.id() instanceof Number) {
+                    taskId = ((Number) req.id()).longValue();
+                } else if (req.id() instanceof String) {
+                    try {
+                        taskId = Long.parseLong((String) req.id());
+                    } catch (NumberFormatException e) {
+                        // Ignore invalid number format (e.g. "preview-...") -> treat as new task
+                        taskId = null;
+                    }
+                }
+
+                if (Boolean.TRUE.equals(req.isDeleted()) && taskId != null && taskId > 0) {
                     // Delete
-                    deleteTask(req.id(), userId);
+                    deleteTask(taskId, userId);
                     deletedCount++;
-                } else if (req.id() == null || req.id() <= 0) {
-                    // Createc
+                } else if (taskId == null || taskId <= 0) {
+                    // Create
                     TaskDto.Create create = convertToCreate(req);
                     createTask(create, userId);
                     createdCount++;
                 } else {
                     // Update
                     TaskDto.Update update = convertToUpdate(req);
-                    updateTask(req.id(), update, userId);
+                    updateTask(taskId, update, userId);
                     updatedCount++;
                 }
             } catch (Exception e) {
@@ -1206,7 +1218,7 @@ public class TaskService {
         List<SubtaskDto.Create> subtasks = null;
         if (req.subtasks() != null) {
             subtasks = req.subtasks().stream()
-                    .map(title -> new SubtaskDto.Create(null, title, null))
+                    .map(summary -> new SubtaskDto.Create(null, summary.title(), summary.description()))
                     .toList();
         }
 

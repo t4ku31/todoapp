@@ -8,9 +8,8 @@ import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.stereotype.Service;
 
+import com.example.app1.dto.AiTaskDto;
 import com.example.app1.dto.TaskDto;
-import com.example.app1.model.Subtask;
-import com.example.app1.model.Task;
 import com.example.app1.repository.ChatMemoryRepository;
 import com.example.app1.repository.ConversationRepository;
 
@@ -100,7 +99,9 @@ public class AiService {
             - `suggestedTaskList` (String): タスクリスト名。
             - `isRecurring` (Boolean): 繰り返しフラグ。
             - `recurrencePattern` (String): 繰り返しルール。
-            - `subtasks` (List<String>): サブタスク（タイトル）のリスト。
+            - `recurrencePattern` (String): 繰り返しルール。
+            - `subtasks` (List<Object>): サブタスクのリスト（各要素は { "title": "...", "isCompleted": false }）。
+            - `isDeleted` (Boolean): 削除時は `true` に設定し、`id` を維持してください。
             - `isDeleted` (Boolean): 削除時は `true` に設定し、`id` を維持してください。
             - `status` (String): タスクのステータス ("PENDING", "COMPLETED")。
 
@@ -153,11 +154,12 @@ public class AiService {
      *
      * @param conversationId 会話ID
      * @param userInput      ユーザーの入力
-     * @param currentTasks   現在のタスクリスト (Domain Model)
+     * @param currentTasks   現在のタスクリスト (DTO, with String/Long IDs)
      * @param projectTitle   プロジェクト名（あれば）
      * @return チャット結果（プレビュー用のタスクリスト + 生成タイトル）
      */
-    public ChatResult chat(String conversationId, String userInput, List<Task> currentTasks,
+    public ChatResult chat(String conversationId, String userInput,
+            List<AiTaskDto.AiContextTask> currentTasks,
             String projectTitle) {
         // 初回メッセージかどうかをチェック（AIリクエスト前にカウント）
         int messageCount = conversationRepository.countChatMessages(conversationId);
@@ -257,15 +259,20 @@ public class AiService {
     /**
      * 現在のタスクリストをコンテキスト用のJSON文字列に変換
      */
-    private String formatTasksContextAsJson(List<Task> tasks, String projectTitle) {
+    /**
+     * 現在のタスクリストをコンテキスト用のJSON文字列に変換
+     */
+    private String formatTasksContextAsJson(List<AiTaskDto.AiContextTask> tasks,
+            String projectTitle) {
         if (tasks == null || tasks.isEmpty()) {
             return "[]";
         }
 
         try {
-            List<TaskDto.SyncTaskDto> parsedTasks = tasks.stream()
-                    .map(this::toSyncTaskDto)
-                    .toList();
+            // AiContextTask is already a DTO suitable for JSON context, but we might want
+            // to ensure format
+            // or we can just serialize it directly.
+            // Let's serialize the subset or the DTO itself.
 
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
             mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
@@ -274,7 +281,7 @@ public class AiService {
             if (projectTitle != null) {
                 sb.append("プロジェクト: ").append(projectTitle).append("\n");
             }
-            sb.append(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(parsedTasks));
+            sb.append(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(tasks));
             return sb.toString();
         } catch (Exception e) {
             log.error("Failed to format tasks context as JSON", e);
@@ -282,27 +289,11 @@ public class AiService {
         }
     }
 
-    /**
-     * Entity を ParsedTask DTO に変換（AI提示用）
-     */
-    private TaskDto.SyncTaskDto toSyncTaskDto(Task task) {
-        return new TaskDto.SyncTaskDto(
-                task.getId(),
-                task.getTitle(),
-                task.getDescription(),
-                task.getExecutionDate() != null ? task.getExecutionDate().toString() : null,
-                task.getScheduledStartAt() != null ? task.getScheduledStartAt().toString() : null,
-                task.getScheduledEndAt() != null ? task.getScheduledEndAt().toString() : null,
-                task.getIsAllDay(),
-                task.getEstimatedPomodoros(),
-                task.getCategory() != null ? task.getCategory().getName() : null,
-                task.getTaskList() != null ? task.getTaskList().getTitle() : null,
-                task.getIsRecurring(),
-                task.getRecurrenceRule(),
-                false, // isDeleted default
-                task.getSubtasks() != null ? task.getSubtasks().stream().map(Subtask::getTitle).toList() : List.of(),
-                task.getStatus() != null ? task.getStatus().name() : "PENDING");
-    }
+    // toSyncTaskDto might not be needed for context generation anymore if we use
+    // AiContextTask directly.
+    // However, if we need to convert Task entity to AiContextTask elsewhere, we
+    // might keep a converter.
+    // For now, the chat context uses the incoming DTOs directly.
 
     public List<com.example.app1.dto.MessageDto> getMessages(String userId, String conversationId) {
         // Note: In a production environment, you should verify that the conversationId

@@ -2,7 +2,6 @@ package com.example.app1.dto;
 
 import java.util.List;
 
-import com.example.app1.model.Task;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -50,9 +49,31 @@ public class AiTaskDto {
 
             @Schema(description = "ユーザーの発言（自然言語）", example = "明日のミーティング準備を追加して") String prompt,
 
-            @Schema(description = "現在のタスクリスト（ドメインモデル）") List<Task> currentTasks,
+            @Schema(description = "現在のタスクリスト（ドメインモデル、ただしIDは文字列許容）") List<AiContextTask> currentTasks,
 
             @Schema(description = "プロジェクトタイトル（オプション）") String projectTitle) {
+    }
+
+    /**
+     * AIコンテキスト用のタスクDTO
+     * IDをObject型(String/Long)で受け入れるために定義
+     */
+    @Schema(name = "AiContextTask", description = "AIコンテキスト用タスク（IDは文字列許容）")
+    public record AiContextTask(
+            @Schema(description = "タスクID（DB保存済みは数値、プレビュー中は文字列）", example = "10 or preview-123...") Object id,
+            String title,
+            String status,
+            Long taskListId,
+            String executionDate,
+            String estimatedPomodoros, // Frontend sends number, but safe to map
+            String description,
+            Boolean isAllDay,
+            String scheduledStartAt,
+            String scheduledEndAt,
+            Boolean isRecurring,
+            String recurrenceRule,
+            List<SubtaskDto.Summary> subtasks // Simplified for context
+    ) {
     }
 
     /**

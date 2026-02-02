@@ -174,7 +174,7 @@ public class TaskDto {
          */
         @Schema(name = "SyncTaskDto", description = "AI生成と同期保存で共通化されたタスクモデル")
         public record SyncTaskDto(
-                        @JsonPropertyDescription("既存タスクのID（更新・削除時は必須）") Long id,
+                        @JsonPropertyDescription("既存タスクのID（更新・削除時は必須）") Object id,
                         @JsonPropertyDescription("タスクのタイトル") String title,
                         @JsonPropertyDescription("タスクの詳細") String description,
                         @JsonPropertyDescription("実行日（YYYY-MM-DD）") String executionDate,
@@ -187,7 +187,7 @@ public class TaskDto {
                         @JsonPropertyDescription("繰り返しフラグ") Boolean isRecurring,
                         @JsonPropertyDescription("繰り返しルール") String recurrencePattern,
                         @JsonPropertyDescription("削除フラグ") Boolean isDeleted,
-                        @JsonPropertyDescription("サブタスク（タイトル）のリスト") List<String> subtasks,
+                        @JsonPropertyDescription("サブタスク（オブジェクト）のリスト") List<SubtaskDto.Summary> subtasks,
                         @JsonPropertyDescription("ステータス（PENDING, COMPLETED）") String status) {
         }
 
@@ -195,10 +195,11 @@ public class TaskDto {
          * AIが生成したSyncTaskDtoのリスト
          */
         @Schema(name = "SyncTaskList", description = "AIが生成したSyncTaskDtoのリスト")
+        @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
         public record SyncTaskList(
-                        List<SyncTaskDto> tasks,
-                        String advice,
-                        String projectTitle) {
+                        @com.fasterxml.jackson.annotation.JsonProperty("tasks") List<SyncTaskDto> tasks,
+                        @com.fasterxml.jackson.annotation.JsonProperty("advice") String advice,
+                        @com.fasterxml.jackson.annotation.JsonProperty("projectTitle") String projectTitle) {
         }
 
         /**

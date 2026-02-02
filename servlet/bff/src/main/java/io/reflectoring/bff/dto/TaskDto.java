@@ -153,7 +153,7 @@ public class TaskDto {
         @JsonIgnoreProperties(ignoreUnknown = true)
         @Schema(name = "SyncTaskDto")
         public record SyncTaskDto(
-                        Long id,
+                        Object id,
                         String title,
                         String description,
                         String executionDate,
@@ -166,7 +166,7 @@ public class TaskDto {
                         Boolean isRecurring,
                         String recurrencePattern,
                         Boolean isDeleted,
-                        List<String> subtasks,
+                        List<SubtaskDto.Summary> subtasks,
                         TaskStatus status) {
         }
 
