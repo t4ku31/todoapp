@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
 import { apiClient } from "@/config/env";
 import type { TaskList } from "@/features/todo/types";
 import { useTodoStore } from "@/store/useTodoStore";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useAiChatContextStore } from "../stores/useAiChatContextStore";
 import { useAiPreviewStore } from "../stores/useAiPreviewStore";
 import type {
@@ -411,20 +411,49 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 		try {
 			// コンテキストタスク（DnDで追加されたタスク）を統合
 			const contextTasksList = useAiChatContextStore.getState().contextTasks;
+			const currentPreviewTasks = useAiPreviewStore.getState().aiPreviewTasks;
+
+			// Merge tasks: Preview tasks take precedence if they modify an existing task
+			// We can simply pass all of them; the backend agent should handle duplicates or we filter here.
+			// Let's filter: if a task is in preview, use that version.
+			// contextTasks are Task[] (number IDs). aiPreviewTasks are ParsedTask[] (string or number ID).
+
+			const blendedTasks = [...contextTasksList];
+
+			//get original id from preview tasks
+			const previewOriginalIds = new Set(
+				currentPreviewTasks
+					.map((t) => t.originalId)
+					.filter((id): id is number => typeof id === "number"),
+			);
+			//only context task that is not in preview
+			// Filter out context tasks that are currently being previewed (modified)
+			const nonOverlappingContext = blendedTasks.filter(
+				(t) => !previewOriginalIds.has(t.id),
+			);
+
+			const finalContextTasks = [
+				...nonOverlappingContext,
+				...currentPreviewTasks,
+			];
+			console.log("~~~~~~~~~~~~~~~~~~~~finalContextTasks", finalContextTasks);
 			const request: ChatAnalysisRequest = {
 				conversationId,
 				prompt: userInput,
-				currentTasks: contextTasksList,
+				currentTasks: finalContextTasks.map((t) => ({
+					...t,
+					id: "originalId" in t ? (t.originalId ?? t.id) : t.id,
+				})) as any[],
 				projectTitle,
 			};
+			console.log("~~~~~~~~~~~~~~~~~~~~request", request);
 
-			console.log("request", request);
 			const response = await apiClient.post<AiChatResponse>(
 				"/api/ai/tasks/chat",
 				request,
 			);
 
-			console.log("response from chat", response);
+			console.log("~~~~~~~~~~~~~~~~~~~~response from chat", response);
 			if (response.data.success) {
 				const result = response.data;
 
@@ -437,19 +466,38 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 					console.log("nextTasks", nextTasks);
 
 					result.result.tasks.forEach((t) => {
-						// 既存タスクの判定 (t.id is from BackendSyncTask, corresponding to originalId in ParsedTask)
-						const existingIndex =
-							t.id && t.id > 0
-								? nextTasks.findIndex((pt) => pt.originalId === t.id)
-								: -1;
-						console.log("existingIndex", existingIndex);
-						console.log("t", t);
+						// 既存タスクの判定
+						// 1. BackendSyncTask has ID (could be number '1' or string 'preview-...')
+						// 2. Try to find match in current preview tasks (nextTasks) by:
+						//    a. originalId (if t.id is number) -> matches DB task
+						//    b. id (if t.id is string) -> matches previously generated preview task
+						const existingIndex = nextTasks.findIndex((pt) => {
+							if (!t.id) return false;
+
+							// Check if t.id matches the task's original DB ID (if t.id is a number)
+							if (typeof t.id === "number" && pt.originalId === t.id) {
+								return true;
+							}
+
+							// Check if t.id matches the preview task's frontend ID (string match)
+							// This handles the case where AI returns the same ID we generated for the preview
+							if (pt.id === t.id) {
+								return true;
+							}
+
+							return false;
+						});
+
+						// console.log("existingIndex", existingIndex);
+						// console.log("t", t);
+
 						const mappedTask: ParsedTask = {
 							id:
 								existingIndex >= 0
 									? nextTasks[existingIndex].id
 									: `preview-${Date.now()}-${Math.random()}`,
-							originalId: t.id,
+							// originalId should be set only if it's a real DB ID (number)
+							originalId: typeof t.id === "number" ? t.id : undefined,
 							title: t.title,
 							description: t.description,
 							executionDate: t.executionDate,
@@ -469,15 +517,17 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 									? nextTasks[existingIndex].status
 									: "PENDING"),
 							selected: true,
-							originalTask: t.id
-								? useTodoStore
-										.getState()
-										.allTasks.find((task) => task.id === t.id)
-								: undefined,
+							originalTask:
+								t.id && typeof t.id === "number"
+									? useTodoStore
+											.getState()
+											.allTasks.find((task) => task.id === t.id)
+									: undefined,
 						};
 
 						if (existingIndex >= 0) {
-							// 更新
+							// 更新: Merge with existing to keep other props if any (though mappedTask overwrites most)
+							// We strictly overwrite with AI's latest suggestion but keep the ID.
 							nextTasks[existingIndex] = mappedTask;
 						} else {
 							// 新規追加
