@@ -1,3 +1,4 @@
+import { AiDiffTaskItem } from "@/features/ai/components/preview/AiDiffTaskItem";
 import { AiPreviewTaskItem } from "@/features/ai/components/preview/AiPreviewTaskItem";
 import type { ParsedTask } from "@/features/ai/types";
 import type { Task } from "@/features/todo/types";
@@ -53,10 +54,10 @@ export function StandardTaskView({
 					const aiEditPreview = aiEditPreviewMap.get(task.id);
 					if (aiEditPreview) {
 						return (
-							<AiPreviewTaskItem
-								key={`preview-${task.id}`}
-								task={aiEditPreview}
-								index={0}
+							<AiDiffTaskItem
+								key={`diff-${task.id}`}
+								originalTask={task}
+								previewTask={aiEditPreview}
 								onUpdateTask={updateAiPreviewTask}
 								onToggleSelection={toggleAiPreviewSelection}
 							/>
