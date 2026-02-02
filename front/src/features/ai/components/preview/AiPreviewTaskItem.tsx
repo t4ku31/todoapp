@@ -1,5 +1,3 @@
-import { GripVertical, Trash2 } from "lucide-react";
-import { memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CategorySelect } from "@/features/todo/components/ui/CategorySelect";
@@ -11,6 +9,8 @@ import { TaskListSelector } from "@/features/todo/components/ui/TaskListSelector
 import { cn } from "@/lib/utils";
 import { useCategoryStore } from "@/store/useCategoryStore";
 import { useTodoStore } from "@/store/useTodoStore";
+import { GripVertical, Trash2 } from "lucide-react";
+import { memo } from "react";
 import type { ParsedTask } from "../../types";
 
 interface AiPreviewTaskItemProps {
@@ -186,7 +186,9 @@ export const AiPreviewTaskItem = memo(function AiPreviewTaskItem({
 								className="flex items-center gap-2 text-xs text-gray-600 bg-gray-50/50 px-2 py-1 rounded"
 							>
 								<div className="w-1 h-1 rounded-full bg-gray-300" />
-								<span className="truncate">{st}</span>
+								<span className="truncate">
+									{typeof st === "string" ? st : st.title}
+								</span>
 							</div>
 						))}
 					</div>

@@ -1,7 +1,7 @@
-import type { Task } from "@/features/todo/types";
+import type { Subtask, Task } from "@/features/todo/types";
 
 export interface BackendSyncTask {
-	id?: number; // Database ID (null/undefined for new)
+	id?: number | string; // Database ID (number) or Frontend ID (string) for preview matching
 	title: string;
 	description?: string;
 	executionDate?: string;
@@ -14,7 +14,7 @@ export interface BackendSyncTask {
 	isRecurring?: boolean;
 	recurrencePattern?: string;
 	isDeleted?: boolean;
-	subtasks?: string[];
+	subtasks?: Subtask[];
 	status?: string;
 }
 
@@ -42,7 +42,7 @@ export interface ChatHistoryMessage {
 export interface ChatAnalysisRequest {
 	conversationId?: string;
 	prompt: string;
-	currentTasks: Task[];
+	currentTasks: (Task | ParsedTask)[];
 	projectTitle?: string;
 }
 
