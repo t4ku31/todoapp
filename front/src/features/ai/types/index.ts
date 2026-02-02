@@ -1,7 +1,7 @@
 import type { Subtask, Task } from "@/features/todo/types";
 
-export interface BackendSyncTask {
-	id?: number | string; // Database ID (number) or Frontend ID (string) for preview matching
+export interface SyncTask {
+	id?: number; // Database ID (positive) or Null (create)
 	title: string;
 	description?: string;
 	executionDate?: string;
@@ -18,9 +18,8 @@ export interface BackendSyncTask {
 	status?: string;
 }
 
-export interface ParsedTask extends Omit<BackendSyncTask, "id"> {
-	id: string; // Frontend ID (UUID)
-	originalId?: number; // Maps to BackendSyncTask.id
+export interface ParsedTask extends Omit<SyncTask, "id"> {
+	id: number; // Positive (DB) or Negative (Preview)
 	selected: boolean;
 	originalTask?: Task;
 }
@@ -42,7 +41,7 @@ export interface ChatHistoryMessage {
 export interface ChatAnalysisRequest {
 	conversationId?: string;
 	prompt: string;
-	currentTasks: (Task | ParsedTask)[];
+	currentTasks: SyncTask[];
 	projectTitle?: string;
 }
 
@@ -51,7 +50,7 @@ export interface AiChatResponse {
 	result?: {
 		projectTitle?: string;
 		projectDescription?: string;
-		tasks?: BackendSyncTask[];
+		tasks?: SyncTask[];
 		totalEstimatedMinutes?: number;
 		advice?: string;
 	};

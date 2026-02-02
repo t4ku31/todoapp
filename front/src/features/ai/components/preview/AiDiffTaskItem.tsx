@@ -7,8 +7,8 @@ import { AiPreviewTaskItem } from "./AiPreviewTaskItem";
 interface AiDiffTaskItemProps {
 	originalTask: Task;
 	previewTask: ParsedTask;
-	onUpdateTask: (taskId: string, updates: Partial<ParsedTask>) => void;
-	onToggleSelection: (taskId: string) => void;
+	onUpdateTask: (taskId: number, updates: Partial<ParsedTask>) => void;
+	onToggleSelection: (taskId: number) => void;
 }
 
 export function AiDiffTaskItem({

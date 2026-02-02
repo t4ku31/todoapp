@@ -8,7 +8,6 @@ import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.stereotype.Service;
 
-import com.example.app1.dto.AiTaskDto;
 import com.example.app1.dto.TaskDto;
 import com.example.app1.repository.ChatMemoryRepository;
 import com.example.app1.repository.ConversationRepository;
@@ -159,7 +158,7 @@ public class AiService {
      * @return チャット結果（プレビュー用のタスクリスト + 生成タイトル）
      */
     public ChatResult chat(String conversationId, String userInput,
-            List<AiTaskDto.AiContextTask> currentTasks,
+            List<TaskDto.SyncTaskDto> currentTasks,
             String projectTitle) {
         // 初回メッセージかどうかをチェック（AIリクエスト前にカウント）
         int messageCount = conversationRepository.countChatMessages(conversationId);
@@ -262,7 +261,7 @@ public class AiService {
     /**
      * 現在のタスクリストをコンテキスト用のJSON文字列に変換
      */
-    private String formatTasksContextAsJson(List<AiTaskDto.AiContextTask> tasks,
+    private String formatTasksContextAsJson(List<TaskDto.SyncTaskDto> tasks,
             String projectTitle) {
         if (tasks == null || tasks.isEmpty()) {
             return "[]";

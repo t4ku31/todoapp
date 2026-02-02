@@ -8,8 +8,8 @@ interface AiPreviewState {
 	aiPreviewTasks: ParsedTask[];
 	setAiPreviewTasks: (tasks: ParsedTask[]) => void;
 	clearAiPreviewTasks: () => void;
-	updateAiPreviewTask: (taskId: string, updates: Partial<ParsedTask>) => void;
-	toggleAiPreviewSelection: (taskId: string) => void;
+	updateAiPreviewTask: (taskId: number, updates: Partial<ParsedTask>) => void;
+	toggleAiPreviewSelection: (taskId: number) => void;
 	saveAiPreviewTasks: () => Promise<void>;
 	loading: boolean;
 }
@@ -47,7 +47,8 @@ export const useAiPreviewStore = create<AiPreviewState>((set, get) => ({
 
 		try {
 			const syncPayload = selectedTasks.map((t) => ({
-				id: t.originalId && t.originalId > 0 ? t.originalId : undefined,
+				// ID: If positive, it's an existing task (update). If negative, it's a new task (create, send undefined).
+				id: t.id > 0 ? t.id : undefined,
 				title: t.title,
 				description: t.description,
 				executionDate: t.executionDate,

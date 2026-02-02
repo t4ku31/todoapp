@@ -1,5 +1,8 @@
+import { GripVertical, Trash2 } from "lucide-react";
+import { memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import type { ParsedTask } from "@/features/ai/types";
 import { CategorySelect } from "@/features/todo/components/ui/CategorySelect";
 import { EditableDate } from "@/features/todo/components/ui/EditableDate";
 import { EditableDescription } from "@/features/todo/components/ui/EditableDescription";
@@ -9,15 +12,13 @@ import { TaskListSelector } from "@/features/todo/components/ui/TaskListSelector
 import { cn } from "@/lib/utils";
 import { useCategoryStore } from "@/store/useCategoryStore";
 import { useTodoStore } from "@/store/useTodoStore";
-import { GripVertical, Trash2 } from "lucide-react";
-import { memo } from "react";
-import type { ParsedTask } from "../../types";
+import { isExistingTask } from "../../utils/aiUtils";
 
 interface AiPreviewTaskItemProps {
 	task: ParsedTask;
 	index: number;
-	onUpdateTask: (taskId: string, updates: Partial<ParsedTask>) => void;
-	onToggleSelection: (taskId: string) => void;
+	onUpdateTask: (taskId: number, updates: Partial<ParsedTask>) => void;
+	onToggleSelection: (taskId: number) => void;
 }
 
 export const AiPreviewTaskItem = memo(function AiPreviewTaskItem({
@@ -40,7 +41,7 @@ export const AiPreviewTaskItem = memo(function AiPreviewTaskItem({
 		: undefined;
 
 	// 既存タスクかどうか
-	const isExisting = !!task.originalId;
+	const isExisting = isExistingTask(task);
 
 	const handleCategoryChange = (newCategoryId: number) => {
 		const category = categories.find((c) => c.id === newCategoryId);

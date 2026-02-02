@@ -153,7 +153,7 @@ public class TaskDto {
         @JsonIgnoreProperties(ignoreUnknown = true)
         @Schema(name = "SyncTaskDto")
         public record SyncTaskDto(
-                        Object id,
+                        Long id,
                         String title,
                         String description,
                         String executionDate,

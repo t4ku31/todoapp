@@ -1145,17 +1145,7 @@ public class TaskService {
 
         for (SyncTaskDto req : tasks) {
             try {
-                Long taskId = null;
-                if (req.id() instanceof Number) {
-                    taskId = ((Number) req.id()).longValue();
-                } else if (req.id() instanceof String) {
-                    try {
-                        taskId = Long.parseLong((String) req.id());
-                    } catch (NumberFormatException e) {
-                        // Ignore invalid number format (e.g. "preview-...") -> treat as new task
-                        taskId = null;
-                    }
-                }
+                Long taskId = req.id();
 
                 if (Boolean.TRUE.equals(req.isDeleted()) && taskId != null && taskId > 0) {
                     // Delete

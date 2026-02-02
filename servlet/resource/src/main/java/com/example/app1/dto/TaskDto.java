@@ -174,7 +174,7 @@ public class TaskDto {
          */
         @Schema(name = "SyncTaskDto", description = "AI生成と同期保存で共通化されたタスクモデル")
         public record SyncTaskDto(
-                        @JsonPropertyDescription("既存タスクのID（更新・削除時は必須）") Object id,
+                        @JsonPropertyDescription("既存タスクのID（更新・削除時は必須）") Long id,
                         @JsonPropertyDescription("タスクのタイトル") String title,
                         @JsonPropertyDescription("タスクの詳細") String description,
                         @JsonPropertyDescription("実行日（YYYY-MM-DD）") String executionDate,
