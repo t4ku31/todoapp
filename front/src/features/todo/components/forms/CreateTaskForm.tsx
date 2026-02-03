@@ -1,3 +1,8 @@
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import type { Subtask, Task } from "@/features/todo/types";
+import { cn } from "@/lib/utils";
+import type { CreateTaskParams } from "@/store/useTodoStore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { Plus } from "lucide-react";
@@ -8,11 +13,6 @@ import {
 	useFieldArray,
 	useForm,
 } from "react-hook-form";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import type { Subtask, Task } from "@/features/todo/types";
-import { cn } from "@/lib/utils";
-import type { CreateTaskParams } from "@/store/useTodoStore";
 import { AddSubtaskButton } from "../ui/AddSubtaskButton";
 import { CategorySelect } from "../ui/CategorySelect";
 import { DateScheduler } from "../ui/DateScheduler";
@@ -239,6 +239,14 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 		// Toggle for subtask expansion? Or always show if present?
 		// If has subtasks, we show them.
 
+		const mappedSubtasks = subtaskFields.map((f, i) => ({
+			...f,
+			id: -i - 1,
+			title: f.title || "",
+			isCompleted: f.isCompleted || false,
+			orderIndex: i,
+		})) as Subtask[];
+
 		return (
 			<FormProvider {...form}>
 				<form
@@ -358,15 +366,7 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 					>
 						<div className="px-2 pt-1">
 							<TaskItemSubtaskList
-								subtasks={
-									subtaskFields.map((f, i) => ({
-										...f,
-										id: -i - 1,
-										title: f.title || "",
-										isCompleted: f.isCompleted || false,
-										orderIndex: i,
-									})) as Subtask[]
-								}
+								subtasks={mappedSubtasks}
 								onUpdate={handleUpdateSubtask}
 								onDelete={handleDeleteSubtask}
 								onAdd={handleAddSubtask}
