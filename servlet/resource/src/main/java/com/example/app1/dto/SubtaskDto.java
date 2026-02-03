@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class SubtaskDto {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Schema(name = "SubtaskCreate")
-    public record Create(Long taskId, String title, String description) {
+    public record Create(Long taskId, String title, String description, Boolean isCompleted, Integer orderIndex) {
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

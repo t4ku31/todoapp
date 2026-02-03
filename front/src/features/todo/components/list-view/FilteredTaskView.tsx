@@ -59,10 +59,10 @@ export function FilteredTaskView({
 		}
 
 		aiPreviewTasks.forEach((t) => {
-			if (t.originalId) {
-				const originalTask = filteredTasks.find((bt) => bt.id === t.originalId);
+			if (t.id > 0) {
+				const originalTask = filteredTasks.find((bt) => bt.id === t.id);
 				if (originalTask) {
-					aiEditPreviewMap.set(t.originalId, { ...t, originalTask });
+					aiEditPreviewMap.set(t.id, { ...t, originalTask });
 				}
 			} else {
 				aiNewTaskPreviews.push(t);

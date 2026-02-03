@@ -385,7 +385,8 @@ public class TaskService {
                         .title(dto.title())
                         .description(dto.description())
                         .task(task)
-                        .isCompleted(false)
+                        .isCompleted(dto.isCompleted() != null ? dto.isCompleted() : false)
+                        .orderIndex(dto.orderIndex() != null ? dto.orderIndex() : 0)
                         .build())
                 .toList();
         task.getSubtasks().addAll(entities);
@@ -1145,19 +1146,21 @@ public class TaskService {
 
         for (SyncTaskDto req : tasks) {
             try {
-                if (Boolean.TRUE.equals(req.isDeleted()) && req.id() != null) {
+                Long taskId = req.id();
+
+                if (Boolean.TRUE.equals(req.isDeleted()) && taskId != null && taskId > 0) {
                     // Delete
-                    deleteTask(req.id(), userId);
+                    deleteTask(taskId, userId);
                     deletedCount++;
-                } else if (req.id() == null || req.id() <= 0) {
-                    // Createc
+                } else if (taskId == null || taskId <= 0) {
+                    // Create
                     TaskDto.Create create = convertToCreate(req);
                     createTask(create, userId);
                     createdCount++;
                 } else {
                     // Update
                     TaskDto.Update update = convertToUpdate(req);
-                    updateTask(req.id(), update, userId);
+                    updateTask(taskId, update, userId);
                     updatedCount++;
                 }
             } catch (Exception e) {
@@ -1206,7 +1209,8 @@ public class TaskService {
         List<SubtaskDto.Create> subtasks = null;
         if (req.subtasks() != null) {
             subtasks = req.subtasks().stream()
-                    .map(title -> new SubtaskDto.Create(null, title, null))
+                    .map(summary -> new SubtaskDto.Create(null, summary.title(), summary.description(),
+                            summary.isCompleted(), summary.orderIndex()))
                     .toList();
         }
 

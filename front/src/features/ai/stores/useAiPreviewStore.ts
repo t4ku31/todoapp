@@ -3,13 +3,14 @@ import { create } from "zustand";
 import { useTodoStore } from "@/store/useTodoStore";
 import { normalizeError } from "@/utils/error";
 import type { ParsedTask } from "../types";
+import { toSyncTask } from "../utils/aiUtils";
 
 interface AiPreviewState {
 	aiPreviewTasks: ParsedTask[];
 	setAiPreviewTasks: (tasks: ParsedTask[]) => void;
 	clearAiPreviewTasks: () => void;
-	updateAiPreviewTask: (taskId: string, updates: Partial<ParsedTask>) => void;
-	toggleAiPreviewSelection: (taskId: string) => void;
+	updateAiPreviewTask: (taskId: number, updates: Partial<ParsedTask>) => void;
+	toggleAiPreviewSelection: (taskId: number) => void;
 	saveAiPreviewTasks: () => Promise<void>;
 	loading: boolean;
 }
@@ -46,23 +47,7 @@ export const useAiPreviewStore = create<AiPreviewState>((set, get) => ({
 		set({ loading: true });
 
 		try {
-			const syncPayload = selectedTasks.map((t) => ({
-				id: t.originalId && t.originalId > 0 ? t.originalId : undefined,
-				title: t.title,
-				description: t.description,
-				executionDate: t.executionDate,
-				scheduledStartAt: t.scheduledStartAt,
-				scheduledEndAt: t.scheduledEndAt,
-				isAllDay: t.isAllDay,
-				estimatedPomodoros: t.estimatedPomodoros,
-				categoryName: t.categoryName,
-				taskListTitle: t.taskListTitle,
-				isRecurring: t.isRecurring,
-				recurrencePattern: t.recurrencePattern,
-				isDeleted: t.isDeleted,
-				subtasks: t.subtasks,
-				status: t.status,
-			}));
+			const syncPayload = selectedTasks.map(toSyncTask);
 			console.log("selectedTasks", selectedTasks);
 			console.log("syncPayload", syncPayload);
 

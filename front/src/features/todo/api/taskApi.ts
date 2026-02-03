@@ -1,5 +1,5 @@
 import { apiClient } from "@/config/env";
-import type { BackendSyncTask, SyncResult } from "@/features/ai/types";
+import type { SyncResult, SyncTask } from "@/features/ai/types";
 import type { Task, TaskList } from "@/features/todo/types";
 
 // Parameters for createTask
@@ -11,7 +11,12 @@ export interface CreateTaskParams {
 	executionDate?: string | null;
 	categoryId?: number;
 	estimatedPomodoros?: number;
-	subtasks?: { title: string; description?: string }[];
+	subtasks?: {
+		title: string;
+		description?: string;
+		isCompleted?: boolean;
+		orderIndex?: number;
+	}[];
 	isRecurring?: boolean;
 	recurrenceRule?: string | null;
 	customDates?: string[];
@@ -148,7 +153,7 @@ export const taskApi = {
 		return response.data;
 	},
 
-	syncTasks: async (tasks: BackendSyncTask[]): Promise<SyncResult> => {
+	syncTasks: async (tasks: SyncTask[]): Promise<SyncResult> => {
 		const response = await apiClient.post<SyncResult>("/api/tasks/sync", tasks);
 		return response.data;
 	},

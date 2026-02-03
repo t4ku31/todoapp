@@ -9,7 +9,7 @@ import type { ParsedTask } from "../../types";
 interface AiChatTaskCardProps {
 	task: ParsedTask;
 	onClick: () => void;
-	onToggleSelect: (id: string) => void;
+	onToggleSelect: (id: number) => void;
 }
 
 const formatDate = (dateStr?: string) => {
@@ -57,8 +57,8 @@ export const AiChatTaskCard: React.FC<AiChatTaskCardProps> = ({
 	onClick,
 	onToggleSelect,
 }) => {
-	const isNew = !task.originalId;
-	const isModified = !!task.originalId && !!task.originalTask;
+	const isNew = task.id < 0;
+	const isModified = task.id > 0 && !!task.originalTask;
 
 	return (
 		<div

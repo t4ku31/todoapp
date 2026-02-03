@@ -1,3 +1,4 @@
+import { AiDiffTaskItem } from "@/features/ai/components/preview/AiDiffTaskItem";
 import { AiPreviewTaskItem } from "@/features/ai/components/preview/AiPreviewTaskItem";
 import type { ParsedTask } from "@/features/ai/types";
 import type { Task } from "@/features/todo/types";
@@ -7,8 +8,8 @@ interface StandardTaskViewProps {
 	aiNewTaskPreviews: ParsedTask[];
 	filteredTasks: Task[];
 	aiEditPreviewMap: Map<number, ParsedTask>;
-	updateAiPreviewTask: (taskId: string, updates: Partial<ParsedTask>) => void;
-	toggleAiPreviewSelection: (id: string) => void;
+	updateAiPreviewTask: (taskId: number, updates: Partial<ParsedTask>) => void;
+	toggleAiPreviewSelection: (id: number) => void;
 	onUpdateTask: (taskId: number, updates: Partial<Task>) => Promise<void>;
 	onDeleteTask: (taskId: number) => Promise<void>;
 	onTaskSelect?: (taskId: number | null) => void;
@@ -52,11 +53,24 @@ export function StandardTaskView({
 				{filteredTasks.map((task) => {
 					const aiEditPreview = aiEditPreviewMap.get(task.id);
 					if (aiEditPreview) {
+						// 削除タスクの場合はPreview表示（Diff表示しない）
+						if (aiEditPreview.isDeleted) {
+							return (
+								<AiPreviewTaskItem
+									key={`preview-del-${task.id}`}
+									task={aiEditPreview}
+									index={0}
+									onUpdateTask={updateAiPreviewTask}
+									onToggleSelection={toggleAiPreviewSelection}
+								/>
+							);
+						}
+
 						return (
-							<AiPreviewTaskItem
-								key={`preview-${task.id}`}
-								task={aiEditPreview}
-								index={0}
+							<AiDiffTaskItem
+								key={`diff-${task.id}`}
+								originalTask={task}
+								previewTask={aiEditPreview}
 								onUpdateTask={updateAiPreviewTask}
 								onToggleSelection={toggleAiPreviewSelection}
 							/>

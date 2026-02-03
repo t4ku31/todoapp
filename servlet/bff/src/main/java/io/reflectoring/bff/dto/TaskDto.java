@@ -166,7 +166,7 @@ public class TaskDto {
                         Boolean isRecurring,
                         String recurrencePattern,
                         Boolean isDeleted,
-                        List<String> subtasks,
+                        List<SubtaskDto.Summary> subtasks,
                         TaskStatus status) {
         }
 

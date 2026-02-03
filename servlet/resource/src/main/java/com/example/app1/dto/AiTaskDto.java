@@ -2,7 +2,6 @@ package com.example.app1.dto;
 
 import java.util.List;
 
-import com.example.app1.model.Task;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -50,7 +49,7 @@ public class AiTaskDto {
 
             @Schema(description = "ユーザーの発言（自然言語）", example = "明日のミーティング準備を追加して") String prompt,
 
-            @Schema(description = "現在のタスクリスト（ドメインモデル）") List<Task> currentTasks,
+            @Schema(description = "現在のタスクリスト（ドメインモデル）") List<TaskDto.SyncTaskDto> currentTasks,
 
             @Schema(description = "プロジェクトタイトル（オプション）") String projectTitle) {
     }
