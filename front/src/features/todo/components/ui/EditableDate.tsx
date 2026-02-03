@@ -275,7 +275,7 @@ export function EditableDate({
 			<PopoverTrigger asChild>
 				<IconBadge
 					icon={getIconComponent()}
-					variant="solid"
+					variant="soft"
 					colorScheme={getColorScheme()}
 					onPointerDown={(e) => e.stopPropagation()}
 				>

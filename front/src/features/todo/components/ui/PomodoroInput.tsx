@@ -1,4 +1,6 @@
-import { useEffect, useRef } from "react";
+import { ChevronDown, ChevronUp, Timer } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 interface PomodoroInputProps {
@@ -14,143 +16,80 @@ export function PomodoroInput({
 	onChange,
 	max = 10,
 	className,
-	color = "text-indigo-500",
+	color,
 }: PomodoroInputProps) {
-	const containerRef = useRef<HTMLDivElement>(null);
-	const isDraggingRef = useRef(false);
-	const dragStartYRef = useRef(0);
-	const accumulatedDeltaRef = useRef(0);
-	const hasDraggedRef = useRef(false);
+	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const newValue = Number.parseInt(e.target.value, 10);
+		if (Number.isNaN(newValue)) return;
+		onChange(Math.min(Math.max(newValue, 0), max));
+	};
 
-	useEffect(() => {
-		const container = containerRef.current;
-		if (!container) return;
+	const handleIncrement = () => {
+		if (value < max) onChange(value + 1);
+	};
 
-		const handleWheel = (e: WheelEvent) => {
-			e.preventDefault();
-			if (e.deltaY < 0) {
-				onChange(Math.min(value + 1, max));
-			} else {
-				onChange(Math.max(value - 1, 0));
-			}
-		};
-
-		const handleMouseDown = (e: MouseEvent) => {
-			// Only handle left click
-			if (e.button !== 0) return;
-			isDraggingRef.current = true;
-			dragStartYRef.current = e.clientY;
-			accumulatedDeltaRef.current = 0;
-			hasDraggedRef.current = false;
-		};
-
-		const handleMouseMove = (e: MouseEvent) => {
-			if (!isDraggingRef.current) return;
-
-			const deltaY = dragStartYRef.current - e.clientY;
-			accumulatedDeltaRef.current += deltaY;
-			dragStartYRef.current = e.clientY;
-
-			// Threshold: 20px of movement = 1 unit change
-			const threshold = 15;
-			if (Math.abs(accumulatedDeltaRef.current) >= threshold) {
-				hasDraggedRef.current = true;
-				const change = Math.sign(accumulatedDeltaRef.current);
-				accumulatedDeltaRef.current = 0;
-
-				if (change > 0) {
-					onChange(Math.min(value + 1, max));
-				} else {
-					onChange(Math.max(value - 1, 0));
-				}
-			}
-		};
-
-		const handleMouseUp = () => {
-			isDraggingRef.current = false;
-			accumulatedDeltaRef.current = 0;
-		};
-
-		container.addEventListener("wheel", handleWheel, { passive: false });
-		container.addEventListener("mousedown", handleMouseDown);
-		document.addEventListener("mousemove", handleMouseMove);
-		document.addEventListener("mouseup", handleMouseUp);
-
-		return () => {
-			container.removeEventListener("wheel", handleWheel);
-			container.removeEventListener("mousedown", handleMouseDown);
-			document.removeEventListener("mousemove", handleMouseMove);
-			document.removeEventListener("mouseup", handleMouseUp);
-		};
-	}, [value, onChange, max]);
+	const handleDecrement = () => {
+		if (value > 0) onChange(value - 1);
+	};
 
 	return (
 		<div
-			ref={containerRef}
 			className={cn(
-				"flex items-center gap-1 cursor-pointer select-none hover:bg-gray-100 rounded p-1 transition-colors outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500",
-				color,
+				"inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full border shadow-sm transition-all duration-200",
+				value > 0
+					? "bg-indigo-50 border-indigo-100 text-indigo-700"
+					: "bg-white border-gray-200 hover:border-gray-300 text-gray-600",
 				className,
 			)}
-			onClick={() => {
-				// Don't fire click if we just finished dragging
-				if (hasDraggedRef.current) {
-					hasDraggedRef.current = false;
-					return;
-				}
-				onChange(value >= max ? 0 : value + 1);
-			}}
-			onKeyDown={(e) => {
-				if (e.key === "Enter" || e.key === " ") {
-					e.preventDefault();
-					onChange(value >= max ? 0 : value + 1);
-				}
-			}}
-			tabIndex={0}
-			role="spinbutton"
-			aria-valuenow={value}
-			aria-valuemin={0}
-			aria-valuemax={max}
-			onContextMenu={(e) => {
-				e.preventDefault();
-				onChange(Math.max(0, value - 1));
-			}}
 		>
-			<div className="flex items-end gap-[2px] h-5">
-				{/* Vertical Stack of Horizontal Bars */}
-				<div className="flex flex-col-reverse justify-between w-4 h-[18px]">
-					{["bar-bottom", "bar-lower", "bar-upper", "bar-top"].map(
-						(barId, i) => {
-							// i=0 is bottom
-							// 4 bars total
-							const visuallyFilled = i < (value > 4 ? 4 : value);
-
-							return (
-								<div
-									key={barId}
-									className={cn(
-										"w-full h-[3px] rounded-[1px] transition-colors",
-										visuallyFilled
-											? "bg-current"
-											: "bg-gray-200 border border-gray-300",
-									)}
-									style={{
-										backgroundColor: visuallyFilled ? undefined : "transparent",
-										borderColor: visuallyFilled ? undefined : "currentColor",
-										opacity: visuallyFilled ? 1 : 0.4,
-									}}
-								/>
-							);
-						},
+			<Timer
+				className={cn(
+					"h-3.5 w-3.5 pointer-events-none transition-colors opacity-80",
+					value > 0 ? "text-indigo-700" : "text-gray-400",
+				)}
+			/>
+			<div className="relative flex items-center gap-0.5">
+				<Input
+					type="number"
+					value={value}
+					onChange={handleChange}
+					min={0}
+					max={max}
+					className={cn(
+						// Reset standard Input styles
+						"h-auto p-0 border-none shadow-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
+						// Dimensions and text alignment
+						"w-5 text-sm font-medium text-center leading-none",
+						// Hide browser default spinners
+						"[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+						value > 0 ? "text-indigo-700" : "text-gray-700",
+						color,
 					)}
+				/>
+				{/* Custom Spin Buttons */}
+				<div className="flex flex-col ">
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						className="h-3 w-4 hover:bg-indigo-100/50 text-gray-400 hover:text-indigo-600 rounded-sm"
+						onClick={handleIncrement}
+						disabled={value >= max}
+					>
+						<ChevronUp className="h-2.5 w-2.5" />
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						className="h-3 w-4 hover:bg-indigo-100/50 text-gray-400 hover:text-indigo-600 rounded-sm"
+						onClick={handleDecrement}
+						disabled={value <= 0}
+					>
+						<ChevronDown className="h-2.5 w-2.5" />
+					</Button>
 				</div>
 			</div>
-
-			{value > 4 && (
-				<span className={cn("text-xs font-bold leading-none", color)}>
-					+{value - 4}
-				</span>
-			)}
 		</div>
 	);
 }

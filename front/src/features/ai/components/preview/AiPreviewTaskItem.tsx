@@ -5,8 +5,8 @@ import { AddSubtaskButton } from "@/features/todo/components/ui/AddSubtaskButton
 import { CategorySelect } from "@/features/todo/components/ui/CategorySelect";
 import { EditableDate } from "@/features/todo/components/ui/EditableDate";
 import { EditableDescription } from "@/features/todo/components/ui/EditableDescription";
-import { EditableDuration } from "@/features/todo/components/ui/EditableDuration";
 import { EditableTitle } from "@/features/todo/components/ui/EditableTitle";
+import { PomodoroInput } from "@/features/todo/components/ui/PomodoroInput";
 import { TaskItemSubtaskList } from "@/features/todo/components/ui/TaskItemSubtaskList";
 import { TaskListSelector } from "@/features/todo/components/ui/TaskListSelector";
 import type { Subtask } from "@/features/todo/types";
@@ -278,10 +278,9 @@ export const AiPreviewTaskItem = memo(function AiPreviewTaskItem({
 							</div>
 							{/* Pomodoro */}
 							<div>
-								<EditableDuration
-									id={0}
-									duration={task.estimatedPomodoros}
-									onDurationChange={async (_, duration) => {
+								<PomodoroInput
+									value={task.estimatedPomodoros ?? 0}
+									onChange={(duration) => {
 										onUpdateTask(task.id, { estimatedPomodoros: duration });
 									}}
 								/>
