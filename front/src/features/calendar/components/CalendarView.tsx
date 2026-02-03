@@ -52,6 +52,13 @@ interface NewEventDraft {
 	allDay: boolean;
 }
 
+const normalizeDate = (d: Date | string) => {
+	const dateObj = d instanceof Date ? new Date(d) : new Date(d);
+	dateObj.setSeconds(0);
+	dateObj.setMilliseconds(0);
+	return dateObj;
+};
+
 const DragAndDropCalendar = withDragAndDrop<CalendarEvent>(Calendar);
 
 export default function CalendarView() {
@@ -269,7 +276,6 @@ export default function CalendarView() {
 		({
 			event,
 			start,
-			end,
 			isAllDay: droppedOnAllDaySlot = false,
 		}: EventInteractionArgs<CalendarEvent>) => {
 			// Don't move the new event draft
@@ -285,24 +291,16 @@ export default function CalendarView() {
 				isAllDay = false;
 			}
 
-			// Format dates to ISO string for backend
-			const newStart = start;
-			let newEnd = end;
-
-			// If moving from AllDay to Time slot, default to 1 hour duration
-			if (!droppedOnAllDaySlot && event.allDay) {
-				if (newStart instanceof Date) {
-					newEnd = addHours(newStart, 1);
-				}
-			}
+			const newStart = normalizeDate(start);
+			const newEnd = addHours(newStart, 1);
+			const newDate = new Date(newStart);
+			const newDate2 = new Date(newEnd);
 
 			const updates = {
-				scheduledStartAt:
-					newStart instanceof Date ? newStart.toISOString() : newStart,
-				scheduledEndAt: newEnd instanceof Date ? newEnd.toISOString() : newEnd,
+				scheduledStartAt: newDate,
+				scheduledEndAt: newDate2,
 				isAllDay,
-				executionDate:
-					newStart instanceof Date ? format(newStart, "yyyy-MM-dd") : undefined,
+				executionDate: newStart.toISOString().split("T")[0],
 			};
 
 			updateTask(event.id, updates);
@@ -316,9 +314,13 @@ export default function CalendarView() {
 			// Don't resize the new event draft
 			if (event.isNew) return;
 
+			// Normalize to ensure 00 seconds and 000 ms
+			const newStart = normalizeDate(start);
+			const newEnd = normalizeDate(end);
+
 			const updates = {
-				scheduledStartAt: start instanceof Date ? start.toISOString() : start,
-				scheduledEndAt: end instanceof Date ? end.toISOString() : end,
+				scheduledStartAt: newStart,
+				scheduledEndAt: newEnd,
 			};
 
 			updateTask(event.id, updates);

@@ -86,7 +86,7 @@ public class BffTaskController {
             @PathVariable Long id,
             @RequestBody TaskDto.Update request,
             @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
-        log.info("[PATCH /api/tasks/{id}] Request by user: {}", client.getPrincipalName());
+        log.info("[a /api/tasks/{id}] Request by user: {}", client.getPrincipalName());
         log.info("[PATCH /api/tasks/{id}] Updating task {} with request: {}", id, request);
         try {
             taskService.updateTask(id, request, client.getAccessToken().getTokenValue());

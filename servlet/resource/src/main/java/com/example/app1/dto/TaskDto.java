@@ -29,8 +29,8 @@ public class TaskDto {
                         @Schema(description = "繰り返しタスクかどうか（任意）") Boolean isRecurring,
                         @Schema(description = "繰り返しルール（JSON形式、任意）") String recurrenceRule,
                         @Schema(description = "カスタム日付リスト（任意）") List<LocalDate> customDates,
-                        @Schema(description = "開始日時（YYYY-MM-DDTHH:mm形式、任意）") LocalDateTime scheduledStartAt,
-                        @Schema(description = "終了日時（YYYY-MM-DDTHH:mm形式、任意）") LocalDateTime scheduledEndAt,
+                        @Schema(description = "開始日時（YYYY-MM-DDTHH:mm形式、任意）") java.time.OffsetDateTime scheduledStartAt,
+                        @Schema(description = "終了日時（YYYY-MM-DDTHH:mm形式、任意）") java.time.OffsetDateTime scheduledEndAt,
                         @Schema(description = "終日イベントかどうか（任意）") Boolean isAllDay,
                         @Schema(description = "説明文（任意）") String description,
                         @Schema(description = "ステータス（任意）") TaskStatus status) {
@@ -51,8 +51,8 @@ public class TaskDto {
                         @Schema(description = "繰り返しタスクかどうか（変更する場合のみ）") Boolean isRecurring,
                         @Schema(description = "繰り返しルール（JSON形式、変更する場合のみ）") String recurrenceRule,
                         @Schema(description = "説明文（変更する場合のみ）") String description,
-                        @Schema(description = "開始日時（YYYY-MM-DDTHH:mm形式、変更する場合のみ）") LocalDateTime scheduledStartAt,
-                        @Schema(description = "終了日時（YYYY-MM-DDTHH:mm形式、変更する場合のみ）") LocalDateTime scheduledEndAt,
+                        @Schema(description = "開始日時（YYYY-MM-DDTHH:mm形式、変更する場合のみ）") java.time.OffsetDateTime scheduledStartAt,
+                        @Schema(description = "終了日時（YYYY-MM-DDTHH:mm形式、変更する場合のみ）") java.time.OffsetDateTime scheduledEndAt,
                         @Schema(description = "終日イベントかどうか（変更する場合のみ）") Boolean isAllDay) {
         }
 
@@ -88,8 +88,8 @@ public class TaskDto {
                         String description,
                         Boolean isRecurring,
                         String recurrenceRule,
-                        LocalDateTime scheduledStartAt,
-                        LocalDateTime scheduledEndAt,
+                        java.time.OffsetDateTime scheduledStartAt,
+                        java.time.OffsetDateTime scheduledEndAt,
                         Boolean isAllDay) {
         }
 

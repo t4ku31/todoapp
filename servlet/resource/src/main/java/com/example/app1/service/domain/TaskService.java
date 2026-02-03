@@ -1,7 +1,6 @@
 package com.example.app1.service.domain;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -326,10 +325,10 @@ public class TaskService {
                 .userId(userId)
                 .taskList(taskList)
                 .scheduledStartAt(taskCreateRequest.scheduledStartAt() != null && executionDate != null
-                        ? taskCreateRequest.scheduledStartAt().with(executionDate)
+                        ? taskCreateRequest.scheduledStartAt().with(executionDate.atStartOfDay().toLocalDate())
                         : taskCreateRequest.scheduledStartAt())
                 .scheduledEndAt(taskCreateRequest.scheduledEndAt() != null && executionDate != null
-                        ? taskCreateRequest.scheduledEndAt().with(executionDate)
+                        ? taskCreateRequest.scheduledEndAt().with(executionDate.atStartOfDay().toLocalDate())
                         : taskCreateRequest.scheduledEndAt())
                 .isAllDay(taskCreateRequest.isAllDay())
                 .description(taskCreateRequest.description());
@@ -1188,19 +1187,19 @@ public class TaskService {
             }
         }
 
-        LocalDateTime startAt = null;
+        java.time.OffsetDateTime startAt = null;
         if (req.scheduledStartAt() != null) {
             try {
-                startAt = LocalDateTime.parse(req.scheduledStartAt());
+                startAt = java.time.OffsetDateTime.parse(req.scheduledStartAt());
             } catch (Exception e) {
                 log.warn("Invalid scheduledStartAt format: {}", req.scheduledStartAt());
             }
         }
 
-        LocalDateTime endAt = null;
+        java.time.OffsetDateTime endAt = null;
         if (req.scheduledEndAt() != null) {
             try {
-                endAt = LocalDateTime.parse(req.scheduledEndAt());
+                endAt = java.time.OffsetDateTime.parse(req.scheduledEndAt());
             } catch (Exception e) {
                 log.warn("Invalid scheduledEndAt format: {}", req.scheduledEndAt());
             }
@@ -1252,19 +1251,19 @@ public class TaskService {
             }
         }
 
-        LocalDateTime startAt = null;
+        java.time.OffsetDateTime startAt = null;
         if (req.scheduledStartAt() != null) {
             try {
-                startAt = LocalDateTime.parse(req.scheduledStartAt());
+                startAt = java.time.OffsetDateTime.parse(req.scheduledStartAt());
             } catch (Exception e) {
                 log.warn("Invalid scheduledStartAt format: {}", req.scheduledStartAt());
             }
         }
 
-        LocalDateTime endAt = null;
+        java.time.OffsetDateTime endAt = null;
         if (req.scheduledEndAt() != null) {
             try {
-                endAt = LocalDateTime.parse(req.scheduledEndAt());
+                endAt = java.time.OffsetDateTime.parse(req.scheduledEndAt());
             } catch (Exception e) {
                 log.warn("Invalid scheduledEndAt format: {}", req.scheduledEndAt());
             }
