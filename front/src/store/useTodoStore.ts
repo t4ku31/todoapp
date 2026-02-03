@@ -465,6 +465,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		}));
 
 		try {
+			console.log("Updating task:", taskId, updates);
 			await taskApi.updateTask(taskId, updates);
 
 			// If taskListId, categoryId, or isRecurring was updated, refetch to get the correct state
