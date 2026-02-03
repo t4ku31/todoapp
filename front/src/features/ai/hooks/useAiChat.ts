@@ -12,7 +12,13 @@ import type {
 	ChatMessage,
 	ParsedTask,
 } from "../types";
-import { getUserId, taskToParsedTask } from "../utils/aiUtils";
+import {
+	getUserId,
+	isExistingTask,
+	mergeTasks,
+	taskToParsedTask,
+	toSyncTask,
+} from "../utils/aiUtils";
 
 // 会話メタデータ型
 interface Conversation {
@@ -304,7 +310,7 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 
 	// タスクの選択状態をトグル
 	const toggleTaskSelection = useCallback(
-		(taskId: string) => {
+		(taskId: number) => {
 			toggleAiPreviewSelection(taskId);
 		},
 		[toggleAiPreviewSelection],
@@ -312,7 +318,7 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 
 	// ドラフトタスクを更新
 	const updateDraftTask = useCallback(
-		(taskId: string, updates: Partial<ParsedTask>) => {
+		(taskId: number, updates: Partial<ParsedTask>) => {
 			updateAiPreviewTask(taskId, updates);
 		},
 		[updateAiPreviewTask],
@@ -328,27 +334,17 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 		setIsLoading(true);
 		console.log("selectedTasks", selectedTasks);
 		try {
-			// Convert ParsedTask to BackendSyncTask
-			const syncTasks = selectedTasks.map((t) => ({
-				id: t.originalId && t.originalId > 0 ? t.originalId : undefined,
-				title: t.title,
-				description: t.description,
-				executionDate: t.executionDate,
-				scheduledStartAt: t.scheduledStartAt,
-				scheduledEndAt: t.scheduledEndAt,
-				isAllDay: t.isAllDay,
-				estimatedPomodoros: t.estimatedPomodoros,
-				categoryName: t.categoryName,
-				taskListTitle: t.taskListTitle,
-				isRecurring: t.isRecurring,
-				recurrencePattern: t.recurrencePattern,
-				isDeleted: t.isDeleted,
-				subtasks: t.subtasks,
-				status: t.status,
-			}));
+			// Use helper to prepare payload
+			// Note: prepareTasksForSave generates CreateTaskParams. syncTasks expects SyncTaskDto-like structure.
+			// However, useTodoStore.syncTasks handles the payload.
+			// Let's manually construct payload to be safe and consistent with useAiPreviewStore logic for now,
+			// or use `prepareTasksForSave` if we were using separate create/update endpoints.
+			// Since we use `syncTasks`, we need a uniform list.
 
-			console.log("syncTasks", syncTasks);
-			const result = await useTodoStore.getState().syncTasks(syncTasks);
+			const syncPayload = selectedTasks.map(toSyncTask);
+
+			console.log("syncPayload", syncPayload);
+			const result = await useTodoStore.getState().syncTasks(syncPayload);
 
 			console.log("result", result);
 			if (result.success) {
@@ -411,79 +407,56 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 		try {
 			// コンテキストタスク（DnDで追加されたタスク）を統合
 			const contextTasksList = useAiChatContextStore.getState().contextTasks;
+			const currentPreviewTasks = useAiPreviewStore.getState().aiPreviewTasks;
+
+			// Merge tasks: Preview tasks take precedence if they modify an existing task
+			// We prioritize preview tasks if they share same ID (positive) with context tasks
+
+			const blendedTasks = [...contextTasksList];
+
+			// get IDs from preview tasks that are existing tasks
+			const previewExistingIds = new Set(
+				currentPreviewTasks.filter((t) => isExistingTask(t)).map((t) => t.id),
+			);
+
+			// Filter out context tasks that are currently being previewed (modified)
+			const nonOverlappingContext = blendedTasks.filter(
+				(t) => !previewExistingIds.has(t.id),
+			);
+
+			const finalContextTasks = [
+				...nonOverlappingContext,
+				...currentPreviewTasks,
+			];
+			console.log("~~~~~~~~~~~~~~~~~~~~finalContextTasks", finalContextTasks);
+
+			// Transform tasks to match backend contract (SyncTask)
+			const syncTasksPayload = finalContextTasks.map(toSyncTask);
+
 			const request: ChatAnalysisRequest = {
 				conversationId,
 				prompt: userInput,
-				currentTasks: contextTasksList,
+				currentTasks: syncTasksPayload,
 				projectTitle,
 			};
+			console.log("~~~~~~~~~~~~~~~~~~~~request", request);
 
-			console.log("request", request);
 			const response = await apiClient.post<AiChatResponse>(
 				"/api/ai/tasks/chat",
 				request,
 			);
 
-			console.log("response from chat", response);
+			console.log("~~~~~~~~~~~~~~~~~~~~response from chat", response);
 			if (response.data.success) {
 				const result = response.data;
 
 				// 提案されたタスクをセット
 				if (result.result?.tasks) {
-					// Use current aiPreviewTasks state
-					const currentTasks = useAiPreviewStore.getState().aiPreviewTasks;
-					// Shallow copy for mutation
-					const nextTasks = [...currentTasks];
-					console.log("nextTasks", nextTasks);
+					// Use aiUtils.mergeTasks to handle merging logic
+					const currentStoreTasks = useAiPreviewStore.getState().aiPreviewTasks;
 
-					result.result.tasks.forEach((t) => {
-						// 既存タスクの判定 (t.id is from BackendSyncTask, corresponding to originalId in ParsedTask)
-						const existingIndex =
-							t.id && t.id > 0
-								? nextTasks.findIndex((pt) => pt.originalId === t.id)
-								: -1;
-						console.log("existingIndex", existingIndex);
-						console.log("t", t);
-						const mappedTask: ParsedTask = {
-							id:
-								existingIndex >= 0
-									? nextTasks[existingIndex].id
-									: `preview-${Date.now()}-${Math.random()}`,
-							originalId: t.id,
-							title: t.title,
-							description: t.description,
-							executionDate: t.executionDate,
-							scheduledStartAt: t.scheduledStartAt,
-							scheduledEndAt: t.scheduledEndAt,
-							isAllDay: t.isAllDay,
-							estimatedPomodoros: t.estimatedPomodoros,
-							categoryName: t.categoryName,
-							taskListTitle: t.taskListTitle,
-							isRecurring: t.isRecurring,
-							recurrencePattern: t.recurrencePattern,
-							isDeleted: t.isDeleted,
-							subtasks: t.subtasks,
-							status:
-								t.status ??
-								(existingIndex >= 0
-									? nextTasks[existingIndex].status
-									: "PENDING"),
-							selected: true,
-							originalTask: t.id
-								? useTodoStore
-										.getState()
-										.allTasks.find((task) => task.id === t.id)
-								: undefined,
-						};
+					const nextTasks = mergeTasks(currentStoreTasks, result.result.tasks);
 
-						if (existingIndex >= 0) {
-							// 更新
-							nextTasks[existingIndex] = mappedTask;
-						} else {
-							// 新規追加
-							nextTasks.push(mappedTask);
-						}
-					});
 					console.log("nextTasks", nextTasks);
 					setAiPreviewTasks(nextTasks);
 					setIsTaskListExpanded(true);

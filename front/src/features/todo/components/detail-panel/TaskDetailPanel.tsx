@@ -22,7 +22,7 @@ import { CategorySelect } from "../ui/CategorySelect";
 import { DeleteButton } from "../ui/DeleteButton";
 import { EditableDate } from "../ui/EditableDate";
 import { EditableDescription } from "../ui/EditableDescription";
-import { EditableDuration } from "../ui/EditableDuration";
+import { PomodoroInput } from "../ui/PomodoroInput";
 import { TaskItemSubtaskList } from "../ui/TaskItemSubtaskList";
 import { TaskListSelector } from "../ui/TaskListSelector";
 
@@ -278,11 +278,10 @@ export function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProps) {
 							<Clock className="w-4 h-4" />
 							<span>見積時間</span>
 						</div>
-						<EditableDuration
-							id={task.id}
-							duration={task.estimatedPomodoros}
-							onDurationChange={(id, duration) =>
-								updateTask(id, { estimatedPomodoros: duration })
+						<PomodoroInput
+							value={task.estimatedPomodoros ?? 0}
+							onChange={(value) =>
+								updateTask(task.id, { estimatedPomodoros: value })
 							}
 						/>
 					</div>

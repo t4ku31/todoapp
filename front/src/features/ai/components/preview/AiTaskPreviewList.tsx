@@ -15,8 +15,8 @@ import { AiPreviewTaskItem } from "./AiPreviewTaskItem";
 
 interface AiTaskPreviewListProps {
 	tasks: ParsedTask[];
-	onToggleSelection: (taskId: string) => void;
-	onUpdateTask: (taskId: string, updates: Partial<ParsedTask>) => void;
+	onToggleSelection: (taskId: number) => void;
+	onUpdateTask: (taskId: number, updates: Partial<ParsedTask>) => void;
 	onSave: () => void;
 	isLoading: boolean;
 	expanded?: boolean;
@@ -69,6 +69,39 @@ export function AiTaskPreviewList({
 	const newListNames = Array.from(groupedTasks.keys()).filter(
 		(name) => name !== null,
 	);
+
+	const getButtonContent = () => {
+		if (newListNames.length > 0) {
+			return (
+				<>
+					<FolderPlus className="h-4 w-4 mr-2" />
+					リスト作成 & 保存 ({selectedTaskCount}件)
+				</>
+			);
+		}
+		if (tasks.some((t) => t.selected && t.isDeleted)) {
+			return (
+				<>
+					<Save className="h-4 w-4 mr-2" />
+					変更を適用・削除 ({selectedTaskCount}件)
+				</>
+			);
+		}
+		if (modifiedTaskCount > 0) {
+			return (
+				<>
+					<Save className="h-4 w-4 mr-2" />
+					変更を保存 ({selectedTaskCount}件)
+				</>
+			);
+		}
+		return (
+			<>
+				<Plus className="h-4 w-4 mr-2" />
+				タスクを追加 ({selectedTaskCount}件)
+			</>
+		);
+	};
 
 	return (
 		<div className="border-t border-gray-100 bg-white">
@@ -139,27 +172,7 @@ export function AiTaskPreviewList({
 							className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200"
 							size="lg"
 						>
-							{newListNames.length > 0 ? (
-								<>
-									<FolderPlus className="h-4 w-4 mr-2" />
-									リスト作成 & 保存 ({selectedTaskCount}件)
-								</>
-							) : tasks.some((t) => t.selected && t.isDeleted) ? (
-								<>
-									<Save className="h-4 w-4 mr-2" />
-									変更を適用・削除 ({selectedTaskCount}件)
-								</>
-							) : modifiedTaskCount > 0 ? (
-								<>
-									<Save className="h-4 w-4 mr-2" />
-									変更を保存 ({selectedTaskCount}件)
-								</>
-							) : (
-								<>
-									<Plus className="h-4 w-4 mr-2" />
-									タスクを追加 ({selectedTaskCount}件)
-								</>
-							)}
+							{getButtonContent()}
 						</Button>
 					</div>
 				</div>
@@ -172,8 +185,8 @@ export function AiTaskPreviewList({
 interface TaskListGroupProps {
 	listName: string | null;
 	tasks: ParsedTask[];
-	onToggleSelection: (taskId: string) => void;
-	onUpdateTask: (taskId: string, updates: Partial<ParsedTask>) => void;
+	onToggleSelection: (taskId: number) => void;
+	onUpdateTask: (taskId: number, updates: Partial<ParsedTask>) => void;
 }
 
 function TaskListGroup({

@@ -1,7 +1,6 @@
 package com.example.app1.service.domain;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -326,10 +325,10 @@ public class TaskService {
                 .userId(userId)
                 .taskList(taskList)
                 .scheduledStartAt(taskCreateRequest.scheduledStartAt() != null && executionDate != null
-                        ? taskCreateRequest.scheduledStartAt().with(executionDate)
+                        ? taskCreateRequest.scheduledStartAt().with(executionDate.atStartOfDay().toLocalDate())
                         : taskCreateRequest.scheduledStartAt())
                 .scheduledEndAt(taskCreateRequest.scheduledEndAt() != null && executionDate != null
-                        ? taskCreateRequest.scheduledEndAt().with(executionDate)
+                        ? taskCreateRequest.scheduledEndAt().with(executionDate.atStartOfDay().toLocalDate())
                         : taskCreateRequest.scheduledEndAt())
                 .isAllDay(taskCreateRequest.isAllDay())
                 .description(taskCreateRequest.description());
@@ -385,7 +384,8 @@ public class TaskService {
                         .title(dto.title())
                         .description(dto.description())
                         .task(task)
-                        .isCompleted(false)
+                        .isCompleted(dto.isCompleted() != null ? dto.isCompleted() : false)
+                        .orderIndex(dto.orderIndex() != null ? dto.orderIndex() : 0)
                         .build())
                 .toList();
         task.getSubtasks().addAll(entities);
@@ -1145,19 +1145,21 @@ public class TaskService {
 
         for (SyncTaskDto req : tasks) {
             try {
-                if (Boolean.TRUE.equals(req.isDeleted()) && req.id() != null) {
+                Long taskId = req.id();
+
+                if (Boolean.TRUE.equals(req.isDeleted()) && taskId != null && taskId > 0) {
                     // Delete
-                    deleteTask(req.id(), userId);
+                    deleteTask(taskId, userId);
                     deletedCount++;
-                } else if (req.id() == null || req.id() <= 0) {
-                    // Createc
+                } else if (taskId == null || taskId <= 0) {
+                    // Create
                     TaskDto.Create create = convertToCreate(req);
                     createTask(create, userId);
                     createdCount++;
                 } else {
                     // Update
                     TaskDto.Update update = convertToUpdate(req);
-                    updateTask(req.id(), update, userId);
+                    updateTask(taskId, update, userId);
                     updatedCount++;
                 }
             } catch (Exception e) {
@@ -1185,19 +1187,19 @@ public class TaskService {
             }
         }
 
-        LocalDateTime startAt = null;
+        java.time.OffsetDateTime startAt = null;
         if (req.scheduledStartAt() != null) {
             try {
-                startAt = LocalDateTime.parse(req.scheduledStartAt());
+                startAt = java.time.OffsetDateTime.parse(req.scheduledStartAt());
             } catch (Exception e) {
                 log.warn("Invalid scheduledStartAt format: {}", req.scheduledStartAt());
             }
         }
 
-        LocalDateTime endAt = null;
+        java.time.OffsetDateTime endAt = null;
         if (req.scheduledEndAt() != null) {
             try {
-                endAt = LocalDateTime.parse(req.scheduledEndAt());
+                endAt = java.time.OffsetDateTime.parse(req.scheduledEndAt());
             } catch (Exception e) {
                 log.warn("Invalid scheduledEndAt format: {}", req.scheduledEndAt());
             }
@@ -1206,7 +1208,8 @@ public class TaskService {
         List<SubtaskDto.Create> subtasks = null;
         if (req.subtasks() != null) {
             subtasks = req.subtasks().stream()
-                    .map(title -> new SubtaskDto.Create(null, title, null))
+                    .map(summary -> new SubtaskDto.Create(null, summary.title(), summary.description(),
+                            summary.isCompleted(), summary.orderIndex()))
                     .toList();
         }
 
@@ -1248,19 +1251,19 @@ public class TaskService {
             }
         }
 
-        LocalDateTime startAt = null;
+        java.time.OffsetDateTime startAt = null;
         if (req.scheduledStartAt() != null) {
             try {
-                startAt = LocalDateTime.parse(req.scheduledStartAt());
+                startAt = java.time.OffsetDateTime.parse(req.scheduledStartAt());
             } catch (Exception e) {
                 log.warn("Invalid scheduledStartAt format: {}", req.scheduledStartAt());
             }
         }
 
-        LocalDateTime endAt = null;
+        java.time.OffsetDateTime endAt = null;
         if (req.scheduledEndAt() != null) {
             try {
-                endAt = LocalDateTime.parse(req.scheduledEndAt());
+                endAt = java.time.OffsetDateTime.parse(req.scheduledEndAt());
             } catch (Exception e) {
                 log.warn("Invalid scheduledEndAt format: {}", req.scheduledEndAt());
             }

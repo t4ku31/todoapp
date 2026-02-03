@@ -1,3 +1,12 @@
+import {
+	Calendar,
+	CheckSquare,
+	Home,
+	LogOut,
+	Settings,
+	TrendingUp,
+} from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import Logo from "@/components/Logo";
 import {
 	Sidebar,
@@ -8,15 +17,6 @@ import {
 } from "@/components/ui/sidebar";
 import { env } from "@/config/env";
 import { cn } from "@/lib/utils";
-import {
-	Calendar,
-	CheckSquare,
-	Home,
-	LogOut,
-	Settings,
-	TrendingUp,
-} from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
 
 type AppSidebarProps = React.HTMLAttributes<HTMLDivElement>;
 

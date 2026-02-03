@@ -23,8 +23,8 @@ export interface Task {
 	isDeleted?: boolean;
 	description?: string;
 	// Calendar scheduling fields
-	scheduledStartAt?: string; // ISO 8601 datetime string
-	scheduledEndAt?: string; // ISO 8601 datetime string
+	scheduledStartAt?: string | Date; // ISO 8601 datetime string
+	scheduledEndAt?: string | Date; // ISO 8601 datetime string
 	isAllDay?: boolean;
 	suggestedTaskListTitle?: string;
 }

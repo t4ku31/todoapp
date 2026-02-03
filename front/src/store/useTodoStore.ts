@@ -1,7 +1,7 @@
 import * as React from "react";
 import { toast } from "sonner";
 import { create } from "zustand";
-import type { BackendSyncTask, SyncResult } from "@/features/ai/types";
+import type { SyncResult, SyncTask } from "@/features/ai/types";
 import {
 	type BulkOperationResult,
 	type CreateTaskParams,
@@ -66,7 +66,7 @@ interface TodoState {
 	) => Promise<void>;
 	bulkDeleteTasks: (taskIds: number[]) => Promise<void>;
 	bulkCreateTasks: (tasks: CreateTaskParams[]) => Promise<number[]>;
-	syncTasks: (tasks: BackendSyncTask[]) => Promise<SyncResult>;
+	syncTasks: (tasks: SyncTask[]) => Promise<SyncResult>;
 
 	// Subtask Actions
 	createSubtask: (
@@ -465,6 +465,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		}));
 
 		try {
+			console.log("Updating task:", taskId, updates);
 			await taskApi.updateTask(taskId, updates);
 
 			// If taskListId, categoryId, or isRecurring was updated, refetch to get the correct state

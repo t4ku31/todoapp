@@ -38,7 +38,8 @@ export function TaskListSelector({
 			<PopoverTrigger asChild>
 				<IconBadge
 					icon={FolderInput}
-					variant="outline"
+					variant={selectedList ? "soft" : "outline"}
+					colorScheme="indigo"
 					className={className}
 					onPointerDown={(e) => e.stopPropagation()}
 				>

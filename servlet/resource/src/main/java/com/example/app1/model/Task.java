@@ -95,13 +95,13 @@ public class Task {
      * Scheduled start datetime for calendar events
      */
     @Column(name = "scheduled_start_at")
-    private LocalDateTime scheduledStartAt;
+    private java.time.OffsetDateTime scheduledStartAt;
 
     /**
      * Scheduled end datetime for calendar events
      */
     @Column(name = "scheduled_end_at")
-    private LocalDateTime scheduledEndAt;
+    private java.time.OffsetDateTime scheduledEndAt;
 
     /**
      * Whether this is an all-day event (no specific time)

@@ -25,8 +25,10 @@ public class AiTaskDto {
                         Boolean isRecurring,
                         String recurrencePattern,
                         Boolean isDeleted,
-                        List<String> subtasks,
-                        String status) {
+                        List<SubtaskDto.Summary> subtasks,
+                        String status)
+
+        {
         }
 
         /**
@@ -55,7 +57,7 @@ public class AiTaskDto {
         public record ChatAnalysisRequest(
                         String conversationId,
                         String prompt,
-                        List<TaskDto.Entity> currentTasks,
+                        List<SyncTaskDto> currentTasks,
                         String projectTitle) {
         }
 

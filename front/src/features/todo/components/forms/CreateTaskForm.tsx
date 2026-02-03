@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { ListTree, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { forwardRef, useEffect, useState } from "react";
 import {
 	Controller,
@@ -10,13 +10,14 @@ import {
 } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Task } from "@/features/todo/types";
+import type { Subtask, Task } from "@/features/todo/types";
 import { cn } from "@/lib/utils";
 import type { CreateTaskParams } from "@/store/useTodoStore";
+import { AddSubtaskButton } from "../ui/AddSubtaskButton";
 import { CategorySelect } from "../ui/CategorySelect";
 import { DateScheduler } from "../ui/DateScheduler";
 import { PomodoroInput } from "../ui/PomodoroInput";
-import { SubtaskList } from "../ui/SubtaskList";
+import { TaskItemSubtaskList } from "../ui/TaskItemSubtaskList";
 import { type TaskFormValues, taskSchema } from "./schema";
 
 interface CreateTaskFormProps {
@@ -148,7 +149,7 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 					estimatedPomodoros: 0,
 					subtasks: [],
 				});
-				setTimeout(() => replaceSubtasks([]), 0);
+				replaceSubtasks([]);
 				// Optionally reset focus to input?
 			} catch (error) {
 				console.error(error);
@@ -184,8 +185,67 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 			? "text-indigo-600"
 			: "text-gray-400";
 
+		const handleUpdateSubtask = (id: number, updates: Partial<Subtask>) => {
+			const index = -id - 1;
+			const currentSubtask = form.getValues("subtasks")?.[index];
+			if (!currentSubtask) return;
+
+			form.setValue(`subtasks.${index}`, {
+				...currentSubtask,
+				title:
+					updates.title !== undefined
+						? updates.title
+						: currentSubtask.title || "",
+				isCompleted:
+					updates.isCompleted !== undefined
+						? updates.isCompleted
+						: currentSubtask.isCompleted || false,
+				orderIndex:
+					updates.orderIndex !== undefined
+						? updates.orderIndex
+						: currentSubtask.orderIndex || 0,
+				description:
+					updates.description !== undefined
+						? updates.description
+						: currentSubtask.description || "",
+			});
+		};
+
+		const handleDeleteSubtask = (id: number) => {
+			const index = -id - 1;
+			removeSubtask(index);
+		};
+
+		const handleAddSubtask = (title: string) => {
+			appendSubtask({
+				title,
+				isCompleted: false,
+				description: "",
+				orderIndex: subtaskFields.length,
+			});
+		};
+
+		const handleReorderSubtasks = (newSubtasks: Subtask[]) => {
+			replaceSubtasks(
+				newSubtasks.map((st) => ({
+					title: st.title,
+					isCompleted: st.isCompleted,
+					description: st.description || "",
+					orderIndex: st.orderIndex,
+				})),
+			);
+		};
+
 		// Toggle for subtask expansion? Or always show if present?
 		// If has subtasks, we show them.
+
+		const mappedSubtasks = subtaskFields.map((f, i) => ({
+			...f,
+			id: -i - 1,
+			title: f.title || "",
+			isCompleted: f.isCompleted || false,
+			orderIndex: i,
+		})) as Subtask[];
 
 		return (
 			<FormProvider {...form}>
@@ -204,22 +264,20 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 					{/* Main Input Row */}
 					<div className="flex items-center px-3 py-1.5 gap-2">
 						{/* Left Icon: ListTree - Clickable to add subtask */}
-						<Button
-							type="button"
-							variant="ghost"
-							size="icon"
-							className={cn(
-								"shrink-0 h-7 w-7 hover:bg-indigo-50 transition-colors",
-								hasSubtasks ? "text-indigo-600" : activeColorClass,
-							)}
+						{/* Left Icon: ListTree - Clickable to add subtask */}
+						<AddSubtaskButton
+							hasSubtasks={hasSubtasks}
+							activeColorClass={activeColorClass}
 							onClick={() => {
 								// Add a new subtask - SubtaskList will auto-focus via useEffect
-								appendSubtask({ title: "", description: "" });
+								appendSubtask({
+									title: "",
+									description: "",
+									isCompleted: false,
+									orderIndex: subtaskFields.length,
+								});
 							}}
-							title="Add subtask"
-						>
-							<ListTree className="w-5 h-5" />
-						</Button>
+						/>
 
 						{/* Input Field */}
 						<Controller
@@ -307,10 +365,13 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 						)}
 					>
 						<div className="px-2 pt-1">
-							<SubtaskList
-								fields={subtaskFields}
-								append={appendSubtask}
-								remove={removeSubtask}
+							<TaskItemSubtaskList
+								subtasks={mappedSubtasks}
+								onUpdate={handleUpdateSubtask}
+								onDelete={handleDeleteSubtask}
+								onAdd={handleAddSubtask}
+								onReorder={handleReorderSubtasks}
+								className="mt-0 pl-0 border-none ml-0"
 							/>
 						</div>
 					</div>

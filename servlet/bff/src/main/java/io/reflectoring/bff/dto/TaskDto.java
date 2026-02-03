@@ -22,8 +22,8 @@ public class TaskDto {
                         @Schema(description = "Whether this is a recurring task") Boolean isRecurring,
                         @Schema(description = "Recurrence rule in JSON format") String recurrenceRule,
                         @Schema(description = "Custom dates for multi-select mode") List<LocalDate> customDates,
-                        @Schema(description = "Scheduled start time") LocalDateTime scheduledStartAt,
-                        @Schema(description = "Scheduled end time") LocalDateTime scheduledEndAt,
+                        @Schema(description = "Scheduled start time") java.time.OffsetDateTime scheduledStartAt,
+                        @Schema(description = "Scheduled end time") java.time.OffsetDateTime scheduledEndAt,
                         @Schema(description = "Whether this is an all-day event") Boolean isAllDay,
                         @Schema(description = "Task status", example = "PENDING") TaskStatus status) {
         }
@@ -41,8 +41,8 @@ public class TaskDto {
                         @Schema(description = "Whether this is a recurring task") Boolean isRecurring,
                         @Schema(description = "Recurrence rule in JSON format") String recurrenceRule,
                         @Schema(description = "Task description/notes") String description,
-                        @Schema(description = "Scheduled start time") LocalDateTime scheduledStartAt,
-                        @Schema(description = "Scheduled end time") LocalDateTime scheduledEndAt,
+                        @Schema(description = "Scheduled start time") java.time.OffsetDateTime scheduledStartAt,
+                        @Schema(description = "Scheduled end time") java.time.OffsetDateTime scheduledEndAt,
                         @Schema(description = "Whether this is an all-day event") Boolean isAllDay) {
         }
 
@@ -63,8 +63,8 @@ public class TaskDto {
                         @Schema(description = "Parent task ID for recurring instances") Long recurrenceParentId,
                         @Schema(description = "Whether the task is in the trash") Boolean isDeleted,
                         @Schema(description = "Task description/notes") String description,
-                        @Schema(description = "Scheduled start time") LocalDateTime scheduledStartAt,
-                        @Schema(description = "Scheduled end time") LocalDateTime scheduledEndAt,
+                        @Schema(description = "Scheduled start time") java.time.OffsetDateTime scheduledStartAt,
+                        @Schema(description = "Scheduled end time") java.time.OffsetDateTime scheduledEndAt,
                         @Schema(description = "Whether this is an all-day event") Boolean isAllDay) {
         }
 
@@ -77,8 +77,8 @@ public class TaskDto {
                         Integer estimatedPomodoros,
                         LocalDate startDate,
                         LocalDate endDate,
-                        LocalDateTime scheduledStartAt,
-                        LocalDateTime scheduledEndAt,
+                        java.time.OffsetDateTime scheduledStartAt,
+                        java.time.OffsetDateTime scheduledEndAt,
                         Boolean isAllDay,
                         String description,
                         Boolean isRecurring,
@@ -166,7 +166,7 @@ public class TaskDto {
                         Boolean isRecurring,
                         String recurrencePattern,
                         Boolean isDeleted,
-                        List<String> subtasks,
+                        List<SubtaskDto.Summary> subtasks,
                         TaskStatus status) {
         }
 
