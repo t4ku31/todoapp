@@ -33,8 +33,14 @@ export const taskToParsedTask = (task: Task): ParsedTask => ({
 	title: task.title,
 	description: task.description,
 	executionDate: task.executionDate ?? undefined,
-	scheduledStartAt: task.scheduledStartAt ?? undefined,
-	scheduledEndAt: task.scheduledEndAt ?? undefined,
+	scheduledStartAt:
+		task.scheduledStartAt instanceof Date
+			? task.scheduledStartAt.toISOString()
+			: (task.scheduledStartAt ?? undefined),
+	scheduledEndAt:
+		task.scheduledEndAt instanceof Date
+			? task.scheduledEndAt.toISOString()
+			: (task.scheduledEndAt ?? undefined),
 	isAllDay: task.isAllDay,
 	estimatedPomodoros: task.estimatedPomodoros ?? undefined,
 	categoryName: task.category?.name,
@@ -53,8 +59,14 @@ export const toSyncTask = (task: Task | ParsedTask): SyncTask => {
 		title: task.title,
 		description: task.description,
 		executionDate: task.executionDate,
-		scheduledStartAt: task.scheduledStartAt,
-		scheduledEndAt: task.scheduledEndAt,
+		scheduledStartAt:
+			task.scheduledStartAt instanceof Date
+				? task.scheduledStartAt.toISOString()
+				: task.scheduledStartAt,
+		scheduledEndAt:
+			task.scheduledEndAt instanceof Date
+				? task.scheduledEndAt.toISOString()
+				: task.scheduledEndAt,
 		isAllDay: task.isAllDay,
 		estimatedPomodoros: task.estimatedPomodoros,
 		isRecurring: task.isRecurring,
