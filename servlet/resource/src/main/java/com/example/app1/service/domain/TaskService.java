@@ -385,7 +385,8 @@ public class TaskService {
                         .title(dto.title())
                         .description(dto.description())
                         .task(task)
-                        .isCompleted(false)
+                        .isCompleted(dto.isCompleted() != null ? dto.isCompleted() : false)
+                        .orderIndex(dto.orderIndex() != null ? dto.orderIndex() : 0)
                         .build())
                 .toList();
         task.getSubtasks().addAll(entities);
@@ -1208,7 +1209,8 @@ public class TaskService {
         List<SubtaskDto.Create> subtasks = null;
         if (req.subtasks() != null) {
             subtasks = req.subtasks().stream()
-                    .map(summary -> new SubtaskDto.Create(null, summary.title(), summary.description()))
+                    .map(summary -> new SubtaskDto.Create(null, summary.title(), summary.description(),
+                            summary.isCompleted(), summary.orderIndex()))
                     .toList();
         }
 
