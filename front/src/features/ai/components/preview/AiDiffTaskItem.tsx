@@ -1,7 +1,7 @@
+import { CornerDownRight } from "lucide-react";
 import { AiOriginalTaskItem } from "@/features/ai";
 import type { ParsedTask } from "@/features/ai/types";
 import type { Task } from "@/features/todo/types";
-import { CornerDownRight } from "lucide-react";
 import { AiPreviewTaskItem } from "./AiPreviewTaskItem";
 
 interface AiDiffTaskItemProps {
@@ -24,9 +24,6 @@ export function AiDiffTaskItem({
 
 			{/* Original Task */}
 			<div className="relative flex-1 w-full min-w-0">
-				<div className="absolute -left-3 -top-2.5 px-2 py-0.5 bg-white/80 backdrop-blur text-[10px] font-medium text-gray-400 rounded-full border border-gray-100 shadow-sm z-10">
-					Original
-				</div>
 				<div className="opacity-70 scale-[0.98] origin-left transition-opacity hover:opacity-100">
 					<AiOriginalTaskItem
 						key={`original-${originalTask.id}`}
@@ -42,9 +39,6 @@ export function AiDiffTaskItem({
 
 				{/* Preview Task */}
 				<div className="relative pl-8 flex-1 w-full min-w-0">
-					<div className="absolute -left-1 -top-2.5 px-2 py-0.5 bg-indigo-100/80 backdrop-blur text-[10px] font-medium text-indigo-600 rounded-full border border-indigo-200 shadow-sm z-10">
-						Preview
-					</div>
 					<div className="flex-1 shadow-lg shadow-indigo-100/50 rounded-xl">
 						<AiPreviewTaskItem
 							key={`preview-${previewTask.id}`}

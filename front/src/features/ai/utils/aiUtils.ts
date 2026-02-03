@@ -1,6 +1,18 @@
-import type { Category, Task, TaskStatus } from "@/features/todo/types";
+import type {
+	Category,
+	Subtask,
+	Task,
+	TaskStatus,
+} from "@/features/todo/types";
 import type { CreateTaskParams } from "@/store/useTodoStore";
 import type { AiChatResponse, ParsedTask, SyncTask } from "../types";
+
+export const createEmptySubtask = (orderIndex: number): Subtask => ({
+	title: "",
+	isCompleted: false,
+	id: -Date.now(),
+	orderIndex,
+});
 
 export const getUserId = () => {
 	if (typeof window === "undefined") return "guest";
@@ -48,7 +60,18 @@ export const toSyncTask = (task: Task | ParsedTask): SyncTask => {
 		isRecurring: task.isRecurring,
 		isDeleted: task.isDeleted,
 		status: task.status,
-		subtasks: task.subtasks,
+		// Convert subtasks to strict Subtask[]
+		subtasks: task.subtasks?.map((s, index) => {
+			if (typeof s === "string") {
+				return {
+					title: s,
+					isCompleted: false,
+					id: -Date.now() - index,
+					orderIndex: index,
+				};
+			}
+			return s;
+		}),
 	};
 
 	// 2. Handle specific fields (ParsedTest has flat categoryName, Task has Category object)
@@ -173,12 +196,22 @@ export const createPreviewTasks = (
 			category: category,
 			isRecurring: t.isRecurring,
 			recurrenceRule: t.recurrencePattern,
-			subtasks: t.subtasks?.map((s, i) => ({
-				id: s.id ?? -i, // Subtask IDs
-				title: s.title,
-				isCompleted: s.isCompleted ?? false,
-				orderIndex: s.orderIndex ?? i,
-			})),
+			subtasks: t.subtasks?.map((s, i) => {
+				if (typeof s === "string") {
+					return {
+						id: -Date.now() - i,
+						title: s,
+						isCompleted: false,
+						orderIndex: i,
+					};
+				}
+				return {
+					id: s.id ?? -i,
+					title: s.title,
+					isCompleted: s.isCompleted ?? false,
+					orderIndex: s.orderIndex ?? i,
+				};
+			}),
 			isDeleted: false,
 			suggestedTaskListTitle: t.taskListTitle,
 		} as Task;
@@ -211,7 +244,12 @@ export const prepareTasksForSave = (
 			scheduledEndAt: task.scheduledEndAt || null,
 			isAllDay: task.isAllDay ?? true,
 			status: task.status,
-			subtasks: task.subtasks?.map((s) => ({ title: s.title })),
+			subtasks: task.subtasks?.map((s) => {
+				if (typeof s === "string") {
+					return { title: s };
+				}
+				return { title: s.title };
+			}),
 		};
 	});
 

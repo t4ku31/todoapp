@@ -341,23 +341,7 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 			// or use `prepareTasksForSave` if we were using separate create/update endpoints.
 			// Since we use `syncTasks`, we need a uniform list.
 
-			const syncPayload = selectedTasks.map((t) => ({
-				id: t.id > 0 ? t.id : undefined, // Positive = update, Negative/Undefined = create
-				title: t.title,
-				description: t.description,
-				executionDate: t.executionDate,
-				scheduledStartAt: t.scheduledStartAt,
-				scheduledEndAt: t.scheduledEndAt,
-				isAllDay: t.isAllDay,
-				estimatedPomodoros: t.estimatedPomodoros,
-				categoryName: t.categoryName,
-				taskListTitle: t.taskListTitle,
-				isRecurring: t.isRecurring,
-				recurrencePattern: t.recurrencePattern,
-				isDeleted: t.isDeleted,
-				subtasks: t.subtasks,
-				status: t.status,
-			}));
+			const syncPayload = selectedTasks.map(toSyncTask);
 
 			console.log("syncPayload", syncPayload);
 			const result = await useTodoStore.getState().syncTasks(syncPayload);

@@ -18,10 +18,11 @@ export interface SyncTask {
 	status?: string;
 }
 
-export interface ParsedTask extends Omit<SyncTask, "id"> {
+export interface ParsedTask extends Omit<SyncTask, "id" | "subtasks"> {
 	id: number; // Positive (DB) or Negative (Preview)
 	selected: boolean;
 	originalTask?: Task;
+	subtasks?: (Subtask | string)[];
 }
 
 export interface ChatMessage {
