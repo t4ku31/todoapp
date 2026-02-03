@@ -10,8 +10,8 @@ import { usePomodoroStore } from "@/store/usePomodoroStore";
 import { CategorySelect } from "./ui/CategorySelect";
 import { DeleteButton } from "./ui/DeleteButton";
 import { EditableDate } from "./ui/EditableDate";
-import { EditableDuration } from "./ui/EditableDuration";
 import { EditableTitle } from "./ui/EditableTitle";
+import { PomodoroInput } from "./ui/PomodoroInput";
 import { TaskItemSubtaskList } from "./ui/TaskItemSubtaskList";
 import { TaskListSelector } from "./ui/TaskListSelector";
 
@@ -213,13 +213,11 @@ export const TaskItem = memo(function TaskItem({
 									onOpenChange={setIsExpanded}
 								/>
 
-								<EditableDuration
-									id={task.id}
-									duration={task.estimatedPomodoros}
-									onDurationChange={(id, duration) =>
-										onUpdateTask(id, { estimatedPomodoros: duration })
+								<PomodoroInput
+									value={task.estimatedPomodoros ?? 0}
+									onChange={(value) =>
+										onUpdateTask(task.id, { estimatedPomodoros: value })
 									}
-									onOpenChange={setIsExpanded}
 								/>
 							</div>
 
