@@ -17,6 +17,7 @@ import { AddSubtaskButton } from "../ui/AddSubtaskButton";
 import { CategorySelect } from "../ui/CategorySelect";
 import { DateScheduler } from "../ui/DateScheduler";
 import { PomodoroInput } from "../ui/PomodoroInput";
+import { SubtaskButton } from "../ui/SubtaskButton";
 import { TaskItemSubtaskList } from "../ui/TaskItemSubtaskList";
 import { type TaskFormValues, taskSchema } from "./schema";
 
@@ -57,6 +58,8 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 		useEffect(() => {
 			setSelectedTaskListId(defaultTaskListId);
 		}, [defaultTaskListId]);
+
+		const [isSubtasksOpen, setIsSubtasksOpen] = useState(false);
 
 		const form = useForm<TaskFormValues>({
 			resolver: zodResolver(taskSchema),
@@ -178,13 +181,6 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 			}
 		};
 
-		const watchedCategoryId = form.watch("categoryId");
-		const hasSubtasks = subtaskFields.length > 0;
-
-		const activeColorClass = watchedCategoryId
-			? "text-indigo-600"
-			: "text-gray-400";
-
 		const handleUpdateSubtask = (id: number, updates: Partial<Subtask>) => {
 			const index = -id - 1;
 			const currentSubtask = form.getValues("subtasks")?.[index];
@@ -247,6 +243,8 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 			orderIndex: i,
 		})) as Subtask[];
 
+		const hasSubtasks = subtaskFields.length > 0;
+
 		return (
 			<FormProvider {...form}>
 				<form
@@ -265,19 +263,31 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 					<div className="flex items-center px-3 py-1.5 gap-2">
 						{/* Left Icon: ListTree - Clickable to add subtask */}
 						{/* Left Icon: ListTree - Clickable to add subtask */}
-						<AddSubtaskButton
-							hasSubtasks={hasSubtasks}
-							activeColorClass={activeColorClass}
-							onClick={() => {
-								// Add a new subtask - SubtaskList will auto-focus via useEffect
-								appendSubtask({
-									title: "",
-									description: "",
-									isCompleted: false,
-									orderIndex: subtaskFields.length,
-								});
-							}}
-						/>
+
+						{hasSubtasks ? (
+							<SubtaskButton
+								completedCount={
+									subtaskFields.filter((f) => f.isCompleted).length
+								}
+								totalCount={subtaskFields.length}
+								isOpen={isSubtasksOpen}
+								onClick={() => setIsSubtasksOpen(!isSubtasksOpen)}
+							/>
+						) : (
+							<AddSubtaskButton
+								hasSubtasks={hasSubtasks}
+								// activeColorClass is removed, defaulting to standard behavior
+								onClick={() => {
+									appendSubtask({
+										title: "",
+										description: "",
+										isCompleted: false,
+										orderIndex: subtaskFields.length,
+									});
+									setIsSubtasksOpen(true);
+								}}
+							/>
+						)}
 
 						{/* Input Field */}
 						<Controller
@@ -356,25 +366,27 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 					</div>
 
 					{/* Subtasks Section - Renders below if exists */}
-					<div
-						className={cn(
-							"transition-all duration-300 ease-in-out border-t border-transparent",
-							hasSubtasks
-								? "border-gray-100 pb-2"
-								: "h-0 overflow-hidden opacity-0",
-						)}
-					>
-						<div className="px-2 pt-1">
-							<TaskItemSubtaskList
-								subtasks={mappedSubtasks}
-								onUpdate={handleUpdateSubtask}
-								onDelete={handleDeleteSubtask}
-								onAdd={handleAddSubtask}
-								onReorder={handleReorderSubtasks}
-								className="mt-0 pl-0 border-none ml-0"
-							/>
+					{hasSubtasks && (
+						<div
+							className={cn(
+								"transition-all duration-300 ease-in-out border-t border-transparent",
+								isSubtasksOpen
+									? "border-gray-100 pb-2"
+									: "h-0 overflow-hidden opacity-0",
+							)}
+						>
+							<div className="px-2 pt-1">
+								<TaskItemSubtaskList
+									subtasks={mappedSubtasks}
+									onUpdate={handleUpdateSubtask}
+									onDelete={handleDeleteSubtask}
+									onAdd={handleAddSubtask}
+									onReorder={handleReorderSubtasks}
+									className="mt-0 pl-0 border-none ml-0"
+								/>
+							</div>
 						</div>
-					</div>
+					)}
 				</form>
 			</FormProvider>
 		);

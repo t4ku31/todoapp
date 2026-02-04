@@ -1,5 +1,5 @@
 import { useDraggable } from "@dnd-kit/core";
-import { GripVertical, ListTree, Trash2, Undo2 } from "lucide-react";
+import { GripVertical, Trash2, Undo2 } from "lucide-react";
 import { memo, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { DeleteButton } from "./ui/DeleteButton";
 import { EditableDate } from "./ui/EditableDate";
 import { EditableTitle } from "./ui/EditableTitle";
 import { PomodoroInput } from "./ui/PomodoroInput";
+import { SubtaskButton } from "./ui/SubtaskButton";
 import { TaskItemSubtaskList } from "./ui/TaskItemSubtaskList";
 import { TaskListSelector } from "./ui/TaskListSelector";
 
@@ -145,23 +146,12 @@ export const TaskItem = memo(function TaskItem({
 				/>
 
 				{hasSubtasks && !isTrash && (
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							setIsSubtasksOpen(!isSubtasksOpen);
-						}}
-						className={`flex items-center gap-1.5 hover:bg-red-100 px-2 py-0.5 rounded-full text-xs font-medium transition-colors border ${
-							isSubtasksOpen
-								? "bg-indigo-50 text-indigo-600 border-indigo-200"
-								: "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
-						}`}
-					>
-						<ListTree className="w-3.5 h-3.5" />
-						<span>
-							{completedSubtasks}/{totalSubtasks}
-						</span>
-					</button>
+					<SubtaskButton
+						completedCount={completedSubtasks}
+						totalCount={totalSubtasks}
+						isOpen={isSubtasksOpen}
+						onClick={() => setIsSubtasksOpen(!isSubtasksOpen)}
+					/>
 				)}
 			</div>
 
