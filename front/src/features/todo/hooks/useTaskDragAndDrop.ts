@@ -75,12 +75,15 @@ export function useTaskDragAndDrop({
 			}
 			// AIチャットパネルを開く
 			setIsAiChatOpen(true);
+			// today target case
 		} else if (targetId === "today") {
-			const today = new Date().toISOString().split("T")[0];
+			const today = new Date();
+			const todayString = today.toISOString().split("T")[0];
+
 			if (tasksToMove.length > 1) {
-				bulkUpdateTasks(tasksToMove, { executionDate: today });
-			} else if (task.executionDate !== today) {
-				updateTask(task.id, { executionDate: today });
+				bulkUpdateTasks(tasksToMove, { startDate: today });
+			} else if (task.startDate?.toISOString().split("T")[0] !== todayString) {
+				updateTask(task.id, { startDate: today });
 			}
 		} else if (targetId === "inbox") {
 			const inboxList = taskLists.find((l) => l.title === "Inbox");

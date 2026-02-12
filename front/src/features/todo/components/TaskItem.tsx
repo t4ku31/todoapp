@@ -4,9 +4,9 @@ import { memo, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import type { UpdateTaskParams } from "@/features/todo/api/taskApi";
 import type { Task } from "@/features/todo/types";
 import { usePomodoroStore } from "@/store/usePomodoroStore";
-
 import { CategorySelect } from "./ui/CategorySelect";
 import { DeleteButton } from "./ui/DeleteButton";
 import { EditableDate } from "./ui/EditableDate";
@@ -18,7 +18,7 @@ import { TaskListSelector } from "./ui/TaskListSelector";
 
 interface TaskItemProps {
 	task: Task;
-	onUpdateTask: (taskId: number, updates: Partial<Task>) => Promise<void>;
+	onUpdateTask: (taskId: number, updates: UpdateTaskParams) => Promise<void>;
 	onDeleteTask: (taskId: number) => Promise<void>;
 	variant?: "default" | "focusSelector";
 	isTrash?: boolean;
@@ -172,7 +172,6 @@ export const TaskItem = memo(function TaskItem({
 								<CategorySelect
 									selectedCategoryId={task.category?.id}
 									onCategoryChange={(categoryId) =>
-										// @ts-expect-error - categoryId is handled by the store
 										onUpdateTask(task.id, { categoryId })
 									}
 									onOpenChange={setIsExpanded}
@@ -187,10 +186,10 @@ export const TaskItem = memo(function TaskItem({
 
 								<EditableDate
 									id={task.id}
-									date={task.executionDate ?? null}
-									type="executionDate"
+									date={task.startDate ?? null}
+									type="startDate"
 									onDateChange={(id, date) =>
-										onUpdateTask(id, { executionDate: date })
+										onUpdateTask(id, { startDate: date })
 									}
 									onRecurrenceChange={async (id, recurrence) => {
 										await onUpdateTask(id, {

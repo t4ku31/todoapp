@@ -1,11 +1,12 @@
-import { addDays, format, isSameDay, parseISO, startOfDay } from "date-fns";
+import { addDays, format, isSameDay, startOfDay } from "date-fns";
 import { ja } from "date-fns/locale";
+import type { UpdateTaskParams } from "@/features/todo/api/taskApi";
 import type { Task } from "@/features/todo/types";
 import { TaskItem } from "../../TaskItem";
 
 interface WeekTaskViewProps {
 	filteredTasks: Task[];
-	onUpdateTask: (taskId: number, updates: Partial<Task>) => Promise<void>;
+	onUpdateTask: (taskId: number, updates: UpdateTaskParams) => Promise<void>;
 	onDeleteTask: (taskId: number) => Promise<void>;
 	onTaskSelect?: (taskId: number | null) => void;
 	selectedTaskId?: number | null;
@@ -25,12 +26,8 @@ export function WeekTaskView({
 
 	const getTasksForDay = (date: Date) => {
 		return filteredTasks.filter((task) => {
-			if (!task.executionDate) return false;
-			// executionDate is likely YYYY-MM-DD or ISO.
-			// TaskItem EditableDate uses string.
-			// Assuming ISO or YYYY-MM-DD.
-			// parseISO handles YYYY-MM-DD well.
-			return isSameDay(parseISO(task.executionDate), date);
+			if (!task.startDate) return false;
+			return isSameDay(task.startDate, date);
 		});
 	};
 

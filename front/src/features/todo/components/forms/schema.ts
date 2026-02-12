@@ -1,43 +1,45 @@
 import { z } from "zod";
 
-// Repeat frequency options
-export const repeatFrequencySchema = z.enum([
-	"daily",
-	"weekly",
-	"monthly",
-	"yearly",
-	"custom",
-]);
-
-export type RepeatFrequency = z.infer<typeof repeatFrequencySchema>;
-
 // Date mode: single execution date, date range, or repeating
 export const dateModeSchema = z.enum(["single", "range", "repeat"]);
 
 export type DateMode = z.infer<typeof dateModeSchema>;
 
-// Repeat unit for custom frequency
-export const repeatUnitSchema = z.enum(["day", "week", "month", "year"]);
-
-export type RepeatUnit = z.infer<typeof repeatUnitSchema>;
-
-// Days of week for weekly repeat
+// Days of week - matches RecurrenceConfig.byDay
 export const dayOfWeekSchema = z.enum([
-	"sun",
-	"mon",
-	"tue",
-	"wed",
-	"thu",
-	"fri",
-	"sat",
+	"SUNDAY",
+	"MONDAY",
+	"TUESDAY",
+	"WEDNESDAY",
+	"THURSDAY",
+	"FRIDAY",
+	"SATURDAY",
 ]);
 
 export type DayOfWeek = z.infer<typeof dayOfWeekSchema>;
 
-// Repeat end type: never, on date, or after X occurrences
-export const repeatEndTypeSchema = z.enum(["never", "on_date", "after_count"]);
+// Frequency - matches RecurrenceConfig.frequency
+export const frequencySchema = z.enum([
+	"DAILY",
+	"WEEKLY",
+	"MONTHLY",
+	"YEARLY",
+	"CUSTOM",
+]);
 
-export type RepeatEndType = z.infer<typeof repeatEndTypeSchema>;
+export type Frequency = z.infer<typeof frequencySchema>;
+
+// RecurrenceConfig schema - directly matches RecurrenceConfig type
+export const recurrenceConfigSchema = z.object({
+	frequency: frequencySchema,
+	interval: z.number().min(1).optional(),
+	byDay: z.array(dayOfWeekSchema).optional(),
+	until: z.date().optional(),
+	count: z.number().min(1).optional(),
+	occurs: z.array(z.date()).optional(),
+});
+
+export type RecurrenceConfigFormValues = z.infer<typeof recurrenceConfigSchema>;
 
 export const taskSchema = z
 	.object({
@@ -45,21 +47,11 @@ export const taskSchema = z
 
 		// Date Configuration
 		dateMode: dateModeSchema,
-		executionDate: z.date().optional(), // Single date mode
-		startDate: z.date().optional(), // Range mode start
+		startDate: z.date().optional(), // Start date for all modes (single/range/repeat)
 		endDate: z.date().optional(), // Range mode end
-
-		// Repeat Configuration
-		repeatFrequency: repeatFrequencySchema.optional(),
-		repeatInterval: z.number().min(1).optional(), // Every X units (e.g., every 2 weeks)
-		repeatUnit: repeatUnitSchema.optional(), // Unit for custom repeat
-		repeatDays: z.array(dayOfWeekSchema).optional(), // Specific days for weekly
-		customDates: z.array(z.date()).optional(), // Multiple specific dates for custom
-
-		// Repeat End Configuration
-		repeatEndType: repeatEndTypeSchema.optional(), // How the repeat ends
-		repeatEndDate: z.date().optional(), // End date when repeatEndType is "on_date"
-		repeatEndCount: z.number().min(1).optional(), // Number of occurrences when repeatEndType is "after_count"
+		isRecurring: z.boolean().optional(),
+		// Recurrence Configuration - unified with RecurrenceConfig type
+		recurrenceRule: recurrenceConfigSchema.optional(),
 
 		categoryId: z.number().optional(),
 		estimatedPomodoros: z.number().optional(),

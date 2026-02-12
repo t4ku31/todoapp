@@ -1,10 +1,12 @@
 import type { Subtask, Task } from "@/features/todo/types";
+import type { SerializedRecurrenceConfig } from "@/features/todo/utils/recurrenceUtils";
 
+// SyncTask is for Gemini API communication - uses string dates
 export interface SyncTask {
 	id?: number; // Database ID (positive) or Null (create)
 	title: string;
 	description?: string;
-	executionDate?: string;
+	startDate?: string | null;
 	scheduledStartAt?: string;
 	scheduledEndAt?: string;
 	isAllDay?: boolean;
@@ -12,17 +14,23 @@ export interface SyncTask {
 	categoryName?: string;
 	taskListTitle?: string;
 	isRecurring?: boolean;
-	recurrencePattern?: string;
+	recurrenceRule?: SerializedRecurrenceConfig;
 	isDeleted?: boolean;
 	subtasks?: Subtask[];
 	status?: string;
 }
 
-export interface ParsedTask extends Omit<SyncTask, "id" | "subtasks"> {
-	id: number; // Positive (DB) or Negative (Preview)
-	selected: boolean;
-	originalTask?: Task;
-	subtasks?: (Subtask | string)[];
+// ParsedTask extends Task with AI-specific additions
+export interface ParsedTask
+	extends Omit<
+		Task,
+		"status" | "taskListId" | "dueDate" | "completedAt" | "category"
+	> {
+	status?: string; // Optional string (Task has required TaskStatus)
+	categoryName?: string; // AI returns name, not object
+	taskListTitle?: string; // AI returns title, not ID
+	selected: boolean; // UI selection state
+	originalTask?: Task; // Reference for diff
 }
 
 export interface ChatMessage {

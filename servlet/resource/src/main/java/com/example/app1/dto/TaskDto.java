@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.example.app1.model.TaskStatus;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
@@ -21,13 +22,13 @@ public class TaskDto {
                         @Schema(description = "タスクのタイトル（必須）") String title,
                         @Schema(description = "タスクリストID（任意）") Long taskListId,
                         @Schema(description = "タスクリスト名（任意、指定しない場合はInboxに追加）") String taskListTitle,
-                        @Schema(description = "実行日（YYYY-MM-DD形式、任意）") LocalDate executionDate,
+                        @Schema(description = "開始日（YYYY-MM-DD形式、任意）") LocalDate startDate,
                         @Schema(description = "カテゴリID（任意）") Long categoryId,
                         @Schema(description = "カテゴリ名（任意）") String categoryName,
                         @Schema(description = "サブタスクリスト（任意）") List<SubtaskDto.Create> subtasks,
                         @Schema(description = "推定ポモドーロ数（任意）") Integer estimatedPomodoros,
                         @Schema(description = "繰り返しタスクかどうか（任意）") Boolean isRecurring,
-                        @Schema(description = "繰り返しルール（JSON形式、任意）") String recurrenceRule,
+                        @Schema(description = "繰り返しルール（厳密なオブジェクト指定）") RecurrenceRuleDto recurrenceRule,
                         @Schema(description = "カスタム日付リスト（任意）") List<LocalDate> customDates,
                         @Schema(description = "開始日時（YYYY-MM-DDTHH:mm形式、任意）") java.time.OffsetDateTime scheduledStartAt,
                         @Schema(description = "終了日時（YYYY-MM-DDTHH:mm形式、任意）") java.time.OffsetDateTime scheduledEndAt,
@@ -41,7 +42,7 @@ public class TaskDto {
         public record Update(
                         @Schema(description = "新しいタイトル（変更する場合のみ）") String title,
                         @Schema(description = "新しいステータス（変更する場合のみ）") TaskStatus status,
-                        @Schema(description = "新しい実行日（YYYY-MM-DD形式、変更する場合のみ）") LocalDate executionDate,
+                        @Schema(description = "新しい開始日（YYYY-MM-DD形式、変更する場合のみ）") LocalDate startDate,
                         @Schema(description = "新しいカテゴリID（変更する場合のみ）") Long categoryId,
                         @Schema(description = "新しいカテゴリ名（変更する場合のみ）") String categoryName,
                         @Schema(description = "移動先のタスクリストID（変更する場合のみ）") Long taskListId,
@@ -49,11 +50,33 @@ public class TaskDto {
                         @Schema(description = "完了日時（変更する場合のみ）") LocalDateTime completedAt,
                         @Schema(description = "新しい推定ポモドーロ数（変更する場合のみ）") Integer estimatedPomodoros,
                         @Schema(description = "繰り返しタスクかどうか（変更する場合のみ）") Boolean isRecurring,
-                        @Schema(description = "繰り返しルール（JSON形式、変更する場合のみ）") String recurrenceRule,
+                        @Schema(description = "繰り返しルール（厳密なオブジェクト指定、変更する場合のみ）") RecurrenceRuleDto recurrenceRule,
                         @Schema(description = "説明文（変更する場合のみ）") String description,
                         @Schema(description = "開始日時（YYYY-MM-DDTHH:mm形式、変更する場合のみ）") java.time.OffsetDateTime scheduledStartAt,
                         @Schema(description = "終了日時（YYYY-MM-DDTHH:mm形式、変更する場合のみ）") java.time.OffsetDateTime scheduledEndAt,
                         @Schema(description = "終日イベントかどうか（変更する場合のみ）") Boolean isAllDay) {
+        }
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        @Schema(name = "TaskSummary")
+        public record Summary(
+                        @Schema(description = "Task ID", example = "1") Long id,
+                        @Schema(description = "Task title", example = "Buy milk") String title,
+                        @Schema(description = "Task status", example = "COMPLETED") TaskStatus status,
+                        @Schema(description = "Start date", example = "2023-12-24") LocalDate startDate,
+                        @Schema(description = "Task list ID", example = "1") Long taskListId,
+                        @Schema(description = "Category details") CategoryDto.Response category,
+                        @Schema(description = "Subtasks list") List<SubtaskDto.Summary> subtasks,
+                        @Schema(description = "Estimated number of pomodoros", example = "2") Integer estimatedPomodoros,
+                        @Schema(description = "Completed at timestamp") LocalDateTime completedAt,
+                        @Schema(description = "Whether this is a recurring task") Boolean isRecurring,
+                        @Schema(description = "Recurrence rule") RecurrenceRuleDto recurrenceRule,
+                        @Schema(description = "Parent task ID for recurring instances") Long recurrenceParentId,
+                        @Schema(description = "Whether the task is in the trash") Boolean isDeleted,
+                        @Schema(description = "Task description/notes") String description,
+                        @Schema(description = "Scheduled start time") java.time.OffsetDateTime scheduledStartAt,
+                        @Schema(description = "Scheduled end time") java.time.OffsetDateTime scheduledEndAt,
+                        @Schema(description = "Whether this is an all-day event") Boolean isAllDay) {
         }
 
         /**
@@ -83,11 +106,11 @@ public class TaskDto {
                         Long categoryId,
                         String categoryName,
                         Long taskListId,
-                        LocalDate executionDate,
+                        LocalDate startDate,
                         Integer estimatedPomodoros,
                         String description,
                         Boolean isRecurring,
-                        String recurrenceRule,
+                        RecurrenceRuleDto recurrenceRule,
                         java.time.OffsetDateTime scheduledStartAt,
                         java.time.OffsetDateTime scheduledEndAt,
                         Boolean isAllDay) {
@@ -177,7 +200,7 @@ public class TaskDto {
                         @JsonPropertyDescription("既存タスクのID（更新・削除時は必須）") Long id,
                         @JsonPropertyDescription("タスクのタイトル") String title,
                         @JsonPropertyDescription("タスクの詳細") String description,
-                        @JsonPropertyDescription("実行日（YYYY-MM-DD）") String executionDate,
+                        @JsonPropertyDescription("開始日（YYYY-MM-DD）") String startDate,
                         @JsonPropertyDescription("予定開始日時（YYYY-MM-DDTHH:mm:ss）") String scheduledStartAt,
                         @JsonPropertyDescription("予定終了日時（YYYY-MM-DDTHH:mm:ss）") String scheduledEndAt,
                         @JsonPropertyDescription("終日フラグ") Boolean isAllDay,
@@ -185,7 +208,7 @@ public class TaskDto {
                         @JsonPropertyDescription("カテゴリ名") String categoryName,
                         @JsonPropertyDescription("タスクリスト名") String taskListTitle,
                         @JsonPropertyDescription("繰り返しフラグ") Boolean isRecurring,
-                        @JsonPropertyDescription("繰り返しルール") String recurrencePattern,
+                        @JsonPropertyDescription("繰り返しルール") RecurrenceRuleDto recurrenceRule,
                         @JsonPropertyDescription("削除フラグ") Boolean isDeleted,
                         @JsonPropertyDescription("サブタスク（オブジェクト）のリスト") List<SubtaskDto.Summary> subtasks,
                         @JsonPropertyDescription("ステータス（PENDING, COMPLETED）") String status) {

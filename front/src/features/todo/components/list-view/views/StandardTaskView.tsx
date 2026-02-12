@@ -1,6 +1,7 @@
 import { AiDiffTaskItem } from "@/features/ai/components/preview/AiDiffTaskItem";
 import { AiPreviewTaskItem } from "@/features/ai/components/preview/AiPreviewTaskItem";
 import type { ParsedTask } from "@/features/ai/types";
+import type { UpdateTaskParams } from "@/features/todo/api/taskApi";
 import type { Task } from "@/features/todo/types";
 import { TaskItem } from "../../TaskItem";
 
@@ -10,7 +11,7 @@ interface StandardTaskViewProps {
 	aiEditPreviewMap: Map<number, ParsedTask>;
 	updateAiPreviewTask: (taskId: number, updates: Partial<ParsedTask>) => void;
 	toggleAiPreviewSelection: (id: number) => void;
-	onUpdateTask: (taskId: number, updates: Partial<Task>) => Promise<void>;
+	onUpdateTask: (taskId: number, updates: UpdateTaskParams) => Promise<void>;
 	onDeleteTask: (taskId: number) => Promise<void>;
 	onTaskSelect?: (taskId: number | null) => void;
 	selectedTaskId?: number | null;
@@ -35,7 +36,7 @@ export function StandardTaskView({
 		<div className="space-y-8 pb-10">
 			{/* AI Preview: New Tasks */}
 			{aiNewTaskPreviews.length > 0 && (
-				<div className="space-y-2">
+				<div className="space-y-5">
 					{aiNewTaskPreviews.map((preview, index) => (
 						<AiPreviewTaskItem
 							key={preview.id}
@@ -49,7 +50,7 @@ export function StandardTaskView({
 			)}
 
 			{/* Existing Tasks (with AI edit overlay) */}
-			<div className="space-y-2">
+			<div className="space-y-5">
 				{filteredTasks.map((task) => {
 					const aiEditPreview = aiEditPreviewMap.get(task.id);
 					if (aiEditPreview) {

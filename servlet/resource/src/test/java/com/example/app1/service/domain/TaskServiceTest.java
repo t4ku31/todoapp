@@ -8,6 +8,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -21,6 +22,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.example.app1.dto.RecurrenceRuleDto;
+import com.example.app1.dto.RecurrenceRuleDto.Frequency;
 import com.example.app1.dto.TaskDto;
 import com.example.app1.model.Category;
 import com.example.app1.model.Task;
@@ -114,7 +117,11 @@ class TaskServiceTest {
         // Arrange
         // Weekly on Mon, Wed. Max 4 occurrences.
         // Start date: 2026-01-05 (Monday)
-        String recurrenceRule = "{\"frequency\":\"weekly\",\"daysOfWeek\":[\"mon\",\"wed\"],\"occurrences\":4}";
+        RecurrenceRuleDto recurrenceRule = new RecurrenceRuleDto(
+                Frequency.WEEKLY, 1,
+                Arrays.asList(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY),
+                null, 4);
+
         LocalDate startDate = LocalDate.of(2026, 1, 5); // Monday
 
         TaskDto.Create request = new TaskDto.Create(
@@ -144,13 +151,13 @@ class TaskServiceTest {
 
         // First task (Parent)
         Task t1 = capturedTasks.get(0);
-        assertEquals(startDate, t1.getExecutionDate());
+        assertEquals(startDate, t1.getStartDate());
         assertTrue(t1.getIsRecurring());
 
         // Children
-        assertEquals(LocalDate.of(2026, 1, 7), capturedTasks.get(1).getExecutionDate());
-        assertEquals(LocalDate.of(2026, 1, 12), capturedTasks.get(2).getExecutionDate());
-        assertEquals(LocalDate.of(2026, 1, 14), capturedTasks.get(3).getExecutionDate());
+        assertEquals(LocalDate.of(2026, 1, 7), capturedTasks.get(1).getStartDate());
+        assertEquals(LocalDate.of(2026, 1, 12), capturedTasks.get(2).getStartDate());
+        assertEquals(LocalDate.of(2026, 1, 14), capturedTasks.get(3).getStartDate());
 
         // Check parent linkage
         assertEquals(t1.getId(), capturedTasks.get(1).getRecurrenceParentId());
@@ -160,7 +167,9 @@ class TaskServiceTest {
     void createTask_Recurring_Daily_EndDate() {
         // Arrange
         // Daily until 2026-01-04. Start 2026-01-01.
-        String recurrenceRule = "{\"frequency\":\"daily\",\"endDate\":\"2026-01-04\"}";
+        RecurrenceRuleDto recurrenceRule = new RecurrenceRuleDto(
+                Frequency.DAILY, 1, null, LocalDate.of(2026, 1, 4), null);
+
         LocalDate startDate = LocalDate.of(2026, 1, 1);
 
         TaskDto.Create request = new TaskDto.Create(

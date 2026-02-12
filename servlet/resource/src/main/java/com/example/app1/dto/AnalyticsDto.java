@@ -128,7 +128,7 @@ public class AnalyticsDto {
             Integer estimatedMinutes,
             int progressPercentage,
             Long parentTaskId, // For recurring tasks, links to the parent
-            LocalDate executionDate) { // Date this task instance is for
+            LocalDate startDate) { // Date this task instance is for
     }
 
     /**

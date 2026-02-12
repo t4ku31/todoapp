@@ -11,7 +11,12 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import type { DateMode, DayOfWeek, TaskFormValues } from "../forms/schema";
+import type {
+	DateMode,
+	DayOfWeek,
+	Frequency,
+	TaskFormValues,
+} from "../forms/schema";
 
 interface DateSchedulerProps {
 	className?: string;
@@ -19,44 +24,91 @@ interface DateSchedulerProps {
 	onOpenChange?: (open: boolean) => void;
 }
 
+const REPEAT_FREQUENCIES: { value: Frequency; label: string }[] = [
+	{ value: "DAILY", label: "Daily" },
+	{ value: "WEEKLY", label: "Weekly" },
+	{ value: "MONTHLY", label: "Monthly" },
+	{ value: "CUSTOM", label: "Custom" },
+];
+
 export function DateScheduler({
 	className,
 	activeColor = "text-indigo-600",
 	onOpenChange,
 }: DateSchedulerProps) {
-	const { control, setValue } = useFormContext<TaskFormValues>();
+	const { control, setValue, getValues } = useFormContext<TaskFormValues>();
 
-	// All useWatch calls at the top level
+	// Watch form values
 	const dateMode = useWatch({ control, name: "dateMode" }) || "single";
-	const executionDate = useWatch({ control, name: "executionDate" });
+	const startDateValue = useWatch({ control, name: "startDate" });
 	const startDate = useWatch({ control, name: "startDate" });
 	const endDate = useWatch({ control, name: "endDate" });
-	const repeatFrequency = useWatch({ control, name: "repeatFrequency" });
-	const repeatDays = useWatch({ control, name: "repeatDays" }) || [];
-	const customDates = useWatch({ control, name: "customDates" }) || [];
-	const repeatEndType = useWatch({ control, name: "repeatEndType" }) || "never";
-	const repeatEndDate = useWatch({ control, name: "repeatEndDate" });
-	const repeatEndCount = useWatch({ control, name: "repeatEndCount" }) || 10;
+	const recurrenceRule = useWatch({ control, name: "recurrenceRule" });
 
 	const [isOpen, setIsOpen] = useState(false);
 	const [activeTab, setActiveTab] = useState<DateMode>(dateMode as DateMode);
+
+	// Derived values from recurrenceRule
+	const frequency = recurrenceRule?.frequency;
+	const byDay = recurrenceRule?.byDay || [];
+	const occurs = recurrenceRule?.occurs || [];
+	const until = recurrenceRule?.until;
+	const count = recurrenceRule?.count;
+
+	// occurs is already Date[]
+	const occursAsDates = occurs;
 
 	const handleOpenChange = (open: boolean) => {
 		setIsOpen(open);
 		onOpenChange?.(open);
 	};
-
 	const setDateModeValue = (mode: DateMode) => {
 		setActiveTab(mode);
 		setValue("dateMode", mode);
+
+		// Reset irrelevant fields when switching modes
+		if (mode === "single") {
+			// Single mode: clear range and repeat fields
+			setValue("endDate", undefined);
+			setValue("recurrenceRule", undefined);
+		} else if (mode === "range") {
+			// Range mode: clear repeat fields
+			setValue("recurrenceRule", undefined);
+		} else if (mode === "repeat") {
+			// Repeat mode: initialize recurrenceRule if not set
+			const currentRule = getValues("recurrenceRule");
+			if (!currentRule) {
+				setValue("recurrenceRule", {
+					frequency: "DAILY" as Frequency,
+				});
+			}
+		}
+		console.log("recurrenceRule", getValues("recurrenceRule"));
+		console.log("startDate", getValues("startDate"));
+		console.log("endDate", getValues("endDate"));
+	};
+
+	// Helper to update recurrenceRule
+	// Note: recurrenceRule is guaranteed to exist in repeat mode (initialized by setDateModeValue)
+	const updateRecurrenceRule = (
+		updates: Partial<TaskFormValues["recurrenceRule"]>,
+	) => {
+		const current = getValues("recurrenceRule");
+		if (current) {
+			setValue("recurrenceRule", { ...current, ...updates });
+		}
+
+		console.log("recurrenceRule", getValues("recurrenceRule"));
+		console.log("startDate", getValues("startDate"));
+		console.log("endDate", getValues("endDate"));
 	};
 
 	// Format display text based on mode
 	const getDisplayText = () => {
 		switch (dateMode) {
 			case "single":
-				return executionDate
-					? format(executionDate, "M/d", { locale: enUS })
+				return startDateValue
+					? format(startDateValue, "M/d", { locale: enUS })
 					: null;
 			case "range":
 				if (startDate && endDate) {
@@ -67,26 +119,26 @@ export function DateScheduler({
 				}
 				return null;
 			case "repeat":
-				if (repeatFrequency === "custom" && customDates.length > 0) {
-					return `${customDates.length} days`;
+				if (frequency === "CUSTOM" && occurs.length > 0) {
+					return `${occurs.length} days`;
 				}
-				return repeatFrequency ? getRepeatLabel(repeatFrequency) : null;
+				return frequency ? getRepeatLabel(frequency) : null;
 			default:
 				return null;
 		}
 	};
 
-	const getRepeatLabel = (freq: string) => {
+	const getRepeatLabel = (freq: Frequency) => {
 		switch (freq) {
-			case "daily":
+			case "DAILY":
 				return "Daily";
-			case "weekly":
+			case "WEEKLY":
 				return "Weekly";
-			case "monthly":
+			case "MONTHLY":
 				return "Monthly";
-			case "yearly":
+			case "YEARLY":
 				return "Yearly";
-			case "custom":
+			case "CUSTOM":
 				return "Custom";
 			default:
 				return freq;
@@ -105,56 +157,108 @@ export function DateScheduler({
 	};
 
 	const hasValue =
-		executionDate ||
-		startDate ||
-		endDate ||
-		repeatFrequency ||
-		customDates.length > 0;
+		startDateValue || startDate || endDate || frequency || occurs.length > 0;
 
 	const displayText = getDisplayText();
 
 	const dayOptions: { value: DayOfWeek; label: string }[] = [
-		{ value: "sun", label: "S" },
-		{ value: "mon", label: "M" },
-		{ value: "tue", label: "T" },
-		{ value: "wed", label: "W" },
-		{ value: "thu", label: "T" },
-		{ value: "fri", label: "F" },
-		{ value: "sat", label: "S" },
+		{ value: "SUNDAY", label: "S" },
+		{ value: "MONDAY", label: "M" },
+		{ value: "TUESDAY", label: "T" },
+		{ value: "WEDNESDAY", label: "W" },
+		{ value: "THURSDAY", label: "T" },
+		{ value: "FRIDAY", label: "F" },
+		{ value: "SATURDAY", label: "S" },
 	];
 
 	const getDayFullLabel = (day: DayOfWeek) => {
 		const labels: Record<DayOfWeek, string> = {
-			sun: "Sun",
-			mon: "Mon",
-			tue: "Tue",
-			wed: "Wed",
-			thu: "Thu",
-			fri: "Fri",
-			sat: "Sat",
+			SUNDAY: "Sun",
+			MONDAY: "Mon",
+			TUESDAY: "Tue",
+			WEDNESDAY: "Wed",
+			THURSDAY: "Thu",
+			FRIDAY: "Fri",
+			SATURDAY: "Sat",
 		};
 		return labels[day] || day;
 	};
 
 	// Handle multi-select for custom dates
 	const handleCustomDateSelect = (dates: Date[] | undefined) => {
-		setValue("customDates", dates || []);
+		updateRecurrenceRule({ occurs: dates || [] });
 	};
+
+	const handleRangeSelect = (range: { from?: Date; to?: Date } | undefined) => {
+		// Ensure from <= to by swapping if needed
+		if (range?.from && range?.to && range.to < range.from) {
+			setValue("startDate", range.to);
+			setValue("endDate", range.from);
+		} else {
+			setValue("startDate", range?.from);
+			setValue("endDate", range?.to);
+		}
+		console.log("startDate", getValues("startDate"));
+		console.log("endDate", getValues("endDate"));
+	};
+
+	// Determine end type from recurrenceRule
+	const getEndType = (): "never" | "on_date" | "after_count" => {
+		if (until) return "on_date";
+		if (count) return "after_count";
+		return "never";
+	};
+	const endType = getEndType();
 
 	// Get end summary text
 	const getEndSummary = () => {
-		switch (repeatEndType) {
+		switch (endType) {
 			case "never":
 				return "Forever";
 			case "on_date":
-				return repeatEndDate
-					? `Until ${format(repeatEndDate, "MMM d", { locale: enUS })}`
+				return until
+					? `Until ${format(until, "MMM d", { locale: enUS })}`
 					: "Until...";
 			case "after_count":
-				return `${repeatEndCount} times`;
+				return `${count || 10} times`;
 			default:
 				return "";
 		}
+	};
+
+	const renderRecurrenceSummary = () => {
+		if (!frequency) return null;
+
+		return (
+			<>
+				<span className="font-medium">{getRepeatLabel(frequency)}</span>
+				{frequency === "WEEKLY" && (
+					<span className="text-indigo-600">
+						{" "}
+						(
+						{byDay.length > 0
+							? byDay.map(getDayFullLabel).join(", ")
+							: "No days selected"}
+						)
+					</span>
+				)}
+				{frequency === "CUSTOM" && occurs.length > 0 && (
+					<span className="text-indigo-600">
+						{" "}
+						• {occurs.length} dates selected
+					</span>
+				)}
+				{frequency !== "CUSTOM" && startDateValue && (
+					<span className="text-indigo-600">
+						{" "}
+						• from {format(startDateValue, "MMM d", { locale: enUS })}
+					</span>
+				)}
+				{frequency !== "CUSTOM" && (
+					<span className="text-indigo-600"> • {getEndSummary()}</span>
+				)}
+			</>
+		);
 	};
 
 	return (
@@ -178,45 +282,26 @@ export function DateScheduler({
 			<PopoverContent className="w-auto p-0" align="end">
 				{/* Tab Selector */}
 				<div className="flex border-b">
-					<button
-						type="button"
-						onClick={() => setDateModeValue("single")}
-						className={cn(
-							"flex-1 px-4 py-2 text-sm font-medium transition-colors",
-							activeTab === "single"
-								? "border-b-2 border-indigo-500 text-indigo-600"
-								: "text-gray-500 hover:text-gray-700",
-						)}
-					>
-						<CalendarDays className="w-4 h-4 inline-block mr-1" />
-						Date
-					</button>
-					<button
-						type="button"
-						onClick={() => setDateModeValue("range")}
-						className={cn(
-							"flex-1 px-4 py-2 text-sm font-medium transition-colors",
-							activeTab === "range"
-								? "border-b-2 border-indigo-500 text-indigo-600"
-								: "text-gray-500 hover:text-gray-700",
-						)}
-					>
-						<CalendarRange className="w-4 h-4 inline-block mr-1" />
-						Range
-					</button>
-					<button
-						type="button"
-						onClick={() => setDateModeValue("repeat")}
-						className={cn(
-							"flex-1 px-4 py-2 text-sm font-medium transition-colors",
-							activeTab === "repeat"
-								? "border-b-2 border-indigo-500 text-indigo-600"
-								: "text-gray-500 hover:text-gray-700",
-						)}
-					>
-						<Repeat className="w-4 h-4 inline-block mr-1" />
-						Repeat
-					</button>
+					{[
+						{ mode: "single" as const, icon: CalendarDays, label: "Date" },
+						{ mode: "range" as const, icon: CalendarRange, label: "Range" },
+						{ mode: "repeat" as const, icon: Repeat, label: "Repeat" },
+					].map(({ mode, icon: Icon, label }) => (
+						<button
+							key={mode}
+							type="button"
+							onClick={() => setDateModeValue(mode)}
+							className={cn(
+								"flex-1 px-4 py-2 text-sm font-medium transition-colors",
+								activeTab === mode
+									? "border-b-2 border-indigo-500 text-indigo-600"
+									: "text-gray-500 hover:text-gray-700",
+							)}
+						>
+							<Icon className="w-4 h-4 inline-block mr-1" />
+							{label}
+						</button>
+					))}
 				</div>
 
 				{/* Content based on active tab */}
@@ -224,8 +309,8 @@ export function DateScheduler({
 					{activeTab === "single" && (
 						<Calendar
 							mode="single"
-							selected={executionDate}
-							onSelect={(date) => setValue("executionDate", date)}
+							selected={startDateValue}
+							onSelect={(date) => setValue("startDate", date)}
 							locale={enUS}
 							initialFocus
 							className="p-3 [&_table]:w-full [&_table]:border-collapse [&_td]:w-9 [&_td]:h-9 [&_th]:w-9 [&_th]:h-9 [&_th]:text-center [&_th]:font-normal [&_th]:text-gray-500 [&_button]:w-9 [&_button]:h-9"
@@ -244,16 +329,7 @@ export function DateScheduler({
 										? { from: startDate, to: endDate }
 										: undefined
 								}
-								onSelect={(range) => {
-									// Ensure from <= to by swapping if needed
-									if (range?.from && range?.to && range.to < range.from) {
-										setValue("startDate", range.to);
-										setValue("endDate", range.from);
-									} else {
-										setValue("startDate", range?.from);
-										setValue("endDate", range?.to);
-									}
-								}}
+								onSelect={handleRangeSelect}
 								locale={enUS}
 								numberOfMonths={1}
 								initialFocus
@@ -268,78 +344,60 @@ export function DateScheduler({
 							<div className="space-y-3">
 								<div className="text-sm font-medium text-gray-700">Repeat</div>
 								<div className="flex flex-wrap gap-2">
-									{[
-										{ value: "daily", label: "Daily" },
-										{ value: "weekly", label: "Weekly" },
-										{ value: "monthly", label: "Monthly" },
-										{ value: "custom", label: "Custom" },
-									].map((option) => (
+									{REPEAT_FREQUENCIES.map((freq) => (
 										<button
-											key={option.value}
+											key={freq.value}
 											type="button"
 											onClick={() => {
-												if (repeatFrequency === option.value) {
-													setValue("repeatFrequency", undefined);
-													setValue("repeatEndType", undefined);
+												if (frequency === freq.value) {
+													setValue("recurrenceRule", undefined); // select same frequency -> cancel
 												} else {
-													setValue(
-														"repeatFrequency",
-														option.value as TaskFormValues["repeatFrequency"],
-													);
-													// Set default end type
-													if (!repeatEndType) {
-														setValue("repeatEndType", "never");
-													}
+													setValue("recurrenceRule", {
+														frequency: freq.value, // select different frequency -> set frequency
+													});
 												}
 											}}
 											className={cn(
 												"px-3 py-2 text-sm rounded-lg border-2 transition-all font-medium",
-												repeatFrequency === option.value
+												frequency === freq.value
 													? "border-indigo-500 bg-indigo-50 text-indigo-700"
 													: "border-gray-200 hover:border-indigo-300 text-gray-600",
 											)}
 										>
-											{option.label}
+											{freq.label}
 										</button>
 									))}
 								</div>
 							</div>
 
 							{/* Weekly: Day of week selection */}
-							{repeatFrequency === "weekly" && (
+							{frequency === "WEEKLY" && (
 								<div className="mt-4 pt-4 border-t border-gray-100">
 									<div className="text-sm font-medium text-gray-700 mb-2">
 										Days
 									</div>
 									<div className="flex gap-1">
 										{dayOptions.map((day) => {
-											const isSelected = repeatDays.includes(day.value);
+											const isSelected = byDay.includes(day.value);
 											return (
 												<button
 													key={day.value}
 													type="button"
 													onClick={() => {
-														if (isSelected) {
-															setValue(
-																"repeatDays",
-																repeatDays.filter((d) => d !== day.value),
-															);
-														} else {
-															setValue("repeatDays", [
-																...repeatDays,
-																day.value,
-															]);
-														}
+														const newByDay = isSelected
+															? byDay.filter((d) => d !== day.value)
+															: [...byDay, day.value];
+														updateRecurrenceRule({ byDay: newByDay });
 													}}
 													className={cn(
 														"w-9 h-9 rounded-full text-sm font-medium transition-all",
 														isSelected
 															? "bg-indigo-500 text-white"
 															: "bg-gray-100 text-gray-600 hover:bg-indigo-100",
-														day.value === "sun" &&
+														day.value === "SUNDAY" &&
 															!isSelected &&
 															"text-red-500",
-														day.value === "sat" &&
+														day.value === "SATURDAY" &&
 															!isSelected &&
 															"text-blue-500",
 													)}
@@ -353,22 +411,22 @@ export function DateScheduler({
 							)}
 
 							{/* Custom: Multi-select calendar */}
-							{repeatFrequency === "custom" && (
+							{frequency === "CUSTOM" && (
 								<div className="mt-4 pt-4 border-t border-gray-100">
 									<div className="text-sm font-medium text-gray-700 mb-2">
 										Select dates
 									</div>
 									<Calendar
 										mode="multiple"
-										selected={customDates}
+										selected={occursAsDates}
 										onSelect={handleCustomDateSelect}
 										locale={enUS}
 										className="p-3 [&_table]:w-full [&_table]:border-collapse [&_td]:w-9 [&_td]:h-9 [&_th]:w-9 [&_th]:h-9 [&_th]:text-center [&_th]:font-normal [&_th]:text-gray-500 [&_button]:w-9 [&_button]:h-9"
 									/>
-									{customDates.length > 0 && (
+									{occurs.length > 0 && (
 										<div className="mt-2 flex flex-wrap gap-1">
-											{customDates
-												.sort((a, b) => a.getTime() - b.getTime())
+											{occurs
+												.sort()
 												.slice(0, 5)
 												.map((date) => (
 													<span
@@ -378,9 +436,9 @@ export function DateScheduler({
 														{format(date, "M/d", { locale: enUS })}
 													</span>
 												))}
-											{customDates.length > 5 && (
+											{occurs.length > 5 && (
 												<span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">
-													+{customDates.length - 5} more
+													+{occurs.length - 5} more
 												</span>
 											)}
 										</div>
@@ -389,7 +447,7 @@ export function DateScheduler({
 							)}
 
 							{/* Start Date - for daily/weekly/monthly */}
-							{repeatFrequency && repeatFrequency !== "custom" && (
+							{frequency && frequency !== "CUSTOM" && (
 								<div className="mt-4 pt-4 border-t border-gray-100">
 									<div className="flex items-center justify-between">
 										<span className="text-sm font-medium text-gray-700">
@@ -401,21 +459,21 @@ export function DateScheduler({
 													type="button"
 													className={cn(
 														"px-3 py-1.5 text-sm rounded-lg border transition-all",
-														executionDate
+														startDateValue
 															? "border-indigo-300 bg-indigo-50 text-indigo-700"
 															: "border-gray-200 text-gray-500 hover:border-indigo-300",
 													)}
 												>
-													{executionDate
-														? format(executionDate, "MMM d", { locale: enUS })
+													{startDateValue
+														? format(startDateValue, "MMM d", { locale: enUS })
 														: "Select date"}
 												</button>
 											</PopoverTrigger>
 											<PopoverContent className="w-auto p-0" align="end">
 												<Calendar
 													mode="single"
-													selected={executionDate}
-													onSelect={(date) => setValue("executionDate", date)}
+													selected={startDateValue}
+													onSelect={(date) => setValue("startDate", date)}
 													locale={enUS}
 													className="p-3 [&_table]:w-full [&_table]:border-collapse [&_td]:w-9 [&_td]:h-9 [&_th]:w-9 [&_th]:h-9 [&_th]:text-center [&_th]:font-normal [&_th]:text-gray-500 [&_button]:w-9 [&_button]:h-9"
 													initialFocus
@@ -427,7 +485,7 @@ export function DateScheduler({
 							)}
 
 							{/* Repeat End Section - for all repeat types except custom */}
-							{repeatFrequency && repeatFrequency !== "custom" && (
+							{frequency && frequency !== "CUSTOM" && (
 								<div className="mt-4 pt-4 border-t border-gray-100">
 									<div className="text-sm font-medium text-gray-700 mb-3">
 										Ends
@@ -438,8 +496,13 @@ export function DateScheduler({
 											<input
 												type="radio"
 												name="repeatEndType"
-												checked={repeatEndType === "never"}
-												onChange={() => setValue("repeatEndType", "never")}
+												checked={endType === "never"}
+												onChange={() => {
+													updateRecurrenceRule({
+														until: undefined,
+														count: undefined,
+													});
+												}}
 												className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
 											/>
 											<span className="text-sm text-gray-700">Never</span>
@@ -450,25 +513,30 @@ export function DateScheduler({
 											<input
 												type="radio"
 												name="repeatEndType"
-												checked={repeatEndType === "on_date"}
-												onChange={() => setValue("repeatEndType", "on_date")}
+												checked={endType === "on_date"}
+												onChange={() => {
+													updateRecurrenceRule({
+														count: undefined,
+														until: until || new Date(),
+													});
+												}}
 												className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
 											/>
 											<span className="text-sm text-gray-700">On</span>
-											{repeatEndType === "on_date" && (
+											{endType === "on_date" && (
 												<Popover>
 													<PopoverTrigger asChild>
 														<button
 															type="button"
 															className={cn(
 																"px-2 py-1 text-sm rounded border transition-all",
-																repeatEndDate
+																until
 																	? "border-indigo-300 bg-indigo-50 text-indigo-700"
 																	: "border-gray-200 text-gray-500 hover:border-indigo-300",
 															)}
 														>
-															{repeatEndDate
-																? format(repeatEndDate, "MMM d, yyyy", {
+															{until
+																? format(until, "MMM d, yyyy", {
 																		locale: enUS,
 																	})
 																: "Select date"}
@@ -477,9 +545,11 @@ export function DateScheduler({
 													<PopoverContent className="w-auto p-0" align="start">
 														<Calendar
 															mode="single"
-															selected={repeatEndDate}
+															selected={until}
 															onSelect={(date) =>
-																setValue("repeatEndDate", date)
+																updateRecurrenceRule({
+																	until: date,
+																})
 															}
 															locale={enUS}
 															className="p-3 [&_table]:w-full [&_table]:border-collapse [&_td]:w-9 [&_td]:h-9 [&_th]:w-9 [&_th]:h-9 [&_th]:text-center [&_th]:font-normal [&_th]:text-gray-500 [&_button]:w-9 [&_button]:h-9"
@@ -495,28 +565,27 @@ export function DateScheduler({
 											<input
 												type="radio"
 												name="repeatEndType"
-												checked={repeatEndType === "after_count"}
+												checked={endType === "after_count"}
 												onChange={() => {
-													setValue("repeatEndType", "after_count");
-													if (!repeatEndCount) {
-														setValue("repeatEndCount", 10);
-													}
+													updateRecurrenceRule({
+														until: undefined,
+														count: count || 10,
+													});
 												}}
 												className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
 											/>
 											<span className="text-sm text-gray-700">After</span>
-											{repeatEndType === "after_count" && (
+											{endType === "after_count" && (
 												<>
 													<input
 														type="number"
 														min={1}
 														max={999}
-														value={repeatEndCount}
+														value={count || 10}
 														onChange={(e) =>
-															setValue(
-																"repeatEndCount",
-																Number.parseInt(e.target.value, 10) || 1,
-															)
+															updateRecurrenceRule({
+																count: Number.parseInt(e.target.value, 10) || 1,
+															})
 														}
 														className="w-16 px-2 py-1 text-sm border rounded text-center focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
 													/>
@@ -529,41 +598,10 @@ export function DateScheduler({
 							)}
 
 							{/* Summary */}
-							{repeatFrequency && (
+							{frequency && (
 								<div className="mt-4 p-3 bg-indigo-50 rounded-lg">
 									<div className="text-sm text-indigo-700">
-										<span className="font-medium">
-											{getRepeatLabel(repeatFrequency)}
-										</span>
-										{repeatFrequency === "weekly" && (
-											<span className="text-indigo-600">
-												{" "}
-												(
-												{repeatDays.length > 0
-													? repeatDays.map(getDayFullLabel).join(", ")
-													: "No days selected"}
-												)
-											</span>
-										)}
-										{repeatFrequency === "custom" && customDates.length > 0 && (
-											<span className="text-indigo-600">
-												{" "}
-												• {customDates.length} dates selected
-											</span>
-										)}
-										{repeatFrequency !== "custom" && executionDate && (
-											<span className="text-indigo-600">
-												{" "}
-												• from{" "}
-												{format(executionDate, "MMM d", { locale: enUS })}
-											</span>
-										)}
-										{repeatFrequency !== "custom" && (
-											<span className="text-indigo-600">
-												{" "}
-												• {getEndSummary()}
-											</span>
-										)}
+										{renderRecurrenceSummary()}
 									</div>
 								</div>
 							)}

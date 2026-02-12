@@ -63,12 +63,6 @@ public class Task {
     @Column(nullable = false)
     private String title;
 
-    /**
-     * Optional execution date for the task
-     */
-    @Column(name = "execution_date")
-    private LocalDate executionDate;
-
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
@@ -80,16 +74,10 @@ public class Task {
     private Integer estimatedPomodoros = 0;
 
     /**
-     * Start date for date range tasks
+     * Start date for the task (unified date field, replaces executionDate)
      */
     @Column(name = "start_date")
     private LocalDate startDate;
-
-    /**
-     * End date for date range tasks
-     */
-    @Column(name = "end_date")
-    private LocalDate endDate;
 
     /**
      * Scheduled start datetime for calendar events
@@ -127,7 +115,20 @@ public class Task {
      * Recurrence rule in JSON format: {frequency, interval, daysOfWeek, endDate}
      */
     @Column(name = "recurrence_rule", length = 500)
+    @JsonIgnore
     private String recurrenceRule;
+
+    @JsonProperty("recurrenceRule")
+    public com.example.app1.dto.RecurrenceRuleDto getRecurrenceRuleDto() {
+        if (recurrenceRule == null || recurrenceRule.isBlank()) {
+            return null;
+        }
+        try {
+            return com.example.app1.dto.RecurrenceRuleDto.fromRRuleString(recurrenceRule);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     /**
      * Reference to the parent recurring task

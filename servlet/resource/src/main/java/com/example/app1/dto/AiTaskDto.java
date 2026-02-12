@@ -23,7 +23,7 @@ public class AiTaskDto {
     public record UpdateContent(
             @JsonPropertyDescription("新しいタイトル") String title,
             @JsonPropertyDescription("新しいステータス（PENDING, IN_PROGRESS, COMPLETED, CANCELLED）") String status,
-            @JsonPropertyDescription("新しい実行日（YYYY-MM-DD形式）") String executionDate,
+            @JsonPropertyDescription("新しい実行日（YYYY-MM-DD形式）") String startDate,
             @JsonPropertyDescription("新しいカテゴリID") Long categoryId,
             @JsonPropertyDescription("新しいカテゴリ名") String categoryName,
             @JsonPropertyDescription("移動先のタスクリストID") Long taskListId,

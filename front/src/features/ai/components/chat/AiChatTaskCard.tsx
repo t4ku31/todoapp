@@ -142,18 +142,22 @@ export const AiChatTaskCard: React.FC<AiChatTaskCardProps> = ({
 					</div>
 
 					<div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
-						{(task.executionDate ||
-							(isModified && task.originalTask?.executionDate)) && (
+						{(task.startDate ||
+							(isModified && task.originalTask?.startDate)) && (
 							<div className="flex items-center gap-1">
 								<Calendar className="w-3 h-3" />
 								{isModified ? (
 									<DiffField
-										original={task.originalTask?.executionDate}
-										current={task.executionDate}
+										original={task.originalTask?.startDate?.toISOString()}
+										current={task.startDate?.toISOString()}
 										formatValue={formatDate}
 									/>
 								) : (
-									<span>{formatDate(task.executionDate)}</span>
+									<span>
+										{task.startDate
+											? formatDate(task.startDate.toISOString())
+											: ""}
+									</span>
 								)}
 							</div>
 						)}

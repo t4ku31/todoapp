@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
 import { Plus } from "lucide-react";
 import { forwardRef, useEffect, useState } from "react";
 import {
@@ -28,9 +27,9 @@ interface CreateTaskFormProps {
 	placeholder?: string;
 	autoFocus?: boolean;
 	disabled?: boolean;
-	defaultExecutionDate?: Date;
+	defaultStartDate?: Date;
 	defaultCategoryId?: number;
-	showExecutionDate?: boolean;
+	showStartDate?: boolean;
 }
 
 /**
@@ -45,9 +44,9 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 			placeholder,
 			autoFocus,
 			disabled,
-			defaultExecutionDate,
+			defaultStartDate,
 			defaultCategoryId,
-			showExecutionDate = true,
+			showStartDate = true,
 		},
 		_ref,
 	) => {
@@ -66,10 +65,9 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 			defaultValues: {
 				title: "",
 				dateMode: "single",
-				executionDate: defaultExecutionDate || new Date(),
-				startDate: undefined,
+				startDate: defaultStartDate || new Date(),
 				endDate: undefined,
-				repeatFrequency: undefined,
+				recurrenceRule: undefined,
 				categoryId: defaultCategoryId || undefined,
 				estimatedPomodoros: 0,
 				subtasks: [],
@@ -88,69 +86,32 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 
 		const onSubmit = async (data: TaskFormValues) => {
 			try {
-				// Build recurrence rule if in repeat mode
-				let isRecurring = false;
-				let recurrenceRule: string | null = null;
-				let customDatesForApi: string[] | undefined;
+				// Use recurrenceRule directly from form data
+				const isRecurring = !!data.recurrenceRule;
 
-				if (data.dateMode === "repeat" && data.repeatFrequency) {
-					if (data.repeatFrequency === "custom") {
-						// Custom mode uses customDates array
-						if (data.customDates && data.customDates.length > 0) {
-							customDatesForApi = data.customDates.map((d) =>
-								format(d, "yyyy-MM-dd"),
-							);
-						}
-					} else {
-						// Regular repeat mode
-						isRecurring = true;
-						const rule: Record<string, unknown> = {
-							frequency: data.repeatFrequency,
-						};
-						if (data.repeatDays && data.repeatDays.length > 0) {
-							rule.daysOfWeek = data.repeatDays;
-						}
-						if (data.repeatEndType === "on_date" && data.repeatEndDate) {
-							rule.endDate = format(data.repeatEndDate, "yyyy-MM-dd");
-						} else if (
-							data.repeatEndType === "after_count" &&
-							data.repeatEndCount
-						) {
-							rule.occurrences = data.repeatEndCount;
-						}
-						recurrenceRule = JSON.stringify(rule);
-					}
-				}
-
+				console.log("=== onSubmit ===");
+				console.log("Data:", JSON.stringify(data, null, 2));
 				await onCreateTask({
 					taskListId: selectedTaskListId,
 					title: data.title,
-					executionDate: data.executionDate
-						? format(data.executionDate, "yyyy-MM-dd")
-						: format(new Date(), "yyyy-MM-dd"),
+					startDate: data.startDate ?? new Date(),
 					categoryId: data.categoryId,
 					estimatedPomodoros: data.estimatedPomodoros,
 					// Filter out empty subtasks
 					subtasks: data.subtasks?.filter((s) => s.title.trim() !== ""),
 					isRecurring: isRecurring,
-					recurrenceRule: recurrenceRule,
-					customDates: customDatesForApi,
+					recurrenceRule: data.recurrenceRule,
 				});
 				form.reset({
 					title: "",
 					dateMode: "single",
-					executionDate: new Date(),
-					startDate: undefined,
+					startDate: new Date(),
 					endDate: undefined,
-					repeatFrequency: undefined,
-					repeatEndType: undefined,
-					repeatEndDate: undefined,
-					repeatEndCount: undefined,
-					repeatDays: undefined,
-					customDates: undefined,
+					recurrenceRule: undefined,
 					categoryId: undefined,
 					estimatedPomodoros: 0,
 					subtasks: [],
+					isRecurring: false,
 				});
 				replaceSubtasks([]);
 				// Optionally reset focus to input?
@@ -345,7 +306,7 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 							/>
 
 							{/* Date Scheduler - Single/Range/Repeat */}
-							{showExecutionDate && <DateScheduler onOpenChange={setOnOpen} />}
+							{showStartDate && <DateScheduler onOpenChange={setOnOpen} />}
 
 							{/* Create Button */}
 							<Button
