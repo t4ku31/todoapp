@@ -1,6 +1,6 @@
 import { addDays, format, parse, subDays } from "date-fns";
 import { Play } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -56,15 +56,15 @@ export default function HomeView() {
 
 	const inboxList = taskLists.find((list) => list.title === "Inbox");
 
-	const handlePrevDay = () => {
+	const handlePrevDay = useCallback(() => {
 		const currentDate = parse(selectedDate, "yyyy-MM-dd", new Date());
 		setSelectedDate(format(subDays(currentDate, 1), "yyyy-MM-dd"));
-	};
+	}, [selectedDate]);
 
-	const handleNextDay = () => {
+	const handleNextDay = useCallback(() => {
 		const currentDate = parse(selectedDate, "yyyy-MM-dd", new Date());
 		setSelectedDate(format(addDays(currentDate, 1), "yyyy-MM-dd"));
-	};
+	}, [selectedDate]);
 
 	const startFocusSession = () => {
 		updateSettings({

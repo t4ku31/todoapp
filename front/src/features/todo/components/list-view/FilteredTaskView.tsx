@@ -108,7 +108,7 @@ export function FilteredTaskView({
 			{/* biome-ignore lint/a11y/useKeyWithClickEvents: Background click handling for deselection */}
 			{/* biome-ignore lint/a11y/noStaticElementInteractions: Background click handling for deselection */}
 			<div
-				className="flex-1 overflow-y-auto min-h-0 px-5 py-8"
+				className="flex-1 px-2 min-h-0 relative"
 				onClick={handleBackgroundClick}
 			>
 				{viewType === "completed" ? (

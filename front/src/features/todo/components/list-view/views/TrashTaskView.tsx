@@ -1,3 +1,5 @@
+import * as React from "react";
+import { Virtuoso } from "react-virtuoso";
 import type { Task } from "@/features/todo/types";
 import { TaskItem } from "../../TaskItem";
 
@@ -16,28 +18,37 @@ export function TrashTaskView({
 	onTaskSelect,
 	selectedTaskId,
 }: TrashTaskViewProps) {
-	return (
-		<div className="space-y-8 pb-10">
-			<div className="space-y-2">
-				{tasks.map((task) => (
-					<TaskItem
-						key={task.id}
-						task={task}
-						onUpdateTask={async () => {}}
-						onDeleteTask={onDeletePermanently}
-						onRestore={onRestore}
-						onSelect={(id) => onTaskSelect?.(id)}
-						isSelected={selectedTaskId === task.id}
-						isTrash
-					/>
-				))}
+	const itemContent = React.useCallback(
+		(_index: number, task: Task) => (
+			<div className="mb-2 pr-4">
+				<TaskItem
+					key={task.id}
+					task={task}
+					onUpdateTask={async () => {}}
+					onDeleteTask={onDeletePermanently}
+					onRestore={onRestore}
+					onSelect={(id) => onTaskSelect?.(id)}
+					isSelected={selectedTaskId === task.id}
+					isTrash
+				/>
 			</div>
+		),
+		[onDeletePermanently, onRestore, onTaskSelect, selectedTaskId],
+	);
 
-			{tasks.length === 0 && (
-				<div className="flex flex-col items-center justify-center h-64 text-gray-400">
-					<p>ゴミ箱は空です</p>
-				</div>
-			)}
-		</div>
+	if (tasks.length === 0) {
+		return (
+			<div className="flex flex-col items-center justify-center h-64 text-gray-400">
+				<p>ゴミ箱は空です</p>
+			</div>
+		);
+	}
+
+	return (
+		<Virtuoso
+			style={{ height: "100%" }}
+			data={tasks}
+			itemContent={itemContent}
+		/>
 	);
 }
