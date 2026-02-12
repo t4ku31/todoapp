@@ -1,6 +1,6 @@
-import type { RecurrenceConfig } from "@/features/todo/types";
 import { format } from "date-fns";
 import { type Frequency, RRule } from "rrule";
+import type { RecurrenceConfig } from "@/features/todo/types";
 
 /**
  * APIとの通信用にシリアライズされたRecurrenceConfig型
@@ -156,6 +156,7 @@ export const formatConfigToRRule = (config: RecurrenceConfig): string => {
 	}
 
 	// Map BYDAY Strings -> RRule Weekday objects
+	// biome-ignore lint/suspicious/noExplicitAny: rrule types are complex here
 	let byweekday: any[] | undefined;
 	if (config.byDay && config.byDay.length > 0) {
 		byweekday = config.byDay

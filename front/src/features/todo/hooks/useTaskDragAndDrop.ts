@@ -1,8 +1,8 @@
+import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
+import { useState } from "react";
 import { useAiChatContextStore } from "@/features/ai/stores/useAiChatContextStore";
 import type { Task, TaskList } from "@/features/todo/types";
 import { useTodoStore } from "@/store/useTodoStore";
-import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
-import { useState } from "react";
 
 interface UseTaskDragAndDropProps {
 	taskLists: TaskList[];

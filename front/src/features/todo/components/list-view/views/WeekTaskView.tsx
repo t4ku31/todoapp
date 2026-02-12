@@ -1,7 +1,7 @@
-import type { UpdateTaskParams } from "@/features/todo/api/taskApi";
-import type { Task } from "@/features/todo/types";
 import { addDays, format, isSameDay, startOfDay } from "date-fns";
 import { ja } from "date-fns/locale";
+import type { UpdateTaskParams } from "@/features/todo/api/taskApi";
+import type { Task } from "@/features/todo/types";
 import { TaskItem } from "../../TaskItem";
 
 interface WeekTaskViewProps {

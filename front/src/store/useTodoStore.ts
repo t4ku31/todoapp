@@ -1,3 +1,7 @@
+import { isSameDay } from "date-fns";
+import * as React from "react";
+import { toast } from "sonner";
+import { create } from "zustand";
 import type { SyncResult, SyncTask } from "@/features/ai/types";
 import {
 	type BulkOperationResult,
@@ -8,10 +12,6 @@ import {
 import type { Task, TaskList } from "@/features/todo/types";
 import { sortTasks } from "@/features/todo/utils/taskSorter";
 import { normalizeError } from "@/utils/error";
-import { isSameDay } from "date-fns";
-import * as React from "react";
-import { toast } from "sonner";
-import { create } from "zustand";
 
 // Parameters for createTask
 export type { CreateTaskParams, UpdateTaskParams };
@@ -422,16 +422,18 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		const originalTasks = get().allTasks;
 
 		// Build optimistic updates, resolving categoryId to full category object
-		const optimisticUpdates: any = { ...updates };
+		const optimisticUpdates: Partial<Task> & { categoryId?: number } = {
+			...updates,
+		};
 
 		// RecurrenceConfig object is kept as-is (matches Task.recurrenceRule type)
 
 		// Handle completedAt for status changes
 		if (updates.status === "COMPLETED") {
-			optimisticUpdates.completedAt = new Date().toISOString();
+			optimisticUpdates.completedAt = new Date();
 		} else if (updates.status) {
 			// Status changed to something other than COMPLETED, clear completedAt
-			optimisticUpdates.completedAt = undefined;
+			optimisticUpdates.completedAt = null;
 		}
 
 		// If categoryId is provided, resolve the full category object

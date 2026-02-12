@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { ParsedTask } from "@/features/ai/types";
 import { AddSubtaskButton } from "@/features/todo/components/ui/AddSubtaskButton";
@@ -12,7 +13,6 @@ import type { Subtask } from "@/features/todo/types";
 import { cn } from "@/lib/utils";
 import { useCategoryStore } from "@/store/useCategoryStore";
 import { useTodoStore } from "@/store/useTodoStore";
-import { memo } from "react";
 import { isExistingTask } from "../../utils/aiUtils";
 import { AiStatusBadge } from "./AiStatusBadge";
 

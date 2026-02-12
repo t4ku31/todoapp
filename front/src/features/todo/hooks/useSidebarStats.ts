@@ -1,6 +1,6 @@
-import type { TaskList } from "@/features/todo/types";
 import { format } from "date-fns";
 import { useCallback } from "react";
+import type { TaskList } from "@/features/todo/types";
 
 export function useSidebarStats(taskLists: TaskList[]) {
 	const getTodayCount = useCallback(() => {
