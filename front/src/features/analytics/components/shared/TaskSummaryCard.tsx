@@ -290,9 +290,9 @@ export function TaskSummaryCard({
 																: "text-gray-600"
 														}`}
 													>
-														{child.executionDate
+														{child.startDate
 															? format(
-																	new Date(child.executionDate),
+																	new Date(child.startDate),
 																	"M/d (EEE)",
 																)
 															: "—"}

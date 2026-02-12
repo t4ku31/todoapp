@@ -180,7 +180,7 @@ public class TaskListService {
                 .map(req -> Task.builder()
                         .title(req.title())
                         .status(TaskStatus.PENDING)
-                        .executionDate(req.executionDate())
+                        .startDate(req.startDate())
                         .category(req.categoryId() != null ? categoryMap.get(req.categoryId()) : null)
                         .userId(userId)
                         .taskList(taskList)

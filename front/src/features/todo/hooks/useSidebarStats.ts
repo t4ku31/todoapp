@@ -1,6 +1,6 @@
+import type { TaskList } from "@/features/todo/types";
 import { format } from "date-fns";
 import { useCallback } from "react";
-import type { TaskList } from "@/features/todo/types";
 
 export function useSidebarStats(taskLists: TaskList[]) {
 	const getTodayCount = useCallback(() => {
@@ -12,8 +12,8 @@ export function useSidebarStats(taskLists: TaskList[]) {
 					(t) =>
 						!t.isDeleted &&
 						t.status !== "COMPLETED" &&
-						t.executionDate &&
-						t.executionDate.startsWith(today),
+						t.startDate &&
+						format(t.startDate, "yyyy-MM-dd") === today,
 				).length || 0)
 			);
 		}, 0);
@@ -26,10 +26,10 @@ export function useSidebarStats(taskLists: TaskList[]) {
 			return (
 				count +
 				(list.tasks?.filter((t) => {
-					if (t.isDeleted || t.status === "COMPLETED" || !t.executionDate)
+					if (t.isDeleted || t.status === "COMPLETED" || !t.startDate)
 						return false;
-					const execDate = new Date(t.executionDate);
-					return execDate >= today && execDate <= next7Days;
+					const startDate = new Date(t.startDate);
+					return startDate >= today && startDate <= next7Days;
 				}).length || 0)
 			);
 		}, 0);

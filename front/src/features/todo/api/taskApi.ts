@@ -1,14 +1,86 @@
 import { apiClient } from "@/config/env";
 import type { SyncResult, SyncTask } from "@/features/ai/types";
-import type { Task, TaskList } from "@/features/todo/types";
+import type { RecurrenceConfig, Task, TaskList } from "@/features/todo/types";
+import {
+	deserializeRecurrenceConfig,
+	serializeRecurrenceConfig,
+} from "@/features/todo/utils/recurrenceUtils";
+
+// Internal helper types for API raw data
+interface RawRecurrenceConfig
+	extends Omit<RecurrenceConfig, "until" | "occurs"> {
+	until?: string;
+	occurs?: string[];
+}
+interface RawTask
+	extends Omit<
+		Task,
+		| "recurrenceRule"
+		| "startDate"
+		| "dueDate"
+		| "scheduledStartAt"
+		| "scheduledEndAt"
+		| "completedAt"
+	> {
+	recurrenceRule?: RawRecurrenceConfig;
+	startDate?: string | null;
+	dueDate?: string | null;
+	scheduledStartAt?: string | null;
+	scheduledEndAt?: string | null;
+	completedAt?: string | null;
+}
+interface RawTaskList extends Omit<TaskList, "tasks"> {
+	tasks: RawTask[];
+}
+
+// Helper to parse date string as local date
+const parseLocalDate = (dateStr?: string | null): Date | null => {
+	if (!dateStr) return null;
+	const [year, month, day] = dateStr.split("-").map(Number);
+	return new Date(year, month - 1, day);
+};
+
+// Helper to parse datetime string as Date
+const parseDateTime = (dateTimeStr?: string | null): Date | null => {
+	if (!dateTimeStr) return null;
+	return new Date(dateTimeStr);
+};
+
+// Helper to serialize date to yyyy-MM-dd
+const serializeLocalDate = (date: Date | null | undefined): string | null => {
+	if (!date) return null;
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+	return `${year}-${month}-${day}`;
+};
+
+// Helper to serialize datetime to ISO string
+const serializeDateTime = (date: Date | null | undefined): string | null => {
+	if (!date) return null;
+	return date.toISOString();
+};
+
+// Helper to deserialize Task
+const deserializeTask = (task: RawTask): Task => {
+	return {
+		...task,
+		recurrenceRule: deserializeRecurrenceConfig(task.recurrenceRule),
+		startDate: parseLocalDate(task.startDate),
+		dueDate: parseLocalDate(task.dueDate),
+		completedAt: parseDateTime(task.completedAt),
+		scheduledStartAt: parseDateTime(task.scheduledStartAt),
+		scheduledEndAt: parseDateTime(task.scheduledEndAt),
+	};
+};
 
 // Parameters for createTask
 export interface CreateTaskParams {
 	taskListId: number;
 	taskListTitle?: string;
 	title: string;
-	dueDate?: string | null;
-	executionDate?: string | null;
+	dueDate?: Date | null;
+	startDate?: Date | null;
 	categoryId?: number;
 	estimatedPomodoros?: number;
 	subtasks?: {
@@ -18,12 +90,17 @@ export interface CreateTaskParams {
 		orderIndex?: number;
 	}[];
 	isRecurring?: boolean;
-	recurrenceRule?: string | null;
+	recurrenceRule?: RecurrenceConfig | null;
 	customDates?: string[];
-	scheduledStartAt?: string | null;
-	scheduledEndAt?: string | null;
+	scheduledStartAt?: Date | null;
+	scheduledEndAt?: Date | null;
 	isAllDay?: boolean;
 	status?: string;
+}
+
+export interface UpdateTaskParams extends Partial<Omit<Task, "category">> {
+	categoryId?: number;
+	taskListTitle?: string;
 }
 
 export interface BulkOperationResult {
@@ -41,13 +118,16 @@ export interface BulkOperationResult {
 
 export const taskApi = {
 	fetchTaskLists: async (): Promise<TaskList[]> => {
-		const response = await apiClient.get<TaskList[]>("/api/tasklists");
-		return response.data;
+		const response = await apiClient.get<RawTaskList[]>("/api/tasklists");
+		return response.data.map((list) => ({
+			...list,
+			tasks: list.tasks.map(deserializeTask),
+		}));
 	},
 
 	fetchTrashTasks: async (): Promise<Task[]> => {
-		const response = await apiClient.get<Task[]>("/api/tasks/trash");
-		return response.data;
+		const response = await apiClient.get<RawTask[]>("/api/tasks/trash");
+		return response.data.map(deserializeTask);
 	},
 
 	restoreTask: async (id: number): Promise<void> => {
@@ -91,21 +171,49 @@ export const taskApi = {
 		const payload =
 			typeof params === "string"
 				? { title: params, tasks: [] }
-				: { title: params.title, tasks: params.tasks || [] };
-		const response = await apiClient.post<TaskList>("/api/tasklists", payload);
-		return response.data;
+				: {
+						title: params.title,
+						tasks: (params.tasks || []).map((t) => ({
+							...t,
+							recurrenceRule: serializeRecurrenceConfig(t.recurrenceRule),
+						})),
+					};
+		const response = await apiClient.post<RawTaskList>(
+			"/api/tasklists",
+			payload,
+		);
+		return {
+			...response.data,
+			tasks: response.data.tasks.map(deserializeTask),
+		};
 	},
 
 	createTask: async (params: CreateTaskParams): Promise<Task> => {
-		const response = await apiClient.post<Task>("/api/tasks", params);
-		return response.data;
+		const payload = {
+			...params,
+			recurrenceRule: serializeRecurrenceConfig(params.recurrenceRule),
+			startDate: serializeLocalDate(params.startDate),
+			dueDate: serializeLocalDate(params.dueDate),
+			scheduledStartAt: serializeDateTime(params.scheduledStartAt),
+			scheduledEndAt: serializeDateTime(params.scheduledEndAt),
+		};
+		const response = await apiClient.post<RawTask>("/api/tasks", payload);
+		return deserializeTask(response.data);
 	},
 
 	updateTask: async (
 		taskId: number,
-		updates: Partial<Task> & { categoryId?: number; taskListTitle?: string },
+		updates: UpdateTaskParams,
 	): Promise<void> => {
-		await apiClient.patch(`/api/tasks/${taskId}`, updates);
+		const payload = {
+			...updates,
+			recurrenceRule: serializeRecurrenceConfig(updates.recurrenceRule),
+			startDate: serializeLocalDate(updates.startDate),
+			dueDate: serializeLocalDate(updates.dueDate),
+			scheduledStartAt: serializeDateTime(updates.scheduledStartAt),
+			scheduledEndAt: serializeDateTime(updates.scheduledEndAt),
+		};
+		await apiClient.patch(`/api/tasks/${taskId}`, payload);
 	},
 
 	deleteTask: async (taskId: number): Promise<void> => {
@@ -118,15 +226,17 @@ export const taskApi = {
 			status?: "PENDING" | "COMPLETED";
 			categoryId?: number;
 			taskListId?: number;
-			executionDate?: string;
+			startDate?: Date | null;
 		},
 	): Promise<BulkOperationResult> => {
+		const payload = {
+			taskIds,
+			...updates,
+			startDate: serializeLocalDate(updates.startDate),
+		};
 		const response = await apiClient.patch<BulkOperationResult>(
 			"/api/tasks/bulk",
-			{
-				taskIds,
-				...updates,
-			},
+			payload,
 		);
 		return response.data;
 	},
@@ -149,7 +259,13 @@ export const taskApi = {
 		allSucceeded: boolean;
 		errorMessage?: string;
 	}> => {
-		const response = await apiClient.post("/api/tasks/batch", { tasks });
+		const payload = tasks.map((t) => ({
+			...t,
+			recurrenceRule: serializeRecurrenceConfig(t.recurrenceRule),
+		}));
+		const response = await apiClient.post("/api/tasks/batch", {
+			tasks: payload,
+		});
 		return response.data;
 	},
 

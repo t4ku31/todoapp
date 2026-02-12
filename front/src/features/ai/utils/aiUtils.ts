@@ -4,6 +4,10 @@ import type {
 	Task,
 	TaskStatus,
 } from "@/features/todo/types";
+import {
+	deserializeRecurrenceConfig,
+	serializeRecurrenceConfig,
+} from "@/features/todo/utils/recurrenceUtils";
 import type { CreateTaskParams } from "@/store/useTodoStore";
 import type { AiChatResponse, ParsedTask, SyncTask } from "../types";
 
@@ -13,6 +17,34 @@ export const createEmptySubtask = (orderIndex: number): Subtask => ({
 	id: -Date.now(),
 	orderIndex,
 });
+
+// Generate a random negative integer for temporary IDs
+const generateTempId = () => -Math.floor(Math.random() * 1000000000) - 1;
+
+// Normalize subtasks from AI response (string | object) to Subtask[]
+export const normalizeSubtasks = (
+	raw: (string | Partial<Subtask>)[] | undefined,
+): Subtask[] | undefined => {
+	if (!raw) return undefined;
+	return raw
+		.filter((s) => s !== null && s !== undefined)
+		.map((s, i) => {
+			if (typeof s === "string") {
+				return {
+					id: generateTempId(),
+					title: s,
+					isCompleted: false,
+					orderIndex: i,
+				};
+			}
+			return {
+				id: s.id ?? generateTempId(),
+				title: s.title ?? "",
+				isCompleted: s.isCompleted ?? false,
+				orderIndex: s.orderIndex ?? i,
+			};
+		});
+};
 
 export const getUserId = () => {
 	if (typeof window === "undefined") return "guest";
@@ -32,25 +64,36 @@ export const taskToParsedTask = (task: Task): ParsedTask => ({
 	id: task.id, // Task.id is number, keeping it as is
 	title: task.title,
 	description: task.description,
-	executionDate: task.executionDate ?? undefined,
-	scheduledStartAt:
-		task.scheduledStartAt instanceof Date
-			? task.scheduledStartAt.toISOString()
-			: (task.scheduledStartAt ?? undefined),
-	scheduledEndAt:
-		task.scheduledEndAt instanceof Date
-			? task.scheduledEndAt.toISOString()
-			: (task.scheduledEndAt ?? undefined),
+	startDate: task.startDate,
+	scheduledStartAt: task.scheduledStartAt,
+	scheduledEndAt: task.scheduledEndAt,
 	isAllDay: task.isAllDay,
 	estimatedPomodoros: task.estimatedPomodoros ?? undefined,
 	categoryName: task.category?.name,
 	isRecurring: task.isRecurring,
-	recurrencePattern: task.recurrenceRule ?? undefined,
+	recurrenceRule: task.recurrenceRule,
 	subtasks: task.subtasks,
 	status: task.status,
 	selected: false, // Default to unselected for existing tasks context, or true if selection mode
 	originalTask: task, // Keep reference
 });
+
+// Helper to serialize date to yyyy-MM-dd string
+const serializeLocalDate = (date: Date | null | undefined): string | null => {
+	if (!date) return null;
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+	return `${year}-${month}-${day}`;
+};
+
+// Helper to serialize datetime to ISO string
+const serializeDateTime = (
+	date: Date | null | undefined,
+): string | undefined => {
+	if (!date) return undefined;
+	return date.toISOString();
+};
 
 export const toSyncTask = (task: Task | ParsedTask): SyncTask => {
 	// 1. Common fields mapping
@@ -58,52 +101,34 @@ export const toSyncTask = (task: Task | ParsedTask): SyncTask => {
 		id: task.id > 0 ? task.id : undefined, // Negative ID -> undefined (create)
 		title: task.title,
 		description: task.description,
-		executionDate: task.executionDate,
-		scheduledStartAt:
-			task.scheduledStartAt instanceof Date
-				? task.scheduledStartAt.toISOString()
-				: task.scheduledStartAt,
-		scheduledEndAt:
-			task.scheduledEndAt instanceof Date
-				? task.scheduledEndAt.toISOString()
-				: task.scheduledEndAt,
+		startDate: serializeLocalDate(task.startDate),
+		scheduledStartAt: serializeDateTime(task.scheduledStartAt),
+		scheduledEndAt: serializeDateTime(task.scheduledEndAt),
 		isAllDay: task.isAllDay,
 		estimatedPomodoros: task.estimatedPomodoros,
 		isRecurring: task.isRecurring,
+		recurrenceRule: serializeRecurrenceConfig(task.recurrenceRule) ?? undefined,
 		isDeleted: task.isDeleted,
 		status: task.status,
-		// Convert subtasks to strict Subtask[]
-		subtasks: task.subtasks?.map((s, index) => {
-			if (typeof s === "string") {
-				return {
-					title: s,
-					isCompleted: false,
-					id: -Date.now() - index,
-					orderIndex: index,
-				};
-			}
-			return s;
-		}),
 	};
 
-	// 2. Handle specific fields (ParsedTest has flat categoryName, Task has Category object)
+	// 2. Handle category (Task has category object, ParsedTask has categoryName string)
 	if ("category" in task && task.category) {
 		base.categoryName = task.category.name;
 	} else if ("categoryName" in task) {
 		base.categoryName = task.categoryName;
 	}
 
-	if ("recurrenceRule" in task && task.recurrenceRule) {
-		base.recurrencePattern = task.recurrenceRule; // Task
-	} else if ("recurrencePattern" in task) {
-		base.recurrencePattern = task.recurrencePattern; // ParsedTask
+	// 3. Handle taskListTitle (Task has taskListId, ParsedTask may have taskListTitle)
+	if ("taskListTitle" in task) {
+		base.taskListTitle = task.taskListTitle;
+	} else if ("suggestedTaskListTitle" in task && task.suggestedTaskListTitle) {
+		base.taskListTitle = task.suggestedTaskListTitle;
 	}
 
-	// TaskListTitle is usually not strictly required for context but good to have
-	if ("suggestedTaskListTitle" in task && task.suggestedTaskListTitle) {
-		base.taskListTitle = task.suggestedTaskListTitle;
-	} else if ("taskListTitle" in task) {
-		base.taskListTitle = task.taskListTitle;
+	// 4. Handle subtasks (now always Subtask[])
+	if (task.subtasks) {
+		base.subtasks = task.subtasks;
 	}
 
 	return base;
@@ -132,17 +157,43 @@ export const mergeTasks = (
 		// Resolved ID: Use existing ID if matched, otherwise generate negative ID
 		const finalId = existingId ?? matchedTask?.id ?? -(Date.now() + index);
 
-		// Exclude 'id' from rest spread to avoid type issues if backend sends undefined/null
+		// Exclude fields that need explicit handling
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const { id: _, ...rest } = responseTask;
+		const {
+			id: _,
+			recurrenceRule: serializedRule,
+			startDate,
+			scheduledStartAt,
+			scheduledEndAt,
+			...rest
+		} = responseTask;
+
+		// Deserialize recurrenceRule from string dates to Date objects
+		const recurrenceRule = deserializeRecurrenceConfig(serializedRule);
+
+		// Parse date strings to Date objects
+		const parseLocalDate = (s?: string | null): Date | null => {
+			if (!s) return null;
+			const [year, month, day] = s.split("-").map(Number);
+			return new Date(year, month - 1, day);
+		};
+		const parseDateTime = (s?: string | null): Date | null => {
+			if (!s) return null;
+			return new Date(s);
+		};
 
 		return {
 			...rest,
 			id: finalId,
+			startDate: parseLocalDate(startDate),
+			scheduledStartAt: parseDateTime(scheduledStartAt),
+			scheduledEndAt: parseDateTime(scheduledEndAt),
+			recurrenceRule,
 			status: responseTask.status ?? matchedTask?.status,
 			selected: true,
 			taskListTitle: responseTask.taskListTitle,
-			subtasks: responseTask.subtasks ?? matchedTask?.subtasks,
+			subtasks:
+				normalizeSubtasks(responseTask.subtasks) ?? matchedTask?.subtasks,
 			// If we matched an existing task, keep the reference
 			originalTask: matchedTask?.originalTask,
 		} as ParsedTask;
@@ -200,30 +251,15 @@ export const createPreviewTasks = (
 			description: t.description,
 			status: (t.status as TaskStatus) || "PENDING",
 			taskListId: taskListId,
-			executionDate: t.executionDate,
+			startDate: t.startDate,
 			scheduledStartAt: t.scheduledStartAt,
 			scheduledEndAt: t.scheduledEndAt,
 			isAllDay: t.isAllDay,
 			estimatedPomodoros: t.estimatedPomodoros,
 			category: category,
 			isRecurring: t.isRecurring,
-			recurrenceRule: t.recurrencePattern,
-			subtasks: t.subtasks?.map((s, i) => {
-				if (typeof s === "string") {
-					return {
-						id: -Date.now() - i,
-						title: s,
-						isCompleted: false,
-						orderIndex: i,
-					};
-				}
-				return {
-					id: s.id ?? -i,
-					title: s.title,
-					isCompleted: s.isCompleted ?? false,
-					orderIndex: s.orderIndex ?? i,
-				};
-			}),
+			recurrenceRule: t.recurrenceRule,
+			subtasks: t.subtasks,
 			isDeleted: false,
 			suggestedTaskListTitle: t.taskListTitle,
 		} as Task;
@@ -248,20 +284,19 @@ export const prepareTasksForSave = (
 			title: task.title,
 			taskListId,
 			taskListTitle,
-			executionDate: task.executionDate || null,
+			startDate: task.startDate || null,
 			categoryId: categoryId,
 			estimatedPomodoros: task.estimatedPomodoros,
 			isRecurring: task.isRecurring || false,
+			recurrenceRule:
+				task.isRecurring && task.recurrenceRule
+					? task.recurrenceRule
+					: undefined,
 			scheduledStartAt: task.scheduledStartAt || null,
 			scheduledEndAt: task.scheduledEndAt || null,
 			isAllDay: task.isAllDay ?? true,
 			status: task.status,
-			subtasks: task.subtasks?.map((s) => {
-				if (typeof s === "string") {
-					return { title: s };
-				}
-				return { title: s.title };
-			}),
+			subtasks: task.subtasks?.map((s) => ({ title: s.title })),
 		};
 	});
 

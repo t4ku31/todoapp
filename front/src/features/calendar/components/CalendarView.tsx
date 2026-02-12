@@ -1,3 +1,7 @@
+import { Calendar as MiniCalendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import type { Task } from "@/features/todo/types";
+import { useTodoStore } from "@/store/useTodoStore";
 import { addHours, format, getDay, parse, startOfWeek } from "date-fns";
 import { ja } from "date-fns/locale";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -10,10 +14,6 @@ import {
 import withDragAndDrop, {
 	type EventInteractionArgs,
 } from "react-big-calendar/lib/addons/dragAndDrop";
-import { Calendar as MiniCalendar } from "@/components/ui/calendar";
-import { Input } from "@/components/ui/input";
-import type { Task } from "@/features/todo/types";
-import { useTodoStore } from "@/store/useTodoStore";
 import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./calendar.css";
@@ -124,9 +124,9 @@ export default function CalendarView() {
 					};
 				}
 
-				// Fall back to executionDate as all-day event
-				if (task.executionDate) {
-					const date = new Date(task.executionDate);
+				// Fall back to startDate as all-day event
+				if (task.startDate) {
+					const date = new Date(task.startDate);
 					return {
 						id: task.id,
 						title: task.title,
@@ -246,9 +246,9 @@ export default function CalendarView() {
 			await createTask({
 				taskListId,
 				title,
-				executionDate: format(newEventDraft.start, "yyyy-MM-dd"),
-				scheduledStartAt: newEventDraft.start.toISOString(),
-				scheduledEndAt: newEventDraft.end.toISOString(),
+				startDate: newEventDraft.start,
+				scheduledStartAt: newEventDraft.start,
+				scheduledEndAt: newEventDraft.end,
 				isAllDay: newEventDraft.allDay,
 			});
 		} catch {
@@ -300,7 +300,7 @@ export default function CalendarView() {
 				scheduledStartAt: newDate,
 				scheduledEndAt: newDate2,
 				isAllDay,
-				executionDate: newStart.toISOString().split("T")[0],
+				startDate: newStart,
 			};
 
 			updateTask(event.id, updates);

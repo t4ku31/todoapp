@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.example.app1.dto.TaskDto;
 import com.example.app1.repository.ChatMemoryRepository;
 import com.example.app1.repository.ConversationRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -89,16 +90,31 @@ public class AiService {
             - `id` (Long): 既存タスクの更新・削除時は【最重要】。現在のリストのIDを必ず一字一句違わずに維持してください。新規作成時は `null`。
             - `title` (String): タスクのタイトル（必須）。
             - `description` (String): タスクの詳細。
-            - `executionDate` (String): 実行日 ("YYYY-MM-DD")。
+            - `startDate` (String): 実行日 ("YYYY-MM-DD")。
             - `scheduledStartAt` (String): 開始日時 ("YYYY-MM-DDTHH:mm:ss")。
             - `scheduledEndAt` (String): 終了日時 ("YYYY-MM-DDTHH:mm:ss")。
             - `isAllDay` (Boolean): 終日タスク。
             - `estimatedPomodoros` (Integer): 推定ポモドーロ。
             - `categoryName` (String): カテゴリ名。
             - `suggestedTaskList` (String): タスクリスト名。
-            - `isRecurring` (Boolean): 繰り返しフラグ。
-            - `recurrencePattern` (String): 繰り返しルール。
-            - `recurrencePattern` (String): 繰り返しルール。
+            - `isRecurring` (Boolean): 繰り返しフラグ。期間指定や回数指定がある場合も必ず true にしてください。
+            - `recurrenceRule` (Object): 繰り返しルール。**以下のJSONオブジェクト**を設定してください。
+              - **JSONキーはDTO定義に準拠します (小文字)**:
+                - `frequency`: 頻度 ("DAILY", "WEEKLY", "MONTHLY", "YEARLY", "CUSTOM")
+                - `interval`: 間隔 (整数, デフォルト: 1)。例: "2週間ごと"なら 2
+                - `byDay`: 曜日リスト (例: ["MONDAY", "WEDNESDAY", "FRIDAY"])。JavaのDayOfWeek形式(全大文字の英単語)。
+                - `count`: 回数 (整数)
+                - `until`: 終了日 ("YYYY-MM-DD")
+                - `occurs`: 特定の日付リスト (例: ["2023-12-01", "2023-12-05"])。frequencyが"CUSTOM"の場合に使用。
+              - **フォーマット例**:
+                - 毎日: `{"frequency": "DAILY"}`
+                - 2週間ごと(水・金): `{"frequency": "WEEKLY", "interval": 2, "byDay": ["WEDNESDAY", "FRIDAY"]}`
+                - 毎月: `{"frequency": "MONTHLY"}`
+                - 週末(土日): `{"frequency": "WEEKLY", "byDay": ["SATURDAY", "SUNDAY"]}`
+                - 回数指定(5回): `{"frequency": "WEEKLY", "byDay": ["SATURDAY"], "count": 5}`
+                - 期限指定(日付): `{"frequency": "DAILY", "until": "2023-12-31"}`
+
+
             - `subtasks` (List<Object>): サブタスクのリスト（各要素は { "title": "...", "isCompleted": false }）。
             - `isDeleted` (Boolean): 削除時は `true` に設定し、`id` を維持してください。
             - `isDeleted` (Boolean): 削除時は `true` に設定し、`id` を維持してください。
@@ -173,12 +189,16 @@ public class AiService {
         String generatedTitle = null;
 
         try {
-            TaskDto.SyncTaskList result = conversationalChatClient.prompt()
+            String responseContent = conversationalChatClient.prompt()
                     .system(systemPrompt)
                     .user(userInput)
                     .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, conversationId))
                     .call()
-                    .entity(TaskDto.SyncTaskList.class);
+                    .content();
+
+            String cleanedResponse = cleanJsonResponse(responseContent);
+            ObjectMapper mapper = new ObjectMapper();
+            TaskDto.SyncTaskList result = mapper.readValue(cleanedResponse, TaskDto.SyncTaskList.class);
 
             log.info("AI Chat result - advice: {}", result.advice());
             log.info("AI Chat result - tasks: {}", result.tasks());
@@ -311,4 +331,20 @@ public class AiService {
                 .toList();
     }
 
+    private String cleanJsonResponse(String response) {
+        if (response == null) {
+            return "{}";
+        }
+        String cleaned = response.trim();
+        // Markdown code block removal
+        if (cleaned.startsWith("```json")) {
+            cleaned = cleaned.substring(7);
+        } else if (cleaned.startsWith("```")) {
+            cleaned = cleaned.substring(3);
+        }
+        if (cleaned.endsWith("```")) {
+            cleaned = cleaned.substring(0, cleaned.length() - 3);
+        }
+        return cleaned.trim();
+    }
 }

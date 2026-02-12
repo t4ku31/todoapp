@@ -353,7 +353,7 @@
 				"properties": {
 					"title": { "type": "string" },
 					"taskListId": { "type": "integer", "format": "int64" },
-					"executionDate": { "type": "string", "format": "date" },
+					"startDate": { "type": "string", "format": "date" },
 					"categoryId": { "type": "integer", "format": "int64" }
 				}
 			},
@@ -374,7 +374,7 @@
 						"type": "string",
 						"enum": ["PENDING", "IN_PROGRESS", "COMPLETED"]
 					},
-					"executionDate": { "type": "string", "format": "date" },
+					"startDate": { "type": "string", "format": "date" },
 					"taskListId": { "type": "integer", "format": "int64" },
 					"category": { "$ref": "#/components/schemas/Response" }
 				}
@@ -426,7 +426,7 @@
 						"type": "string",
 						"enum": ["PENDING", "IN_PROGRESS", "COMPLETED"]
 					},
-					"executionDate": { "type": "string", "format": "date" },
+					"startDate": { "type": "string", "format": "date" },
 					"categoryId": { "type": "integer", "format": "int64" },
 					"taskListId": { "type": "integer", "format": "int64" }
 				}

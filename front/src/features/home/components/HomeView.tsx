@@ -42,7 +42,10 @@ export default function HomeView() {
 
 	// Auto-select first task if none selected
 	const todaysTasks = allTasks.filter(
-		(t) => t.executionDate === selectedDate && t.status !== "COMPLETED",
+		(t) =>
+			t.startDate &&
+			format(t.startDate, "yyyy-MM-dd") === selectedDate &&
+			t.status !== "COMPLETED",
 	);
 
 	useEffect(() => {
@@ -72,18 +75,6 @@ export default function HomeView() {
 		navigate("/focus");
 	};
 
-	const onCreateTask = async (params: {
-		taskListId: number;
-		title: string;
-		dueDate?: string | null;
-		executionDate?: string | null;
-		categoryId?: number;
-		estimatedPomodoros?: number;
-		subtasks?: { title: string; description?: string }[];
-	}) => {
-		return await createTask(params);
-	};
-
 	return (
 		<div className="h-full flex p-6 gap-6">
 			{/* Right Column: Task List */}
@@ -94,7 +85,7 @@ export default function HomeView() {
 						tasks={allTasks}
 						onUpdateTask={updateTask}
 						onDeleteTask={deleteTask}
-						onCreateTask={onCreateTask}
+						onCreateTask={createTask}
 						onPrevDay={handlePrevDay}
 						onNextDay={handleNextDay}
 						taskListId={inboxList?.id ?? 0}

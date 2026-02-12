@@ -1,9 +1,10 @@
+import type { UpdateTaskParams } from "@/features/todo/api/taskApi";
 import type { Task } from "@/features/todo/types";
 import { TaskItem } from "../../TaskItem";
 
 interface CompletedTaskViewProps {
 	tasks: Task[];
-	onUpdateTask: (taskId: number, updates: Partial<Task>) => Promise<void>;
+	onUpdateTask: (taskId: number, updates: UpdateTaskParams) => Promise<void>;
 	onDeleteTask: (taskId: number) => Promise<void>;
 	onTaskSelect?: (taskId: number | null) => void;
 	selectedTaskId?: number | null;

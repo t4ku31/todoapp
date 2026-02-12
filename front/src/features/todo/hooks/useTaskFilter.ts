@@ -1,8 +1,8 @@
-import { format } from "date-fns";
-import { useEffect, useMemo } from "react";
 import { useAiChatContextStore } from "@/features/ai/stores/useAiChatContextStore";
 import type { Task } from "@/features/todo/types";
 import { useTodoStore } from "@/store/useTodoStore";
+import { format } from "date-fns";
+import { useEffect, useMemo } from "react";
 import type { ViewType } from "./useTaskViewParams";
 
 export function useTaskFilter(
@@ -40,8 +40,8 @@ export function useTaskFilter(
 					(t) =>
 						!t.isDeleted &&
 						t.status !== "COMPLETED" &&
-						t.executionDate &&
-						t.executionDate.startsWith(todayStr),
+						t.startDate &&
+						format(t.startDate, "yyyy-MM-dd") === todayStr,
 				);
 			case "week":
 				// Show all tasks including recurring children for date-based views
@@ -49,9 +49,9 @@ export function useTaskFilter(
 					(t) =>
 						!t.isDeleted &&
 						t.status !== "COMPLETED" &&
-						t.executionDate &&
-						new Date(t.executionDate) >= today &&
-						new Date(t.executionDate) <= next7Days,
+						t.startDate &&
+						new Date(t.startDate) >= today &&
+						new Date(t.startDate) <= next7Days,
 				);
 			case "inbox": {
 				const inboxList = taskLists.find((l) => l.title === "Inbox");
@@ -127,12 +127,14 @@ export function useTaskFilter(
 			case "today":
 				return allTasks.filter(
 					(t) =>
-						t.status === "COMPLETED" && t.executionDate?.startsWith(todayStr),
+						t.status === "COMPLETED" &&
+						t.startDate &&
+						format(t.startDate, "yyyy-MM-dd") === todayStr,
 				);
 			case "week":
 				return allTasks.filter((t) => {
-					if (t.status !== "COMPLETED" || !t.executionDate) return false;
-					const execDate = new Date(t.executionDate);
+					if (t.status !== "COMPLETED" || !t.startDate) return false;
+					const execDate = new Date(t.startDate);
 					return execDate >= today && execDate <= next7Days;
 				});
 			case "inbox": {

@@ -1,11 +1,11 @@
-import { format, isSameDay, parse } from "date-fns";
-import { AnimatePresence, motion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CreateTaskForm } from "@/features/todo/components/forms/CreateTaskForm";
 import type { Task } from "@/features/todo/types";
 import type { CreateTaskParams } from "@/store/useTodoStore";
+import { format, isSameDay, parse } from "date-fns";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { TaskItem } from "./TaskItem";
 import { CompletedSection } from "./ui/CompletedSection";
 import { CompletionBadge } from "./ui/CompletionBadge";
@@ -42,7 +42,9 @@ export function DailyTaskList({
 	selectedTaskId,
 }: DailyTaskListProps) {
 	// Filter tasks by date first
-	const tasksForDate = tasks.filter((task) => task.executionDate === date);
+	const tasksForDate = tasks.filter(
+		(task) => task.startDate && format(task.startDate, "yyyy-MM-dd") === date,
+	);
 
 	// Filter for active tasks
 	const activeTasks = tasksForDate.filter(
@@ -92,7 +94,7 @@ export function DailyTaskList({
 				<CreateTaskForm
 					defaultTaskListId={taskListId}
 					onCreateTask={onCreateTask}
-					defaultExecutionDate={isValidDate ? parsedDate : new Date()}
+					defaultStartDate={isValidDate ? parsedDate : new Date()}
 				/>
 			</div>
 

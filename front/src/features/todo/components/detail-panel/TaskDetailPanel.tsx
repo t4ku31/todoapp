@@ -1,4 +1,7 @@
-import { format, isValid, parseISO } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { format, isValid } from "date-fns";
 import { ja } from "date-fns/locale";
 import {
 	Calendar,
@@ -12,9 +15,6 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 // import { Textarea } from "@/components/ui/textarea"; // Removed
 import { cn } from "@/lib/utils";
 import { useTodoStore } from "@/store/useTodoStore";
@@ -111,14 +111,13 @@ export function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProps) {
 	const taskList = taskLists.find((l) => l.id === task.taskListId);
 
 	// Format dates
-	const formatDate = (dateStr: string | undefined) => {
-		if (!dateStr) return null;
-		const date = parseISO(dateStr);
+	const formatDate = (date: Date | null | undefined) => {
+		if (!date) return null;
 		if (!isValid(date)) return null;
 		return format(date, "M月d日（E）", { locale: ja });
 	};
 
-	const executionDateDisplay = formatDate(task.executionDate);
+	const startDateDisplay = formatDate(task.startDate);
 	const dueDateDisplay = formatDate(task.dueDate);
 
 	const subtasks = task.subtasks || [];
@@ -170,11 +169,11 @@ export function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProps) {
 				</div>
 
 				{/* Due Date Badge */}
-				{(executionDateDisplay || dueDateDisplay) && (
+				{(startDateDisplay || dueDateDisplay) && (
 					<div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg">
 						<Calendar className="w-4 h-4 text-gray-400" />
 						<span className="text-sm text-gray-600">
-							{executionDateDisplay || dueDateDisplay}
+							{startDateDisplay || dueDateDisplay}
 						</span>
 						{task.dueDate && (
 							<span className="text-xs text-orange-500 ml-auto">期限</span>
@@ -256,11 +255,9 @@ export function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProps) {
 						</div>
 						<EditableDate
 							id={task.id}
-							date={task.executionDate ?? null}
-							type="executionDate"
-							onDateChange={(id, date) =>
-								updateTask(id, { executionDate: date })
-							}
+							date={task.startDate ?? null}
+							type="startDate"
+							onDateChange={(id, date) => updateTask(id, { startDate: date })}
 							onRecurrenceChange={async (id, recurrence) => {
 								await updateTask(id, {
 									isRecurring: recurrence.isRecurring,

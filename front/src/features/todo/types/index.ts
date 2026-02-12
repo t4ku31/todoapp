@@ -6,25 +6,42 @@ export interface Category {
 	color?: string;
 }
 
+export interface RecurrenceConfig {
+	frequency: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY" | "CUSTOM";
+	interval?: number;
+	byDay?: (
+		| "SUNDAY"
+		| "MONDAY"
+		| "TUESDAY"
+		| "WEDNESDAY"
+		| "THURSDAY"
+		| "FRIDAY"
+		| "SATURDAY"
+	)[];
+	until?: Date;
+	count?: number;
+	occurs?: Date[];
+}
+
 export interface Task {
 	id: number;
 	title: string;
 	status: TaskStatus;
 	taskListId: number;
-	dueDate?: string;
-	executionDate?: string;
+	dueDate: Date | null;
+	startDate: Date | null;
 	category?: Category;
 	estimatedPomodoros?: number;
 	subtasks?: Subtask[];
-	completedAt?: string; // ISO 8601 date string
+	completedAt: Date | null;
 	isRecurring?: boolean;
-	recurrenceRule?: string;
+	recurrenceRule?: RecurrenceConfig;
 	recurrenceParentId?: number;
 	isDeleted?: boolean;
 	description?: string;
 	// Calendar scheduling fields
-	scheduledStartAt?: string | Date; // ISO 8601 datetime string
-	scheduledEndAt?: string | Date; // ISO 8601 datetime string
+	scheduledStartAt: Date | null;
+	scheduledEndAt: Date | null;
 	isAllDay?: boolean;
 	suggestedTaskListTitle?: string;
 }

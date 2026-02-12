@@ -52,7 +52,7 @@
 - `originalId` (Long): 既存タスクの更新・削除時は必須（元の値を維持）。新規作成時は `null`。
 - `title` (String): タスクのタイトル（必須）。具体的かつ簡潔に。
 - `description` (String): タスクの詳細、メモ。Markdown形式が使用可能。
-- `executionDate` (String): 実行日 ("YYYY-MM-DD")。「今日」「明日」などは具体的な日付に変換すること。
+- `startDate` (String): 実行日 ("YYYY-MM-DD")。「今日」「明日」などは具体的な日付に変換すること。
 - `scheduledStartAt` (String): 開始日時 ("YYYY-MM-DDTHH:mm:ss")。時間指定がある場合に使用。
 - `scheduledEndAt` (String): 終了日時 ("YYYY-MM-DDTHH:mm:ss")。
 - `isAllDay` (Boolean): 終日タスクフラグ。時間が指定されていない定例タスクなどは `true`。

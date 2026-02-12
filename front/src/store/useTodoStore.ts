@@ -1,18 +1,20 @@
-import * as React from "react";
-import { toast } from "sonner";
-import { create } from "zustand";
 import type { SyncResult, SyncTask } from "@/features/ai/types";
 import {
 	type BulkOperationResult,
 	type CreateTaskParams,
 	taskApi,
+	type UpdateTaskParams,
 } from "@/features/todo/api/taskApi";
 import type { Task, TaskList } from "@/features/todo/types";
 import { sortTasks } from "@/features/todo/utils/taskSorter";
 import { normalizeError } from "@/utils/error";
+import { isSameDay } from "date-fns";
+import * as React from "react";
+import { toast } from "sonner";
+import { create } from "zustand";
 
 // Parameters for createTask
-export type { CreateTaskParams };
+export type { CreateTaskParams, UpdateTaskParams };
 
 interface TodoState {
 	taskLists: TaskList[];
@@ -41,14 +43,7 @@ interface TodoState {
 	) => Promise<TaskList>;
 
 	createTask: (params: CreateTaskParams) => Promise<Task>;
-	updateTask: (
-		taskId: number,
-		updates: Partial<Task> & {
-			categoryId?: number;
-			taskListId?: number;
-			taskListTitle?: string;
-		},
-	) => Promise<void>;
+	updateTask: (taskId: number, updates: UpdateTaskParams) => Promise<void>;
 	deleteTask: (taskId: number) => Promise<void>;
 
 	// AI Tasks merge (楽観的更新用)
@@ -61,7 +56,7 @@ interface TodoState {
 			status?: "PENDING" | "COMPLETED";
 			categoryId?: number;
 			taskListId?: number;
-			executionDate?: string;
+			startDate?: Date | null;
 		},
 	) => Promise<void>;
 	bulkDeleteTasks: (taskIds: number[]) => Promise<void>;
@@ -81,7 +76,7 @@ interface TodoState {
 	deleteSubtask: (taskId: number, subtaskId: number) => Promise<void>;
 
 	getInboxList: () => TaskList | undefined;
-	getTasksForDate: (date: string) => Task[];
+	getTasksForDate: (date: Date) => Task[];
 }
 
 // Helper: 複数行テキストをReact要素に変換
@@ -268,8 +263,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		return get().taskLists.find((list) => list.title === "Inbox");
 	},
 
-	getTasksForDate: (date: string) => {
-		return get().allTasks.filter((task) => task.executionDate === date);
+	getTasksForDate: (date: Date) => {
+		return get().allTasks.filter(
+			(task) => task.startDate && isSameDay(task.startDate, date),
+		);
 	},
 
 	addTaskList: (newTaskList: TaskList) => {
@@ -425,7 +422,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		const originalTasks = get().allTasks;
 
 		// Build optimistic updates, resolving categoryId to full category object
-		const optimisticUpdates: Partial<Task> = { ...updates };
+		const optimisticUpdates: any = { ...updates };
+
+		// RecurrenceConfig object is kept as-is (matches Task.recurrenceRule type)
 
 		// Handle completedAt for status changes
 		if (updates.status === "COMPLETED") {
@@ -465,7 +464,15 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 		}));
 
 		try {
-			console.log("Updating task:", taskId, updates);
+			console.log("=== updateTask ===");
+			console.log("Task ID:", taskId);
+			console.log("Updates:", JSON.stringify(updates, null, 2));
+			if (updates.recurrenceRule) {
+				console.log(
+					"RecurrenceRule:",
+					JSON.stringify(updates.recurrenceRule, null, 2),
+				);
+			}
 			await taskApi.updateTask(taskId, updates);
 
 			// If taskListId, categoryId, or isRecurring was updated, refetch to get the correct state
