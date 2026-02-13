@@ -1,23 +1,24 @@
 import { useDraggable } from "@dnd-kit/core";
-import { GripVertical, ListTree, Trash2, Undo2 } from "lucide-react";
+import { GripVertical, Trash2, Undo2 } from "lucide-react";
 import { memo, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { usePomodoroStore } from "@/features/pomodoro/stores/usePomodoroStore";
+import type { UpdateTaskParams } from "@/features/todo/api/taskApi";
 import type { Task } from "@/features/todo/types";
-import { usePomodoroStore } from "@/store/usePomodoroStore";
-
 import { CategorySelect } from "./ui/CategorySelect";
 import { DeleteButton } from "./ui/DeleteButton";
 import { EditableDate } from "./ui/EditableDate";
 import { EditableTitle } from "./ui/EditableTitle";
 import { PomodoroInput } from "./ui/PomodoroInput";
+import { SubtaskButton } from "./ui/SubtaskButton";
 import { TaskItemSubtaskList } from "./ui/TaskItemSubtaskList";
 import { TaskListSelector } from "./ui/TaskListSelector";
 
 interface TaskItemProps {
 	task: Task;
-	onUpdateTask: (taskId: number, updates: Partial<Task>) => Promise<void>;
+	onUpdateTask: (taskId: number, updates: UpdateTaskParams) => Promise<void>;
 	onDeleteTask: (taskId: number) => Promise<void>;
 	variant?: "default" | "focusSelector";
 	isTrash?: boolean;
@@ -145,23 +146,12 @@ export const TaskItem = memo(function TaskItem({
 				/>
 
 				{hasSubtasks && !isTrash && (
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							setIsSubtasksOpen(!isSubtasksOpen);
-						}}
-						className={`flex items-center gap-1.5 hover:bg-red-100 px-2 py-0.5 rounded-full text-xs font-medium transition-colors border ${
-							isSubtasksOpen
-								? "bg-indigo-50 text-indigo-600 border-indigo-200"
-								: "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
-						}`}
-					>
-						<ListTree className="w-3.5 h-3.5" />
-						<span>
-							{completedSubtasks}/{totalSubtasks}
-						</span>
-					</button>
+					<SubtaskButton
+						completedCount={completedSubtasks}
+						totalCount={totalSubtasks}
+						isOpen={isSubtasksOpen}
+						onClick={() => setIsSubtasksOpen(!isSubtasksOpen)}
+					/>
 				)}
 			</div>
 
@@ -182,7 +172,6 @@ export const TaskItem = memo(function TaskItem({
 								<CategorySelect
 									selectedCategoryId={task.category?.id}
 									onCategoryChange={(categoryId) =>
-										// @ts-expect-error - categoryId is handled by the store
 										onUpdateTask(task.id, { categoryId })
 									}
 									onOpenChange={setIsExpanded}
@@ -197,10 +186,10 @@ export const TaskItem = memo(function TaskItem({
 
 								<EditableDate
 									id={task.id}
-									date={task.executionDate ?? null}
-									type="executionDate"
+									date={task.startDate ?? null}
+									type="startDate"
 									onDateChange={(id, date) =>
-										onUpdateTask(id, { executionDate: date })
+										onUpdateTask(id, { startDate: date })
 									}
 									onRecurrenceChange={async (id, recurrence) => {
 										await onUpdateTask(id, {

@@ -15,7 +15,7 @@ public class AiTaskDto {
                         Long id,
                         String title,
                         String description,
-                        String executionDate,
+                        String startDate,
                         String scheduledStartAt,
                         String scheduledEndAt,
                         Boolean isAllDay,
@@ -23,7 +23,7 @@ public class AiTaskDto {
                         String categoryName,
                         String taskListTitle,
                         Boolean isRecurring,
-                        String recurrencePattern,
+                        RecurrenceRuleDto recurrenceRule,
                         Boolean isDeleted,
                         List<SubtaskDto.Summary> subtasks,
                         String status)

@@ -1,3 +1,13 @@
+// biome-ignore assist/source/organizeImports: keep import order
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import type { RecurrenceConfig } from "@/features/todo/types";
+import { cn } from "@/lib/utils";
 import { format, isBefore, startOfDay } from "date-fns";
 import { enUS } from "date-fns/locale";
 import {
@@ -8,31 +18,22 @@ import {
 	Repeat,
 } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import type { DayOfWeek, Frequency } from "../forms/schema";
 import { IconBadge } from "./IconBadge";
 
 type DateMode = "single" | "range" | "repeat";
-type RepeatFrequency = "daily" | "weekly" | "monthly" | "custom";
-type DayOfWeek = "sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat";
 type RepeatEndType = "never" | "on_date" | "after_count";
 
 export interface RecurrenceData {
 	isRecurring: boolean;
-	recurrenceRule?: string;
+	recurrenceRule?: RecurrenceConfig;
 }
 
 interface EditableDateProps {
 	id: number;
-	type: "dueDate" | "executionDate";
-	date: string | null; // ISO 8601 date string
-	onDateChange: (id: number, newDate: string) => Promise<void>;
+	type: "dueDate" | "startDate";
+	date: Date | null;
+	onDateChange: (id: number, newDate: Date | null) => Promise<void>;
 	onRecurrenceChange?: (
 		id: number,
 		recurrence: RecurrenceData,
@@ -40,7 +41,7 @@ interface EditableDateProps {
 	onOpenChange?: (open: boolean) => void;
 	// Current recurrence state for initialization
 	isRecurring?: boolean;
-	recurrenceRule?: string;
+	recurrenceRule?: RecurrenceConfig;
 }
 
 export function EditableDate({
@@ -64,28 +65,29 @@ export function EditableDate({
 				occurrences: 10,
 			};
 		}
-		try {
-			const rule = JSON.parse(initialRecurrenceRule);
-			return {
-				frequency: rule.frequency as RepeatFrequency | undefined,
-				days: (rule.daysOfWeek || []) as DayOfWeek[],
-				endType: rule.endDate
-					? ("on_date" as RepeatEndType)
-					: rule.occurrences
-						? ("after_count" as RepeatEndType)
-						: ("never" as RepeatEndType),
-				endDate: rule.endDate ? new Date(rule.endDate) : undefined,
-				occurrences: rule.occurrences || 10,
-			};
-		} catch {
-			return {
-				frequency: undefined,
-				days: [],
-				endType: "never" as RepeatEndType,
-				endDate: undefined,
-				occurrences: 10,
-			};
-		}
+
+		const config = initialRecurrenceRule;
+		const dayMap: Record<string, DayOfWeek> = {
+			SUNDAY: "SUNDAY",
+			MONDAY: "MONDAY",
+			TUESDAY: "TUESDAY",
+			WEDNESDAY: "WEDNESDAY",
+			THURSDAY: "THURSDAY",
+			FRIDAY: "FRIDAY",
+			SATURDAY: "SATURDAY",
+		};
+
+		return {
+			frequency: config.frequency as Frequency | undefined,
+			days: config.byDay ? config.byDay.map((d) => dayMap[d] || "MONDAY") : [],
+			endType: config.until
+				? ("on_date" as RepeatEndType)
+				: config.count
+					? ("after_count" as RepeatEndType)
+					: ("never" as RepeatEndType),
+			endDate: config.until,
+			occurrences: config.count || 10,
+		};
 	};
 
 	const initialRecurrence = parseInitialRecurrence();
@@ -105,9 +107,9 @@ export function EditableDate({
 	const [endDate, setEndDate] = useState<Date | undefined>();
 
 	// Repeat mode - initialized from props
-	const [repeatFrequency, setRepeatFrequency] = useState<
-		RepeatFrequency | undefined
-	>(initialRecurrence.frequency);
+	const [repeatFrequency, setRepeatFrequency] = useState<Frequency | undefined>(
+		initialRecurrence.frequency,
+	);
 	const [repeatDays, setRepeatDays] = useState<DayOfWeek[]>(
 		initialRecurrence.days,
 	);
@@ -137,9 +139,17 @@ export function EditableDate({
 	const handleSingleSelect = async (newDate: Date | undefined) => {
 		if (newDate) {
 			setSelectedDate(newDate);
-			const formattedDate = format(newDate, "yyyy-MM-dd");
 			setIsOpen(false);
-			await onDateChange(id, formattedDate);
+
+			// Clear recurrence when selecting a single date
+			if (onRecurrenceChange) {
+				await onRecurrenceChange(id, {
+					isRecurring: false,
+					recurrenceRule: undefined,
+				});
+			}
+
+			await onDateChange(id, newDate);
 			onOpenChange?.(false);
 		}
 	};
@@ -153,8 +163,15 @@ export function EditableDate({
 
 			// If both dates selected, use the start date
 			if (range.from) {
-				const formattedDate = format(range.from, "yyyy-MM-dd");
-				await onDateChange(id, formattedDate);
+				// Clear recurrence when selecting a date range
+				if (onRecurrenceChange) {
+					await onRecurrenceChange(id, {
+						isRecurring: false,
+						recurrenceRule: undefined,
+					});
+				}
+
+				await onDateChange(id, range.from);
 			}
 		}
 	};
@@ -165,20 +182,21 @@ export function EditableDate({
 		// Use the first custom date if available
 		if (dates && dates.length > 0) {
 			const sortedDates = [...dates].sort((a, b) => a.getTime() - b.getTime());
-			const formattedDate = format(sortedDates[0], "yyyy-MM-dd");
-			onDateChange(id, formattedDate);
+			onDateChange(id, sortedDates[0]);
 		}
 	};
 
-	const getRepeatLabel = (freq: RepeatFrequency) => {
+	const getRepeatLabel = (freq: Frequency) => {
 		switch (freq) {
-			case "daily":
+			case "DAILY":
 				return "Daily";
-			case "weekly":
+			case "WEEKLY":
 				return "Weekly";
-			case "monthly":
+			case "MONTHLY":
 				return "Monthly";
-			case "custom":
+			case "YEARLY":
+				return "Yearly";
+			case "CUSTOM":
 				return "Custom";
 			default:
 				return freq;
@@ -187,13 +205,13 @@ export function EditableDate({
 
 	const getDayFullLabel = (day: DayOfWeek) => {
 		const labels: Record<DayOfWeek, string> = {
-			sun: "Sun",
-			mon: "Mon",
-			tue: "Tue",
-			wed: "Wed",
-			thu: "Thu",
-			fri: "Fri",
-			sat: "Sat",
+			SUNDAY: "Sun",
+			MONDAY: "Mon",
+			TUESDAY: "Tue",
+			WEDNESDAY: "Wed",
+			THURSDAY: "Thu",
+			FRIDAY: "Fri",
+			SATURDAY: "Sat",
 		};
 		return labels[day] || day;
 	};
@@ -228,7 +246,7 @@ export function EditableDate({
 				}
 				return null;
 			case "repeat":
-				if (repeatFrequency === "custom" && customDates.length > 0) {
+				if (repeatFrequency === "CUSTOM" && customDates.length > 0) {
 					return `${customDates.length} days`;
 				}
 				return repeatFrequency ? getRepeatLabel(repeatFrequency) : null;
@@ -241,13 +259,13 @@ export function EditableDate({
 
 	// Day options for weekly repeat
 	const dayOptions: { value: DayOfWeek; label: string }[] = [
-		{ value: "sun", label: "S" },
-		{ value: "mon", label: "M" },
-		{ value: "tue", label: "T" },
-		{ value: "wed", label: "W" },
-		{ value: "thu", label: "T" },
-		{ value: "fri", label: "F" },
-		{ value: "sat", label: "S" },
+		{ value: "SUNDAY", label: "S" },
+		{ value: "MONDAY", label: "M" },
+		{ value: "TUESDAY", label: "T" },
+		{ value: "WEDNESDAY", label: "W" },
+		{ value: "THURSDAY", label: "T" },
+		{ value: "FRIDAY", label: "F" },
+		{ value: "SATURDAY", label: "S" },
 	];
 
 	const getIconComponent = () => {
@@ -380,10 +398,11 @@ export function EditableDate({
 								<div className="text-sm font-medium text-gray-700">Repeat</div>
 								<div className="flex flex-wrap gap-2">
 									{[
-										{ value: "daily" as const, label: "Daily" },
-										{ value: "weekly" as const, label: "Weekly" },
-										{ value: "monthly" as const, label: "Monthly" },
-										{ value: "custom" as const, label: "Custom" },
+										{ value: "DAILY" as const, label: "Daily" },
+										{ value: "WEEKLY" as const, label: "Weekly" },
+										{ value: "MONTHLY" as const, label: "Monthly" },
+										{ value: "YEARLY" as const, label: "Yearly" },
+										{ value: "CUSTOM" as const, label: "Custom" },
 									].map((option) => (
 										<button
 											key={option.value}
@@ -413,7 +432,7 @@ export function EditableDate({
 							</div>
 
 							{/* Weekly: Day of week selection */}
-							{repeatFrequency === "weekly" && (
+							{repeatFrequency === "WEEKLY" && (
 								<div className="mt-4 pt-4 border-t border-gray-100">
 									<div className="text-sm font-medium text-gray-700 mb-2">
 										Days
@@ -439,10 +458,10 @@ export function EditableDate({
 														isSelected
 															? "bg-indigo-500 text-white"
 															: "bg-gray-100 text-gray-600 hover:bg-indigo-100",
-														day.value === "sun" &&
+														day.value === "SUNDAY" &&
 															!isSelected &&
 															"text-red-500",
-														day.value === "sat" &&
+														day.value === "SATURDAY" &&
 															!isSelected &&
 															"text-blue-500",
 													)}
@@ -456,7 +475,7 @@ export function EditableDate({
 							)}
 
 							{/* Custom: Multi-select calendar */}
-							{repeatFrequency === "custom" && (
+							{repeatFrequency === "CUSTOM" && (
 								<div className="mt-4 pt-4 border-t border-gray-100">
 									<div className="text-sm font-medium text-gray-700 mb-2">
 										Select dates
@@ -492,7 +511,7 @@ export function EditableDate({
 							)}
 
 							{/* Start Date - for daily/weekly/monthly */}
-							{repeatFrequency && repeatFrequency !== "custom" && (
+							{repeatFrequency && repeatFrequency !== "CUSTOM" && (
 								<div className="mt-4 pt-4 border-t border-gray-100">
 									<div className="flex items-center justify-between">
 										<span className="text-sm font-medium text-gray-700">
@@ -521,8 +540,7 @@ export function EditableDate({
 													onSelect={(date) => {
 														setRepeatStartDate(date);
 														if (date) {
-															const formattedDate = format(date, "yyyy-MM-dd");
-															onDateChange(id, formattedDate);
+															onDateChange(id, date);
 														}
 													}}
 													locale={enUS}
@@ -536,7 +554,7 @@ export function EditableDate({
 							)}
 
 							{/* Repeat End Section - for all repeat types except custom */}
-							{repeatFrequency && repeatFrequency !== "custom" && (
+							{repeatFrequency && repeatFrequency !== "CUSTOM" && (
 								<div className="mt-4 pt-4 border-t border-gray-100">
 									<div className="text-sm font-medium text-gray-700 mb-3">
 										Ends
@@ -641,7 +659,7 @@ export function EditableDate({
 										<span className="font-medium">
 											{getRepeatLabel(repeatFrequency)}
 										</span>
-										{repeatFrequency === "weekly" && (
+										{repeatFrequency === "WEEKLY" && (
 											<span className="text-indigo-600">
 												{" "}
 												(
@@ -651,20 +669,20 @@ export function EditableDate({
 												)
 											</span>
 										)}
-										{repeatFrequency === "custom" && customDates.length > 0 && (
+										{repeatFrequency === "CUSTOM" && customDates.length > 0 && (
 											<span className="text-indigo-600">
 												{" "}
 												• {customDates.length} dates selected
 											</span>
 										)}
-										{repeatFrequency !== "custom" && repeatStartDate && (
+										{repeatFrequency !== "CUSTOM" && repeatStartDate && (
 											<span className="text-indigo-600">
 												{" "}
 												• from{" "}
 												{format(repeatStartDate, "MMM d", { locale: enUS })}
 											</span>
 										)}
-										{repeatFrequency !== "custom" && (
+										{repeatFrequency !== "CUSTOM" && (
 											<span className="text-indigo-600">
 												{" "}
 												• {getEndSummary()}
@@ -679,46 +697,36 @@ export function EditableDate({
 								<Button
 									size="sm"
 									onClick={async () => {
-										// Build recurrence rule JSON
+										// Build recurrence rule JSON - directly use RecurrenceConfig
 										if (repeatFrequency) {
-											const rule: {
-												frequency: string;
-												daysOfWeek?: string[];
-												endDate?: string;
-												occurrences?: number;
-											} = {
+											const config: RecurrenceConfig = {
 												frequency: repeatFrequency,
 											};
 
 											if (
-												repeatFrequency === "weekly" &&
+												repeatFrequency === "WEEKLY" &&
 												repeatDays.length > 0
 											) {
-												rule.daysOfWeek = repeatDays;
+												config.byDay = repeatDays;
 											}
 
 											if (repeatEndType === "on_date" && repeatEndDate) {
-												rule.endDate = format(repeatEndDate, "yyyy-MM-dd");
+												config.until = repeatEndDate;
 											} else if (repeatEndType === "after_count") {
-												rule.occurrences = repeatEndCount;
+												config.count = repeatEndCount;
 											}
-
-											const recurrenceRule = JSON.stringify(rule);
 
 											// Notify parent of recurrence change
 											if (onRecurrenceChange) {
 												await onRecurrenceChange(id, {
 													isRecurring: true,
-													recurrenceRule,
+													recurrenceRule: config,
 												});
 											}
 
 											// Set start date if provided
 											if (repeatStartDate) {
-												await onDateChange(
-													id,
-													format(repeatStartDate, "yyyy-MM-dd"),
-												);
+												await onDateChange(id, repeatStartDate);
 											}
 										} else if (
 											repeatFrequency === undefined &&
@@ -728,10 +736,7 @@ export function EditableDate({
 											const sortedDates = [...customDates].sort(
 												(a, b) => a.getTime() - b.getTime(),
 											);
-											await onDateChange(
-												id,
-												format(sortedDates[0], "yyyy-MM-dd"),
-											);
+											await onDateChange(id, sortedDates[0]);
 
 											// Clear recurring flag for custom dates
 											if (onRecurrenceChange) {

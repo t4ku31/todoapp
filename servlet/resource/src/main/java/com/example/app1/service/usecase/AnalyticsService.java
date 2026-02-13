@@ -376,7 +376,7 @@ public class AnalyticsService {
             }
         }
 
-        List<Task> tasksToProcess = taskRepository.findByUserIdAndExecutionDateBetween(userId, startDate, endDate);
+        List<Task> tasksToProcess = taskRepository.findByUserIdAndStartDateBetween(userId, startDate, endDate);
 
         // Get pomodoro focus duration setting
         int focusDuration = pomodoroSettingRepository.findByUserId(userId)
@@ -418,7 +418,7 @@ public class AnalyticsService {
                     estimatedMinutes,
                     progress,
                     task.getRecurrenceParentId(),
-                    task.getExecutionDate()));
+                    task.getStartDate()));
         }
 
         return result;
@@ -457,13 +457,13 @@ public class AnalyticsService {
         AnalyticsDto.GroupedTaskSummary toGroupedTaskSummary() {
             // Sort children by execution date
             children.sort((a, b) -> {
-                if (a.executionDate() == null && b.executionDate() == null)
+                if (a.startDate() == null && b.startDate() == null)
                     return 0;
-                if (a.executionDate() == null)
+                if (a.startDate() == null)
                     return 1;
-                if (b.executionDate() == null)
+                if (b.startDate() == null)
                     return -1;
-                return a.executionDate().compareTo(b.executionDate());
+                return a.startDate().compareTo(b.startDate());
             });
             return new AnalyticsDto.GroupedTaskSummary(
                     parentTaskId,
@@ -605,15 +605,15 @@ public class AnalyticsService {
         // 2. Efficiency Stats
         EfficiencyStats efficiency = getEfficiencyStats(userId, startDate, endDate);
 
-        // 3. Tasks Completed (using executionDate range)
-        Long tasksCompletedLong = taskRepository.countCompletedByUserIdAndExecutionDateBetween(
+        // 3. Tasks Completed (using startDate range)
+        Long tasksCompletedLong = taskRepository.countCompletedByUserIdAndStartDateBetween(
                 userId, startDate, endDate);
         int tasksCompleted = tasksCompletedLong != null ? tasksCompletedLong.intValue() : 0;
-        Long tasksTotalLong = taskRepository.countByUserIdAndExecutionDateBetween(userId, startDate, endDate);
+        Long tasksTotalLong = taskRepository.countByUserIdAndStartDateBetween(userId, startDate, endDate);
         int tasksTotal = tasksTotalLong != null ? tasksTotalLong.intValue() : 0;
 
         // Previous week tasks comparison
-        Long prevTasksCompletedLong = taskRepository.countCompletedByUserIdAndExecutionDateBetween(
+        Long prevTasksCompletedLong = taskRepository.countCompletedByUserIdAndStartDateBetween(
                 userId, prevStart, prevEnd);
         int prevTasksCompleted = prevTasksCompletedLong != null ? prevTasksCompletedLong.intValue() : 0;
         double taskComparison = prevTasksCompleted > 0
@@ -624,7 +624,7 @@ public class AnalyticsService {
         int focusDuration = pomodoroSettingRepository.findByUserId(userId)
                 .map(s -> s.getFocusDuration())
                 .orElse(25);
-        List<Task> completedTasks = taskRepository.findCompletedByUserIdAndExecutionDateBetween(
+        List<Task> completedTasks = taskRepository.findCompletedByUserIdAndStartDateBetween(
                 userId, startDate, endDate);
         int totalEstimated = 0;
         int totalActual = 0;
@@ -687,7 +687,7 @@ public class AnalyticsService {
                         .focusMinutes(child.focusMinutes())
                         .estimatedMinutes(child.estimatedMinutes())
                         .progressPercentage(child.progressPercentage())
-                        .executionDate(child.executionDate())
+                        .startDate(child.startDate())
                         .build());
             }
             taskSummaries.add(com.example.app1.dto.WeeklyAnalyticsDto.GroupedTaskSummaryData.builder()
@@ -736,11 +736,11 @@ public class AnalyticsService {
         // 1. Efficiency Stats
         EfficiencyStats efficiency = getEfficiencyStats(userId, date, date);
 
-        // 2. Estimation Stats (using executionDate)
+        // 2. Estimation Stats (using startDate)
         int focusDuration = pomodoroSettingRepository.findByUserId(userId)
                 .map(s -> s.getFocusDuration())
                 .orElse(25);
-        List<Task> tasks = taskRepository.findByUserIdAndExecutionDate(userId, date);
+        List<Task> tasks = taskRepository.findByUserIdAndStartDate(userId, date);
         int totalEstimated = 0;
         int tasksCompleted = 0;
         for (Task task : tasks) {

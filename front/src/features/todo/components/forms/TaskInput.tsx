@@ -39,8 +39,8 @@ export const TaskInput = ({
 	autoFocus,
 	className,
 	endAdornment,
-	showExecutionDate = true,
-}: TaskInputProps & { showExecutionDate?: boolean }) => {
+	showStartDate = true,
+}: TaskInputProps & { showStartDate?: boolean }) => {
 	const getFieldName = (field: string) =>
 		namePrefix ? `${namePrefix}.${field}` : field;
 
@@ -73,10 +73,10 @@ export const TaskInput = ({
 				)}
 			/>
 
-			{showExecutionDate && (
+			{showStartDate && (
 				<Controller
 					control={control}
-					name={getFieldName("executionDate")}
+					name={getFieldName("startDate")}
 					render={({ field }) => (
 						<Popover>
 							<TooltipProvider>

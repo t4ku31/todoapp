@@ -42,7 +42,9 @@ export function DailyTaskList({
 	selectedTaskId,
 }: DailyTaskListProps) {
 	// Filter tasks by date first
-	const tasksForDate = tasks.filter((task) => task.executionDate === date);
+	const tasksForDate = tasks.filter(
+		(task) => task.startDate && format(task.startDate, "yyyy-MM-dd") === date,
+	);
 
 	// Filter for active tasks
 	const activeTasks = tasksForDate.filter(
@@ -92,7 +94,7 @@ export function DailyTaskList({
 				<CreateTaskForm
 					defaultTaskListId={taskListId}
 					onCreateTask={onCreateTask}
-					defaultExecutionDate={isValidDate ? parsedDate : new Date()}
+					defaultStartDate={isValidDate ? parsedDate : new Date()}
 				/>
 			</div>
 

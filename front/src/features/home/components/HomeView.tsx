@@ -1,12 +1,12 @@
 import { addDays, format, parse, subDays } from "date-fns";
 import { Play } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { usePomodoroStore } from "@/features/pomodoro/stores/usePomodoroStore";
 import { DailyTaskList } from "@/features/todo/components/DailyTaskList";
-import { usePomodoroStore } from "@/store/usePomodoroStore";
 import { useTodoStore } from "@/store/useTodoStore";
 import { FocusCircle } from "./FocusCircle";
 
@@ -23,8 +23,8 @@ export default function HomeView() {
 	const currentTaskId = usePomodoroStore((state) => state.currentTaskId);
 	const setFocusTask = usePomodoroStore((state) => state.setFocusTask);
 	const setPhase = usePomodoroStore((state) => state.setPhase);
-	const updateSettings = usePomodoroStore((state) => state.updateSettings);
 	const fetchSettings = usePomodoroStore((state) => state.fetchSettings);
+	const settings = usePomodoroStore((state) => state.settings);
 
 	// Get current selected task
 	const currentTask = currentTaskId
@@ -42,7 +42,10 @@ export default function HomeView() {
 
 	// Auto-select first task if none selected
 	const todaysTasks = allTasks.filter(
-		(t) => t.executionDate === selectedDate && t.status !== "COMPLETED",
+		(t) =>
+			t.startDate &&
+			format(t.startDate, "yyyy-MM-dd") === selectedDate &&
+			t.status !== "COMPLETED",
 	);
 
 	useEffect(() => {
@@ -53,35 +56,20 @@ export default function HomeView() {
 
 	const inboxList = taskLists.find((list) => list.title === "Inbox");
 
-	const handlePrevDay = () => {
+	const handlePrevDay = useCallback(() => {
 		const currentDate = parse(selectedDate, "yyyy-MM-dd", new Date());
 		setSelectedDate(format(subDays(currentDate, 1), "yyyy-MM-dd"));
-	};
+	}, [selectedDate]);
 
-	const handleNextDay = () => {
+	const handleNextDay = useCallback(() => {
 		const currentDate = parse(selectedDate, "yyyy-MM-dd", new Date());
 		setSelectedDate(format(addDays(currentDate, 1), "yyyy-MM-dd"));
-	};
+	}, [selectedDate]);
 
 	const startFocusSession = () => {
-		updateSettings({
-			whiteNoise: "white-noise",
-		});
 		setPhase("focus");
 		startTimer();
 		navigate("/focus");
-	};
-
-	const onCreateTask = async (params: {
-		taskListId: number;
-		title: string;
-		dueDate?: string | null;
-		executionDate?: string | null;
-		categoryId?: number;
-		estimatedPomodoros?: number;
-		subtasks?: { title: string; description?: string }[];
-	}) => {
-		return await createTask(params);
 	};
 
 	return (
@@ -94,7 +82,7 @@ export default function HomeView() {
 						tasks={allTasks}
 						onUpdateTask={updateTask}
 						onDeleteTask={deleteTask}
-						onCreateTask={onCreateTask}
+						onCreateTask={createTask}
 						onPrevDay={handlePrevDay}
 						onNextDay={handleNextDay}
 						taskListId={inboxList?.id ?? 0}
@@ -129,7 +117,7 @@ export default function HomeView() {
 							className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white px-6 py-3 rounded-full shadow-lg"
 						>
 							<Play className="w-4 h-4 mr-2" />
-							Start Focus Session (25m)
+							Start Focus Session ({settings.focusDuration}m)
 						</Button>
 					</div>
 				</Card>

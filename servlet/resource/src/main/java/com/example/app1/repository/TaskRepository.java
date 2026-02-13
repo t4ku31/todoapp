@@ -103,8 +103,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
          */
         @Query("SELECT COUNT(t) FROM Task t WHERE t.userId = :userId " +
                         "AND t.status = com.example.app1.model.TaskStatus.COMPLETED " +
-                        "AND t.executionDate BETWEEN :startDate AND :endDate")
-        Long countCompletedByUserIdAndExecutionDateBetween(
+                        "AND t.startDate BETWEEN :startDate AND :endDate")
+        Long countCompletedByUserIdAndStartDateBetween(
                         @Param("userId") String userId,
                         @Param("startDate") java.time.LocalDate startDate,
                         @Param("endDate") java.time.LocalDate endDate);
@@ -113,8 +113,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
          * Count total tasks for a user within an execution date range.
          */
         @Query("SELECT COUNT(t) FROM Task t WHERE t.userId = :userId " +
-                        "AND t.executionDate BETWEEN :startDate AND :endDate")
-        Long countByUserIdAndExecutionDateBetween(
+                        "AND t.startDate BETWEEN :startDate AND :endDate")
+        Long countByUserIdAndStartDateBetween(
                         @Param("userId") String userId,
                         @Param("startDate") java.time.LocalDate startDate,
                         @Param("endDate") java.time.LocalDate endDate);
@@ -123,8 +123,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
          * Find all tasks for a user within an execution date range.
          */
         @Query("SELECT t FROM Task t LEFT JOIN FETCH t.category WHERE t.userId = :userId " +
-                        "AND t.executionDate BETWEEN :startDate AND :endDate")
-        List<Task> findByUserIdAndExecutionDateBetween(
+                        "AND t.startDate BETWEEN :startDate AND :endDate")
+        List<Task> findByUserIdAndStartDateBetween(
                         @Param("userId") String userId,
                         @Param("startDate") java.time.LocalDate startDate,
                         @Param("endDate") java.time.LocalDate endDate);
@@ -134,8 +134,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
          */
         @Query("SELECT t FROM Task t WHERE t.userId = :userId " +
                         "AND t.status = com.example.app1.model.TaskStatus.COMPLETED " +
-                        "AND t.executionDate BETWEEN :startDate AND :endDate")
-        List<Task> findCompletedByUserIdAndExecutionDateBetween(
+                        "AND t.startDate BETWEEN :startDate AND :endDate")
+        List<Task> findCompletedByUserIdAndStartDateBetween(
                         @Param("userId") String userId,
                         @Param("startDate") java.time.LocalDate startDate,
                         @Param("endDate") java.time.LocalDate endDate);
@@ -145,24 +145,24 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
          * loaded.
          */
         @Query("SELECT t FROM Task t LEFT JOIN FETCH t.category WHERE t.userId = :userId " +
-                        "AND t.executionDate = :executionDate")
-        List<Task> findByUserIdAndExecutionDate(
+                        "AND t.startDate = :startDate")
+        List<Task> findByUserIdAndStartDate(
                         @Param("userId") String userId,
-                        @Param("executionDate") java.time.LocalDate executionDate);
+                        @Param("startDate") java.time.LocalDate startDate);
 
         /**
          * Count total tasks for a user on a specific execution date.
          */
-        @Query("SELECT COUNT(t) FROM Task t WHERE t.userId = :userId AND t.executionDate = :executionDate")
-        Long countByUserIdAndExecutionDate(@Param("userId") String userId,
-                        @Param("executionDate") java.time.LocalDate executionDate);
+        @Query("SELECT COUNT(t) FROM Task t WHERE t.userId = :userId AND t.startDate = :startDate")
+        Long countByUserIdAndStartDate(@Param("userId") String userId,
+                        @Param("startDate") java.time.LocalDate startDate);
 
         /**
          * Count tasks by status for a user on a specific execution date.
          */
-        @Query("SELECT COUNT(t) FROM Task t WHERE t.userId = :userId AND t.executionDate = :executionDate AND t.status = :status")
-        Long countByUserIdAndExecutionDateAndStatus(@Param("userId") String userId,
-                        @Param("executionDate") java.time.LocalDate executionDate,
+        @Query("SELECT COUNT(t) FROM Task t WHERE t.userId = :userId AND t.startDate = :startDate AND t.status = :status")
+        Long countByUserIdAndStartDateAndStatus(@Param("userId") String userId,
+                        @Param("startDate") java.time.LocalDate startDate,
                         @Param("status") com.example.app1.model.TaskStatus status);
 
         /**

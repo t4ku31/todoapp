@@ -23,7 +23,6 @@ import com.example.app1.repository.PomodoroSettingRepository;
 import com.example.app1.repository.TaskListRepository;
 import com.example.app1.repository.TaskRepository;
 import com.example.app1.service.TaskListService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -157,13 +156,14 @@ public class TaskService {
 
         // Handle recurring task setup
         Boolean isRecurring = taskCreateRequest.isRecurring();
-        String recurrenceRule = taskCreateRequest.recurrenceRule();
+        RecurrenceRuleDto recurrenceRule = taskCreateRequest.recurrenceRule();
 
-        if (isRecurring != null && isRecurring && recurrenceRule != null) {
-            return createRecurringTasks(taskCreateRequest, userId, recurrenceRule, finalTaskListId);
+        if (Boolean.TRUE.equals(isRecurring) && recurrenceRule != null) {
+            String rruleString = recurrenceRule.toRRuleString();
+            return createRecurringTasks(taskCreateRequest, userId, rruleString, finalTaskListId);
         }
 
-        return createSimpleTask(taskCreateRequest, userId, taskCreateRequest.executionDate(),
+        return createSimpleTask(taskCreateRequest, userId, taskCreateRequest.startDate(),
                 finalTaskListId);
     }
 
@@ -190,81 +190,22 @@ public class TaskService {
             Long resolvedTaskListId) {
         log.info("Creating recurring tasks for user: {} with rule: {}", userId, recurrenceRule);
 
-        // Parse recurrence rule JSON
-        ObjectMapper mapper = new ObjectMapper();
-        RecurrenceRuleDto rule;
-        try {
-            rule = mapper.readValue(recurrenceRule, RecurrenceRuleDto.class);
-        } catch (Exception e) {
-            log.error("Failed to parse recurrence rule: {}", recurrenceRule, e);
-            throw new IllegalArgumentException("Invalid recurrence rule format: " + e.getMessage());
-        }
+        // Calculate occurrences using ical4j
+        // Start from the task's execution date, or today if not set
+        LocalDate startDate = taskCreateRequest.startDate() != null
+                ? taskCreateRequest.startDate()
+                : LocalDate.now();
 
-        String frequency = rule.frequency();
-        if (frequency == null) {
-            throw new IllegalArgumentException("Frequency is required in recurrence rule");
-        }
+        // Default limit: 1 year from start if no end condition
+        LocalDate rangeEnd = startDate.plusYears(1);
 
-        String endDateStr = rule.endDate();
-        Integer occurrences = rule.occurrences();
-        java.util.List<String> daysOfWeek = rule.daysOfWeek();
+        // Generate dates using pure Java implementation
+        List<LocalDate> dates = generateRecurringDates(recurrenceRule, startDate, rangeEnd);
 
-        log.debug("Parsed rule - Freq: {}, EndDate: {}, Occurrences: {}, Days: {}",
-                frequency, endDateStr, occurrences, daysOfWeek);
-
-        // case of specifying execution date
-        java.time.LocalDate startDate = taskCreateRequest.executionDate() != null
-                ? taskCreateRequest.executionDate()
-                : java.time.LocalDate.now();
-        // case of specifying end date
-        java.time.LocalDate endDate = null;
-        if (endDateStr != null) {
-            endDate = java.time.LocalDate.parse(endDateStr);
-        }
-
-        // Default: generate 30 instances if no end condition specified
-        int maxInstances = occurrences != null ? occurrences : 30;
-        if (endDate == null && occurrences == null) {
-            // If no end condition, limit to 90 days from start
-            endDate = startDate.plusDays(90);
-        }
-
-        // Generate dates based on frequency
-        java.util.List<java.time.LocalDate> dates = new java.util.ArrayList<>();
-        java.time.LocalDate currentDate = startDate;
-        int count = 0;
-
-        while (count < maxInstances) {
-            if (endDate != null && currentDate.isAfter(endDate)) {
-                break;
-            }
-
-            boolean shouldAdd = true;
-
-            // For weekly frequency with specific days
-            if ("weekly".equals(frequency) && daysOfWeek != null && !daysOfWeek.isEmpty()) {
-                String dayOfWeek = currentDate.getDayOfWeek().toString().toLowerCase().substring(0, 3);
-                shouldAdd = daysOfWeek.contains(dayOfWeek);
-            }
-
-            if (shouldAdd) {
-                dates.add(currentDate);
-                count++;
-            }
-
-            // Advance date based on frequency
-            currentDate = switch (frequency) {
-                case "daily" -> currentDate.plusDays(1);
-                case "weekly" -> {
-                    if (daysOfWeek != null && !daysOfWeek.isEmpty()) {
-                        yield currentDate.plusDays(1); // Check each day for weekly with specific days
-                    }
-                    yield currentDate.plusWeeks(1);
-                }
-                case "monthly" -> currentDate.plusMonths(1);
-                case "yearly" -> currentDate.plusYears(1);
-                default -> currentDate.plusDays(1);
-            };
+        // If empty (shouldn't happen if start matches rule), add start at least?
+        // Actually Recur.getDates includes start if it matches the rule.
+        if (dates.isEmpty()) {
+            dates.add(startDate);
         }
 
         log.info("Generated {} dates for recurring task", dates.size());
@@ -285,31 +226,31 @@ public class TaskService {
     /**
      * Internal method to create a simple standalone task.
      */
-    private Task createSimpleTask(TaskDto.Create request, String userId, LocalDate executionDate, Long taskListId) {
-        return createSingleTask(request, userId, executionDate, false, null, null, taskListId);
+    private Task createSimpleTask(TaskDto.Create request, String userId, LocalDate startDate, Long taskListId) {
+        return createSingleTask(request, userId, startDate, false, null, null, taskListId);
     }
 
     /**
      * Internal method to create the parent instance of a recurring task.
      */
-    private Task createRecurringParent(TaskDto.Create request, String userId, LocalDate executionDate,
+    private Task createRecurringParent(TaskDto.Create request, String userId, LocalDate startDate,
             String rule, Long taskListId) {
-        return createSingleTask(request, userId, executionDate, true, rule, null, taskListId);
+        return createSingleTask(request, userId, startDate, true, rule, null, taskListId);
     }
 
     /**
      * Internal method to create a linked child instance of a recurring task.
      */
-    private Task createRecurringChild(TaskDto.Create request, String userId, LocalDate executionDate,
+    private Task createRecurringChild(TaskDto.Create request, String userId, LocalDate startDate,
             Long parentId, Long taskListId) {
-        return createSingleTask(request, userId, executionDate, false, null, parentId, taskListId);
+        return createSingleTask(request, userId, startDate, false, null, parentId, taskListId);
     }
 
     /**
      * Internal method to create a single task.
      */
     private Task createSingleTask(TaskDto.Create taskCreateRequest, String userId,
-            java.time.LocalDate executionDate, boolean isRecurring, String recurrenceRule, Long recurrenceParentId,
+            java.time.LocalDate startDate, boolean isRecurring, String recurrenceRule, Long recurrenceParentId,
             Long resolvedTaskListId) {
 
         // Set default status
@@ -321,14 +262,14 @@ public class TaskService {
         Task.TaskBuilder taskBuilder = Task.builder()
                 .title(taskCreateRequest.title())
                 .status(status)
-                .executionDate(executionDate)
+                .startDate(startDate)
                 .userId(userId)
                 .taskList(taskList)
-                .scheduledStartAt(taskCreateRequest.scheduledStartAt() != null && executionDate != null
-                        ? taskCreateRequest.scheduledStartAt().with(executionDate.atStartOfDay().toLocalDate())
+                .scheduledStartAt(taskCreateRequest.scheduledStartAt() != null && startDate != null
+                        ? taskCreateRequest.scheduledStartAt().with(startDate.atStartOfDay().toLocalDate())
                         : taskCreateRequest.scheduledStartAt())
-                .scheduledEndAt(taskCreateRequest.scheduledEndAt() != null && executionDate != null
-                        ? taskCreateRequest.scheduledEndAt().with(executionDate.atStartOfDay().toLocalDate())
+                .scheduledEndAt(taskCreateRequest.scheduledEndAt() != null && startDate != null
+                        ? taskCreateRequest.scheduledEndAt().with(startDate.atStartOfDay().toLocalDate())
                         : taskCreateRequest.scheduledEndAt())
                 .isAllDay(taskCreateRequest.isAllDay())
                 .description(taskCreateRequest.description());
@@ -535,8 +476,8 @@ public class TaskService {
             existing.setStatus(request.status());
         }
 
-        if (request.executionDate() != null) {
-            existing.setExecutionDate(request.executionDate());
+        if (request.startDate() != null) {
+            existing.setStartDate(request.startDate());
         }
         if (request.categoryId() != null) {
             Category category = categoryRepository.findById(request.categoryId())
@@ -589,7 +530,8 @@ public class TaskService {
         // Handle isRecurring and recurrenceRule update
         Boolean wasRecurring = existing.getIsRecurring();
         Boolean isNowRecurring = request.isRecurring();
-        String newRecurrenceRule = request.recurrenceRule();
+        RecurrenceRuleDto newRecurrenceRuleDto = request.recurrenceRule();
+        String newRecurrenceRule = newRecurrenceRuleDto != null ? newRecurrenceRuleDto.toRRuleString() : null;
 
         // Determine effective new state
         boolean effectiveIsRecurring = isNowRecurring != null ? isNowRecurring
@@ -658,7 +600,7 @@ public class TaskService {
      * Only propagates certain fields to maintain instance individuality.
      * 
      * Propagated fields: title, category, estimatedPomodoros
-     * Not propagated: executionDate, status, subtasks
+     * Not propagated: startDate, status, subtasks
      */
     private void propagateChangesToChildren(Task parentTask, TaskDto.Update request) {
         List<Task> pendingChildren = taskRepository.findByRecurrenceParentIdAndStatusNot(parentTask.getId(),
@@ -699,12 +641,12 @@ public class TaskService {
             }
 
             // Propagate scheduling (keep the child's execution date, but update the time)
-            if (request.scheduledStartAt() != null && child.getExecutionDate() != null) {
-                child.setScheduledStartAt(request.scheduledStartAt().with(child.getExecutionDate()));
+            if (request.scheduledStartAt() != null && child.getStartDate() != null) {
+                child.setScheduledStartAt(request.scheduledStartAt().with(child.getStartDate()));
                 updated = true;
             }
-            if (request.scheduledEndAt() != null && child.getExecutionDate() != null) {
-                child.setScheduledEndAt(request.scheduledEndAt().with(child.getExecutionDate()));
+            if (request.scheduledEndAt() != null && child.getStartDate() != null) {
+                child.setScheduledEndAt(request.scheduledEndAt().with(child.getStartDate()));
                 updated = true;
             }
             if (request.isAllDay() != null) {
@@ -725,70 +667,18 @@ public class TaskService {
      * This is called when an existing task is converted to recurring.
      */
     private void generateRecurringInstances(Task parentTask, String recurrenceRule, String userId) {
-        ObjectMapper mapper = new ObjectMapper();
-        RecurrenceRuleDto rule;
-        try {
-            rule = mapper.readValue(recurrenceRule, RecurrenceRuleDto.class);
-        } catch (Exception e) {
-            log.error("Failed to parse recurrence rule: {}", recurrenceRule, e);
-            throw new IllegalArgumentException("Invalid recurrence rule format: " + e.getMessage());
-        }
-
-        String frequency = rule.frequency();
-        if (frequency == null) {
-            throw new IllegalArgumentException("Frequency is required in recurrence rule");
-        }
-
-        String endDateStr = rule.endDate();
-        Integer occurrences = rule.occurrences();
-        java.util.List<String> daysOfWeek = rule.daysOfWeek();
-
+        // Generate dates using ical4j
         // Start from the parent task's execution date, or today if not set
-        java.time.LocalDate startDate = parentTask.getExecutionDate() != null
-                ? parentTask.getExecutionDate()
+        LocalDate startDate = parentTask.getStartDate() != null
+                ? parentTask.getStartDate()
                 : java.time.LocalDate.now();
 
-        java.time.LocalDate endDate = null;
-        if (endDateStr != null) {
-            endDate = java.time.LocalDate.parse(endDateStr);
-        }
+        LocalDate rangeEnd = startDate.plusYears(1);
 
-        // Default: generate 365 instances if no end condition specified
-        int maxInstances = occurrences != null ? occurrences : 365;
-        if (endDate == null && occurrences == null) {
-            endDate = startDate.plusDays(365);
-        }
-
-        // Generate dates based on frequency (starting from the day AFTER the parent
-        // task)
-        java.util.List<java.time.LocalDate> dates = new java.util.ArrayList<>();
-        java.time.LocalDate currentDate = advanceDate(startDate, frequency, daysOfWeek);
-        int count = 0;
-
-        while (count < maxInstances - 1) { // -1 because parent is already the first instance
-            if (endDate != null && currentDate.isAfter(endDate)) {
-                break;
-            }
-
-            boolean shouldAdd = true;
-            if ("weekly".equals(frequency) && daysOfWeek != null && !daysOfWeek.isEmpty()) {
-                String dayName = currentDate.getDayOfWeek().toString(); // "MONDAY"
-                String dayNameShort = dayName.toLowerCase().substring(0, 3); // "mon"
-
-                // Allow matches against full name (MONDAY) or short name (mon),
-                // case-insensitive
-                shouldAdd = daysOfWeek.stream()
-                        .anyMatch(d -> d.equalsIgnoreCase(dayName) ||
-                                d.toLowerCase().startsWith(dayNameShort));
-            }
-
-            if (shouldAdd) {
-                dates.add(currentDate);
-                count++;
-            }
-
-            currentDate = advanceDate(currentDate, frequency, daysOfWeek);
-        }
+        // Generate dates using pure Java implementation
+        List<LocalDate> dates = generateRecurringDates(recurrenceRule, startDate, rangeEnd).stream()
+                .filter(ld -> ld.isAfter(startDate)) // exclude parent's date if present
+                .collect(Collectors.toList());
 
         log.info("Generating {} recurring instances for task {}", dates.size(), parentTask.getId());
 
@@ -797,7 +687,7 @@ public class TaskService {
             Task childTask = Task.builder()
                     .title(parentTask.getTitle())
                     .status(TaskStatus.PENDING)
-                    .executionDate(date)
+                    .startDate(date)
                     .userId(userId)
                     .taskList(parentTask.getTaskList())
                     .category(parentTask.getCategory())
@@ -813,21 +703,6 @@ public class TaskService {
     /**
      * Advance the date based on frequency.
      */
-    private LocalDate advanceDate(LocalDate date, String frequency,
-            List<String> daysOfWeek) {
-        return switch (frequency) {
-            case "daily" -> date.plusDays(1);
-            case "weekly" -> {
-                if (daysOfWeek != null && !daysOfWeek.isEmpty()) {
-                    yield date.plusDays(1); // Check each day for weekly with specific days
-                }
-                yield date.plusWeeks(1);
-            }
-            case "monthly" -> date.plusMonths(1);
-            case "yearly" -> date.plusYears(1);
-            default -> date.plusDays(1);
-        };
-    }
 
     /**
      * Get task statistics for a specific range.
@@ -835,13 +710,13 @@ public class TaskService {
     @Transactional(readOnly = true)
     public TaskDto.Stats getTaskStatsInRange(String userId, LocalDate startDate,
             LocalDate endDate) {
-        Long completedCount = taskRepository.countCompletedByUserIdAndExecutionDateBetween(
+        Long completedCount = taskRepository.countCompletedByUserIdAndStartDateBetween(
                 userId, startDate, endDate);
-        Long totalCount = taskRepository.countByUserIdAndExecutionDateBetween(
+        Long totalCount = taskRepository.countByUserIdAndStartDateBetween(
                 userId, startDate, endDate);
 
         // Logic for Estimation Accuracy
-        List<Task> completedTasks = taskRepository.findCompletedByUserIdAndExecutionDateBetween(userId, startDate,
+        List<Task> completedTasks = taskRepository.findCompletedByUserIdAndStartDateBetween(userId, startDate,
                 endDate);
         log.info("Completed tasks: {}", completedTasks);
 
@@ -875,6 +750,152 @@ public class TaskService {
                 .totalEstimatedMinutes(totalEstimatedMinutes)
                 .totalActualMinutes(totalActualMinutes)
                 .build();
+    }
+
+    /**
+     * Generate recurring dates based on an RRULE string using pure Java.
+     * Supports FREQ (DAILY, WEEKLY, MONTHLY, YEARLY), INTERVAL, BYDAY, UNTIL, and
+     * COUNT.
+     */
+    private List<LocalDate> generateRecurringDates(String rrule, LocalDate startDate, LocalDate rangeEnd) {
+        List<LocalDate> dates = new java.util.ArrayList<>();
+
+        if (rrule == null || rrule.isBlank()) {
+            dates.add(startDate);
+            return dates;
+        }
+
+        String cleanRule = rrule.startsWith("RRULE:") ? rrule.substring(6) : rrule;
+        // Normalize separators
+        cleanRule = cleanRule.replaceAll(",(?=[A-Z]+=[^=])", ";");
+
+        // Parse FREQ
+        String freq = "DAILY";
+        java.util.regex.Matcher freqMatcher = java.util.regex.Pattern.compile("FREQ=([A-Z]+)").matcher(cleanRule);
+        if (freqMatcher.find()) {
+            freq = freqMatcher.group(1);
+        }
+
+        // Parse INTERVAL
+        int interval = 1;
+        java.util.regex.Matcher intervalMatcher = java.util.regex.Pattern.compile("INTERVAL=(\\d+)").matcher(cleanRule);
+        if (intervalMatcher.find()) {
+            interval = Integer.parseInt(intervalMatcher.group(1));
+            if (interval < 1)
+                interval = 1;
+        }
+
+        // Parse COUNT
+        Integer count = null;
+        java.util.regex.Matcher countMatcher = java.util.regex.Pattern.compile("COUNT=(\\d+)").matcher(cleanRule);
+        if (countMatcher.find()) {
+            count = Integer.parseInt(countMatcher.group(1));
+        }
+
+        // Parse UNTIL
+        LocalDate until = rangeEnd;
+        java.util.regex.Matcher untilMatcher = java.util.regex.Pattern.compile("UNTIL=(\\d{8})").matcher(cleanRule);
+        if (untilMatcher.find()) {
+            until = LocalDate.parse(untilMatcher.group(1), java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+            if (until.isAfter(rangeEnd)) {
+                until = rangeEnd;
+            }
+        }
+
+        // Parse BYDAY for WEEKLY
+        java.util.Set<java.time.DayOfWeek> byDay = new java.util.HashSet<>();
+        java.util.regex.Matcher byDayMatcher = java.util.regex.Pattern.compile("BYDAY=([A-Z,]+)").matcher(cleanRule);
+        if (byDayMatcher.find()) {
+            String[] days = byDayMatcher.group(1).split(",");
+            for (String day : days) {
+                java.time.DayOfWeek dow = parseDay(day.trim());
+                if (dow != null)
+                    byDay.add(dow);
+            }
+        }
+
+        // Generate dates
+        LocalDate current = startDate;
+        int generatedCount = 0;
+        int maxIterations = 1000; // Safety limit
+        int iterations = 0;
+
+        while (!current.isAfter(until) && iterations < maxIterations) {
+            iterations++;
+
+            if (count != null && generatedCount >= count) {
+                break;
+            }
+
+            boolean shouldAdd = false;
+
+            switch (freq) {
+                case "DAILY":
+                    shouldAdd = true;
+                    break;
+                case "WEEKLY":
+                    if (byDay.isEmpty()) {
+                        shouldAdd = true; // If no BYDAY, use start day of week
+                    } else {
+                        shouldAdd = byDay.contains(current.getDayOfWeek());
+                    }
+                    break;
+                case "MONTHLY":
+                    shouldAdd = (current.getDayOfMonth() == startDate.getDayOfMonth() ||
+                            current.equals(startDate));
+                    break;
+                case "YEARLY":
+                    shouldAdd = (current.getMonth() == startDate.getMonth() &&
+                            current.getDayOfMonth() == startDate.getDayOfMonth()) ||
+                            current.equals(startDate);
+                    break;
+            }
+
+            if (shouldAdd) {
+                dates.add(current);
+                generatedCount++;
+            }
+
+            // Advance current date
+            switch (freq) {
+                case "DAILY":
+                    current = current.plusDays(interval);
+                    break;
+                case "WEEKLY":
+                    if (byDay.isEmpty()) {
+                        current = current.plusWeeks(interval);
+                    } else {
+                        // For WEEKLY with BYDAY, advance day by day within the week
+                        current = current.plusDays(1);
+                        // Check if we've completed a week cycle
+                        if (current.getDayOfWeek() == startDate.getDayOfWeek() && interval > 1) {
+                            current = current.plusWeeks(interval - 1);
+                        }
+                    }
+                    break;
+                case "MONTHLY":
+                    current = current.plusMonths(interval);
+                    break;
+                case "YEARLY":
+                    current = current.plusYears(interval);
+                    break;
+            }
+        }
+
+        return dates;
+    }
+
+    private java.time.DayOfWeek parseDay(String day) {
+        return switch (day) {
+            case "MO" -> java.time.DayOfWeek.MONDAY;
+            case "TU" -> java.time.DayOfWeek.TUESDAY;
+            case "WE" -> java.time.DayOfWeek.WEDNESDAY;
+            case "TH" -> java.time.DayOfWeek.THURSDAY;
+            case "FR" -> java.time.DayOfWeek.FRIDAY;
+            case "SA" -> java.time.DayOfWeek.SATURDAY;
+            case "SU" -> java.time.DayOfWeek.SUNDAY;
+            default -> null;
+        };
     }
 
     /**
@@ -929,7 +950,7 @@ public class TaskService {
 
     /**
      * Bulk update multiple tasks at once.
-     * Supports updating status, categoryId, taskListId, and executionDate.
+     * Supports updating status, categoryId, taskListId, and startDate.
      * 
      * @param request The bulk update request
      * @param userId  The user ID
@@ -1014,8 +1035,8 @@ public class TaskService {
                 if (taskList != null) {
                     task.setTaskList(taskList);
                 }
-                if (request.executionDate() != null) {
-                    task.setExecutionDate(request.executionDate());
+                if (request.startDate() != null) {
+                    task.setStartDate(request.startDate());
                 }
                 if (request.estimatedPomodoros() != null) {
                     task.setEstimatedPomodoros(request.estimatedPomodoros());
@@ -1036,7 +1057,7 @@ public class TaskService {
                     task.setIsRecurring(request.isRecurring());
                 }
                 if (request.recurrenceRule() != null) {
-                    task.setRecurrenceRule(request.recurrenceRule());
+                    task.setRecurrenceRule(request.recurrenceRule().toRRuleString());
                 }
             }
 
@@ -1178,12 +1199,12 @@ public class TaskService {
     }
 
     private TaskDto.Create convertToCreate(TaskDto.SyncTaskDto req) {
-        LocalDate executionDate = null;
-        if (req.executionDate() != null) {
+        LocalDate startDate = null;
+        if (req.startDate() != null) {
             try {
-                executionDate = LocalDate.parse(req.executionDate());
+                startDate = LocalDate.parse(req.startDate());
             } catch (Exception e) {
-                log.warn("Invalid executionDate format: {}", req.executionDate());
+                log.warn("Invalid startDate format: {}", req.startDate());
             }
         }
 
@@ -1226,13 +1247,13 @@ public class TaskService {
                 req.title(),
                 null, // taskListId (resolved by title or default)
                 req.taskListTitle(),
-                executionDate,
+                startDate,
                 null, // categoryId
                 req.categoryName(),
                 subtasks,
                 req.estimatedPomodoros(),
                 req.isRecurring(),
-                req.recurrencePattern(),
+                req.recurrenceRule(),
                 null, // customDates
                 startAt,
                 endAt,
@@ -1242,12 +1263,12 @@ public class TaskService {
     }
 
     private TaskDto.Update convertToUpdate(TaskDto.SyncTaskDto req) {
-        LocalDate executionDate = null;
-        if (req.executionDate() != null) {
+        LocalDate startDate = null;
+        if (req.startDate() != null) {
             try {
-                executionDate = LocalDate.parse(req.executionDate());
+                startDate = LocalDate.parse(req.startDate());
             } catch (Exception e) {
-                log.warn("Invalid executionDate format: {}", req.executionDate());
+                log.warn("Invalid startDate format: {}", req.startDate());
             }
         }
 
@@ -1280,7 +1301,7 @@ public class TaskService {
         TaskDto.Update update = new TaskDto.Update(
                 req.title(),
                 status,
-                executionDate,
+                startDate,
                 null, // categoryId
                 req.categoryName(),
                 null, // taskListId
@@ -1288,7 +1309,7 @@ public class TaskService {
                 null, // completedAt
                 req.estimatedPomodoros(),
                 req.isRecurring(),
-                req.recurrencePattern(),
+                req.recurrenceRule(),
                 req.description(),
                 startAt,
                 endAt,

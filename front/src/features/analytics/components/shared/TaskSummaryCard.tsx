@@ -290,11 +290,8 @@ export function TaskSummaryCard({
 																: "text-gray-600"
 														}`}
 													>
-														{child.executionDate
-															? format(
-																	new Date(child.executionDate),
-																	"M/d (EEE)",
-																)
+														{child.startDate
+															? format(new Date(child.startDate), "M/d (EEE)")
 															: "—"}
 													</span>
 													<div className="flex items-center gap-2">

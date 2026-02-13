@@ -19,7 +19,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { usePomodoroStore } from "@/store/usePomodoroStore";
+import { usePomodoroStore } from "@/features/pomodoro/stores/usePomodoroStore";
 
 export const PomodoroSettings = () => {
 	const { settings, fetchSettings, updateSettings } = usePomodoroStore();
@@ -183,18 +183,6 @@ export const PomodoroSettings = () => {
 								}
 							/>
 						</div>
-					</div>
-					<div className="flex items-center space-x-2 pt-2">
-						<Checkbox
-							id="autoAdvance"
-							checked={settings.autoAdvance}
-							onCheckedChange={(checked) =>
-								updateSettings({ autoAdvance: checked === true })
-							}
-						/>
-						<Label htmlFor="autoAdvance" className="cursor-pointer">
-							Auto-start next phase (Focus/Break)
-						</Label>
 					</div>
 				</CardContent>
 			</Card>

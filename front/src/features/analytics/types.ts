@@ -143,7 +143,7 @@ export interface TaskSummary {
 	estimatedMinutes?: number | null;
 	progressPercentage: number;
 	parentTaskId?: number | null;
-	executionDate?: string | null;
+	startDate?: Date | null;
 }
 
 /**
@@ -173,7 +173,7 @@ export interface TaskSummaryChild {
 	focusMinutes: number;
 	estimatedMinutes?: number | null;
 	progressPercentage: number;
-	executionDate?: string | null;
+	startDate?: Date | null;
 }
 
 /**

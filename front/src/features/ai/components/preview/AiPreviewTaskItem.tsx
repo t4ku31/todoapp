@@ -1,4 +1,4 @@
-import { memo, useEffect } from "react";
+import { memo } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { ParsedTask } from "@/features/ai/types";
 import { AddSubtaskButton } from "@/features/todo/components/ui/AddSubtaskButton";
@@ -28,23 +28,6 @@ const generateTempId = () => {
 	return -Math.floor(Math.random() * 1000000000) - 1;
 };
 
-const normalizeSubtask = (st: Subtask | string, index: number): Subtask => {
-	if (typeof st === "string") {
-		return {
-			id: generateTempId(),
-			title: st,
-			isCompleted: false,
-			orderIndex: index,
-		};
-	}
-	return {
-		...st,
-		id: st.id ?? generateTempId(), // Ensure ID exists
-		isCompleted: st.isCompleted ?? false,
-		orderIndex: st.orderIndex ?? index,
-	};
-};
-
 export const AiPreviewTaskItem = memo(function AiPreviewTaskItem({
 	task,
 	onUpdateTask,
@@ -54,23 +37,7 @@ export const AiPreviewTaskItem = memo(function AiPreviewTaskItem({
 	const { categories } = useCategoryStore();
 	const { taskLists } = useTodoStore();
 
-	// Ensure all subtasks are objects with IDs
-	useEffect(() => {
-		if (task.subtasks?.some((st) => typeof st === "string")) {
-			const newSubtasks = (task.subtasks || []).map((st, index) => {
-				if (typeof st === "string") {
-					return {
-						id: generateTempId(),
-						title: st,
-						isCompleted: false,
-						orderIndex: index,
-					};
-				}
-				return st;
-			});
-			onUpdateTask(task.id, { subtasks: newSubtasks });
-		}
-	}, [task.subtasks, task.id, onUpdateTask]);
+	// Subtasks are now always Subtask[] (normalized at entry point)
 
 	// Get category ID from category name
 	const categoryId = task.categoryName
@@ -100,6 +67,8 @@ export const AiPreviewTaskItem = memo(function AiPreviewTaskItem({
 
 	// Determine badge variant and label based on task status
 
+	type PreviewStatus = "delete" | "new" | "edit";
+
 	const checkboxStyles: Record<PreviewStatus, string> = {
 		delete: "data-[state=checked]:bg-rose-500 border-rose-200",
 		new: "data-[state=checked]:bg-amber-400 border-amber-200",
@@ -108,23 +77,18 @@ export const AiPreviewTaskItem = memo(function AiPreviewTaskItem({
 
 	const handleUpdateSubtask = (id: number, updates: Partial<Subtask>) => {
 		const currentSubtasks = task.subtasks || [];
-		const index = currentSubtasks.findIndex(
-			(st) => typeof st === "object" && st.id === id,
-		);
+		const index = currentSubtasks.findIndex((st) => st.id === id);
 
 		if (index !== -1) {
 			const newSubtasks = [...currentSubtasks];
-			const current = newSubtasks[index] as Subtask;
-			newSubtasks[index] = { ...current, ...updates };
+			newSubtasks[index] = { ...newSubtasks[index], ...updates };
 			onUpdateTask(task.id, { subtasks: newSubtasks });
 		}
 	};
 
 	const handleDeleteSubtask = (id: number) => {
 		const currentSubtasks = task.subtasks || [];
-		const index = currentSubtasks.findIndex(
-			(st) => typeof st === "object" && st.id === id,
-		);
+		const index = currentSubtasks.findIndex((st) => st.id === id);
 
 		if (index !== -1) {
 			const newSubtasks = [...currentSubtasks];
@@ -149,16 +113,14 @@ export const AiPreviewTaskItem = memo(function AiPreviewTaskItem({
 		onUpdateTask(task.id, { subtasks: newSubtasks });
 	};
 
-	const processedSubtasks = (task.subtasks || [])
-		.filter((st) => st !== null && st !== undefined)
-		.map(normalizeSubtask);
+	const processedSubtasks = (task.subtasks || []).filter(
+		(st) => st !== null && st !== undefined,
+	);
 	const badgeInfo = task.isDeleted
 		? ({ variant: "delete", label: "Delete" } as const)
 		: !isExisting
 			? ({ variant: "new", label: "New" } as const)
 			: ({ variant: "edit", label: "Edit" } as const);
-
-	type PreviewStatus = "delete" | "new" | "edit";
 
 	const previewStatus: PreviewStatus = task.isDeleted
 		? "delete"
@@ -267,10 +229,10 @@ export const AiPreviewTaskItem = memo(function AiPreviewTaskItem({
 							<div>
 								<EditableDate
 									id={0}
-									date={task.executionDate ?? null}
-									type="executionDate"
+									date={task.startDate ?? null}
+									type="startDate"
 									onDateChange={async (_, date) =>
-										onUpdateTask(task.id, { executionDate: date ?? undefined })
+										onUpdateTask(task.id, { startDate: date ?? undefined })
 									}
 									isRecurring={false} // Preview doesn't support manual recurrence edit yet
 									onRecurrenceChange={async () => {}}

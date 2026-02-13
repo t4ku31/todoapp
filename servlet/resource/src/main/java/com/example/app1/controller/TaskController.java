@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.app1.dto.CategoryDto;
+import com.example.app1.dto.RecurrenceRuleDto;
+import com.example.app1.dto.SubtaskDto;
 import com.example.app1.dto.TaskDto;
 import com.example.app1.model.Task;
 import com.example.app1.service.domain.TaskService;
@@ -42,7 +45,7 @@ public class TaskController {
      * @return List of tasks
      */
     @GetMapping("/tasklists/{taskListId}/tasks")
-    public ResponseEntity<List<Task>> getTasksByTaskListId(
+    public ResponseEntity<List<TaskDto.Summary>> getTasksByTaskListId(
             @PathVariable Long taskListId,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
@@ -50,8 +53,11 @@ public class TaskController {
 
         try {
             List<Task> tasks = taskService.getTasksByTaskListId(taskListId, userId);
-            log.info("Returning {} tasks for list {} for user: {}", tasks.size(), taskListId, userId);
-            return ResponseEntity.ok(tasks);
+            List<TaskDto.Summary> taskSummaries = tasks.stream()
+                    .map(this::toSummary)
+                    .toList();
+            log.info("Returning {} tasks for list {} for user: {}", taskSummaries.size(), taskListId, userId);
+            return ResponseEntity.ok(taskSummaries);
         } catch (IllegalArgumentException e) {
             log.warn("Task list {} not found for user: {}", taskListId, userId);
             return ResponseEntity.notFound().build();
@@ -65,13 +71,16 @@ public class TaskController {
      * @return List of all user's tasks
      */
     @GetMapping("/tasks")
-    public ResponseEntity<List<Task>> getUserTasks(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<List<TaskDto.Summary>> getUserTasks(@AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
         log.info("Received request to fetch all tasks for user: {}", userId);
 
         List<Task> tasks = taskService.getUserTasks(userId);
-        log.info("Returning {} tasks for user: {}", tasks.size(), userId);
-        return ResponseEntity.ok(tasks);
+        List<TaskDto.Summary> taskSummaries = tasks.stream()
+                .map(this::toSummary)
+                .toList();
+        log.info("Returning {} tasks for user: {}", taskSummaries.size(), userId);
+        return ResponseEntity.ok(taskSummaries);
     }
 
     /**
@@ -82,7 +91,7 @@ public class TaskController {
      * @return The task
      */
     @GetMapping("/tasks/{id}")
-    public ResponseEntity<Task> getTask(
+    public ResponseEntity<TaskDto.Summary> getTask(
             @PathVariable Long id,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
@@ -91,7 +100,7 @@ public class TaskController {
         try {
             Task task = taskService.getTask(id, userId);
             log.info("Successfully fetched task {} for user: {}", id, userId);
-            return ResponseEntity.ok(task);
+            return ResponseEntity.ok(toSummary(task));
         } catch (IllegalArgumentException e) {
             log.warn("Task {} not found for user: {}", id, userId);
             return ResponseEntity.notFound().build();
@@ -115,7 +124,7 @@ public class TaskController {
         try {
             Task created = taskService.createTask(taskCreateRequest, userId);
             log.info("Successfully created task {} for user: {}", created.getId(), userId);
-            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+            return ResponseEntity.status(HttpStatus.CREATED).body(toSummary(created));
         } catch (IllegalArgumentException e) {
             log.warn("Invalid request for user {}: {}", userId, e.getMessage());
             return ResponseEntity.badRequest()
@@ -219,10 +228,10 @@ public class TaskController {
      * Get soft-deleted tasks (trash).
      */
     @GetMapping("/tasks/trash")
-    public ResponseEntity<List<Task>> getTrashTasks(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<List<TaskDto.Summary>> getTrashTasks(@AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
         List<Task> tasks = taskService.getTrashTasks(userId);
-        return ResponseEntity.ok(tasks);
+        return ResponseEntity.ok(tasks.stream().map(this::toSummary).toList());
     }
 
     /**
@@ -274,7 +283,7 @@ public class TaskController {
 
     /**
      * Bulk update multiple tasks at once.
-     * Supports updating status, categoryId, taskListId, and executionDate.
+     * Supports updating status, categoryId, taskListId, and startDate.
      * Returns 200 OK with full success, 207 Multi-Status for partial success.
      */
     @PatchMapping("/tasks/bulk")
@@ -359,5 +368,53 @@ public class TaskController {
 
         TaskDto.SyncResult result = taskService.syncTasks(tasks, userId);
         return ResponseEntity.ok(result);
+    }
+
+    private TaskDto.Summary toSummary(Task task) {
+        RecurrenceRuleDto rrule = null;
+        if (Boolean.TRUE.equals(task.getIsRecurring()) && task.getRecurrenceRule() != null) {
+            try {
+                rrule = RecurrenceRuleDto.fromRRuleString(task.getRecurrenceRule());
+            } catch (Exception e) {
+                log.warn("Failed to parse RRULE for task {}: {}", task.getId(), task.getRecurrenceRule());
+            }
+        }
+
+        CategoryDto.Response category = null;
+        if (task.getCategory() != null) {
+            category = new CategoryDto.Response(
+                    task.getCategory().getId(),
+                    task.getCategory().getName(),
+                    task.getCategory().getColor());
+        }
+
+        List<SubtaskDto.Summary> subtasks = task.getSubtasks().stream()
+                .map(s -> new SubtaskDto.Summary(
+                        s.getId(),
+                        s.getTask().getId(),
+                        s.getTitle(),
+                        s.getDescription(),
+                        s.getIsCompleted(),
+                        s.getOrderIndex()))
+                .toList();
+
+        return new TaskDto.Summary(
+                task.getId(),
+                task.getTitle(),
+                task.getStatus(),
+                task.getStartDate(),
+                task.getTaskList() != null ? task.getTaskList().getId() : null,
+                category,
+                subtasks,
+                task.getEstimatedPomodoros(),
+                task.getCompletedAt(),
+                task.getIsRecurring(),
+                rrule,
+                task.getRecurrenceParentId(),
+                task.getIsDeleted(),
+                task.getDescription(),
+                task.getScheduledStartAt(),
+                task.getScheduledEndAt(),
+                task.getIsAllDay());
     }
 }

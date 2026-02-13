@@ -113,6 +113,6 @@ public class WeeklyAnalyticsDto {
         private int focusMinutes;
         private Integer estimatedMinutes;
         private int progressPercentage;
-        private LocalDate executionDate;
+        private LocalDate startDate;
     }
 }

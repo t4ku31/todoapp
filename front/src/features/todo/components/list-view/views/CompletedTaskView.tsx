@@ -1,9 +1,12 @@
+import * as React from "react";
+import { Virtuoso } from "react-virtuoso";
+import type { UpdateTaskParams } from "@/features/todo/api/taskApi";
 import type { Task } from "@/features/todo/types";
 import { TaskItem } from "../../TaskItem";
 
 interface CompletedTaskViewProps {
 	tasks: Task[];
-	onUpdateTask: (taskId: number, updates: Partial<Task>) => Promise<void>;
+	onUpdateTask: (taskId: number, updates: UpdateTaskParams) => Promise<void>;
 	onDeleteTask: (taskId: number) => Promise<void>;
 	onTaskSelect?: (taskId: number | null) => void;
 	selectedTaskId?: number | null;
@@ -16,6 +19,22 @@ export function CompletedTaskView({
 	onTaskSelect,
 	selectedTaskId,
 }: CompletedTaskViewProps) {
+	const itemContent = React.useCallback(
+		(_index: number, task: Task) => (
+			<div className="mb-2 pr-4">
+				<TaskItem
+					key={task.id}
+					task={task}
+					onUpdateTask={onUpdateTask}
+					onDeleteTask={onDeleteTask}
+					onSelect={(id) => onTaskSelect?.(id)}
+					isSelected={selectedTaskId === task.id}
+				/>
+			</div>
+		),
+		[onUpdateTask, onDeleteTask, onTaskSelect, selectedTaskId],
+	);
+
 	if (tasks.length === 0) {
 		return (
 			<div className="flex flex-col items-center justify-center h-64 text-gray-400">
@@ -25,18 +44,10 @@ export function CompletedTaskView({
 	}
 
 	return (
-		<div className="space-y-2">
-			{tasks.map((task) => (
-				<TaskItem
-					key={task.id}
-					task={task}
-					onUpdateTask={onUpdateTask}
-					onDeleteTask={onDeleteTask}
-					onSelect={(id) => onTaskSelect?.(id)}
-					isSelected={selectedTaskId === task.id}
-					// Completed view specific props if any
-				/>
-			))}
-		</div>
+		<Virtuoso
+			style={{ height: "100%" }}
+			data={tasks}
+			itemContent={itemContent}
+		/>
 	);
 }

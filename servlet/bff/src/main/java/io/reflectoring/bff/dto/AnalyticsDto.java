@@ -72,7 +72,7 @@ public class AnalyticsDto {
                         Integer estimatedMinutes,
                         int progressPercentage,
                         Long parentTaskId,
-                        LocalDate executionDate) {
+                        LocalDate startDate) {
         }
 
         public record GroupedTaskSummary(
