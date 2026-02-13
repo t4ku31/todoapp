@@ -1,12 +1,12 @@
+import { usePomodoroStore } from "@/features/pomodoro/stores/usePomodoroStore";
 import { useEffect, useRef } from "react";
-import { usePomodoroStore } from "@/store/usePomodoroStore";
 
 // Sound file mapping - keys must match usePomodoroStore.settings.whiteNoise values
 const SOUND_FILES: Record<string, string> = {
-	"white-noise": "/sounds/WhiteNoise.mp3",
+	white_noise: "/sounds/WhiteNoise.mp3",
 	// Add more sounds here later
-	// 'rain': '/sounds/rain.mp3',
-	// 'cafe': '/sounds/cafe.mp3',
+	// rain: '/sounds/rain.mp3',
+	// cafe: '/sounds/cafe.mp3',
 };
 
 export function useWhiteNoise() {
