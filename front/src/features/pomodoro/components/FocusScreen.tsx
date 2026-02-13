@@ -1,10 +1,11 @@
+import { usePomodoroStore } from "@/features/pomodoro/stores/usePomodoroStore";
+import { useWhiteNoise } from "@/features/pomodoro/stores/useWhiteNoise";
+import { useTodoStore } from "@/store/useTodoStore";
 import { format } from "date-fns";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { useWhiteNoise } from "@/hooks/useWhiteNoise";
-import { usePomodoroStore } from "@/store/usePomodoroStore";
-import { useTodoStore } from "@/store/useTodoStore";
+const NOTIFICATION_SOUND_PATH = "/sounds/NotificationSound.mp3";
 
 import { ControlButtons } from "./ControlButtons";
 import { TaskSelector } from "./TaskSelector";
@@ -32,11 +33,12 @@ export default function FocusScreen() {
 		currentTaskId,
 		setFocusTask,
 		updateSettings,
-		totalFocusTime,
-		dailyFocusTime,
 		fetchDailySummary,
-		adjustTime,
+		duration, // Add duration
 	} = usePomodoroStore();
+
+	// Derived state for UI
+	const totalFocusTime = duration - timeLeft;
 
 	const allTasks = useTodoStore((state) => state.allTasks);
 	const updateTask = useTodoStore((state) => state.updateTask);
@@ -72,7 +74,6 @@ export default function FocusScreen() {
 	// Fetch daily summary on mount
 	useEffect(() => {
 		fetchDailySummary();
-		console.log("Daily summary fetched");
 	}, [fetchDailySummary]);
 
 	// Save focus time on page leave - Best effort
@@ -82,8 +83,6 @@ export default function FocusScreen() {
 				resetTimer(); // Record as interrupted
 			}
 		};
-		// Visibility change?
-		// We rely on store state persistence or resetTimer.
 
 		window.addEventListener("beforeunload", handleBeforeUnload);
 		return () => {
@@ -102,41 +101,69 @@ export default function FocusScreen() {
 		};
 	}, [isActive, tick]);
 
+	// Request notification permission on mount
+	useEffect(() => {
+		if ("Notification" in window && Notification.permission === "default") {
+			Notification.requestPermission();
+		}
+	}, []);
+
+	const sendSystemNotification = useCallback((title: string, body: string) => {
+		if ("Notification" in window && Notification.permission === "granted") {
+			new Notification(title, {
+				body,
+				icon: "/favicon.ico", // Ensure this exists or use appropriate icon
+			});
+		}
+	}, []);
+
+	// Preload notification sound (useRef pattern, consistent with useWhiteNoise)
+	const notificationAudioRef = useRef<HTMLAudioElement | null>(null);
+	useEffect(() => {
+		notificationAudioRef.current = new Audio(NOTIFICATION_SOUND_PATH);
+	}, []);
+
+	const playNotificationSound = useCallback(() => {
+		const audio = notificationAudioRef.current;
+		if (audio) {
+			audio.volume = settings.volume;
+			audio.currentTime = 0;
+			audio.play().catch((e) => {
+				console.error("Failed to play notification sound", e);
+			});
+		}
+	}, [settings.volume]);
+
+	// Audio & System Notification when time is up (isOvertime transitions to true)
+	const prevOvertimeRef = useRef(false);
+	useEffect(() => {
+		if (isOvertime && !prevOvertimeRef.current) {
+			const phaseLabel = phase === "focus" ? "フォーカス" : "リラックス";
+			const title = "時間になりました！";
+			const body = `${phaseLabel}セッションが終了しました。`;
+
+			playNotificationSound();
+			sendSystemNotification(title, body);
+		}
+		prevOvertimeRef.current = isOvertime;
+	}, [isOvertime, phase, playNotificationSound, sendSystemNotification]);
+
 	// Calculate progress
-	const totalDuration =
-		phase === "focus"
-			? settings.focusDuration * 60
-			: phase === "shortBreak"
-				? settings.shortBreakDuration * 60
-				: settings.longBreakDuration * 60;
-	// Progress:
-	// If overtime (timeLeft < 0), progress > 100% or just 100%?
-	// Let's cap at 100 or show spin?
-	// Simple calc:
-	const progress = Math.min(
-		100,
-		((totalDuration - timeLeft) / totalDuration) * 100,
-	);
 
 	// Handlers
 	const handleEndSession = async () => {
-		// Stop button -> Interrupted
 		resetTimer();
 		setFocusTask(null);
 		navigate("/home");
 	};
 
 	const handleCompleteSession = async () => {
-		// Finish/Break button (for Flow)
 		completeSession();
-		// Maybe navigate? Or stay?
-		// Usually stay or move to break.
 	};
 
 	const handlePlayPause = () => {
-		// New Requirement: If in Overtime (Flow) and Auto Advance is OFF,
-		// the Play (or main) button should triggering "Complete Session".
-		if (isOvertime && !settings.autoAdvance) {
+		// Auto-advance is forced, so no need to check for overtime override unless logic fails
+		if (isOvertime) {
 			completeSession();
 			return;
 		}
@@ -145,10 +172,6 @@ export default function FocusScreen() {
 
 	const toggleWhiteNoise = () => {
 		updateSettings({ whiteNoise: isWhiteNoiseOn ? "none" : "white-noise" });
-	};
-
-	const toggleAutoAdvance = () => {
-		updateSettings({ autoAdvance: !settings.autoAdvance });
 	};
 
 	return (
@@ -168,41 +191,19 @@ export default function FocusScreen() {
 
 			{/* Timer Section */}
 			<div className="flex-1 flex flex-col items-center justify-center">
-				<TimerRing
-					timeLeft={timeLeft}
-					phase={phase}
-					progress={progress}
-					dailyFocusTime={dailyFocusTime}
-					totalFocusTime={totalFocusTime}
-					dailyGoal={settings.dailyGoal}
-					onAdjustTime={adjustTime}
-				/>
-
-				{/* Show "Finish" button if in Overtime */}
-				{/* Show "Finish" button if in Overtime */}
-				{isOvertime && !settings.autoAdvance && (
-					<button
-						type="button"
-						onClick={handleCompleteSession}
-						className="mb-4 bg-green-500 text-white px-6 py-2 rounded-full font-bold shadow-lg hover:bg-green-600 transition"
-					>
-						Complete Session
-					</button>
-				)}
+				<TimerRing />
 
 				<ControlButtons
 					isActive={isActive}
 					phase={phase}
 					isWhiteNoiseOn={isWhiteNoiseOn}
-					autoAdvance={settings.autoAdvance}
+					isOvertime={isOvertime}
 					onPlayPause={handlePlayPause}
 					onReset={resetTimer}
 					onSkip={skipPhase}
 					onEndSession={handleEndSession}
 					onToggleWhiteNoise={toggleWhiteNoise}
-					onToggleAutoAdvance={toggleAutoAdvance}
-					volume={settings.volume}
-					onVolumeChange={(newVol) => updateSettings({ volume: newVol })}
+					onComplete={handleCompleteSession}
 				/>
 			</div>
 		</div>
