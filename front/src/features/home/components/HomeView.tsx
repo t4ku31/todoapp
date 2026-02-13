@@ -5,8 +5,8 @@ import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { usePomodoroStore } from "@/features/pomodoro/stores/usePomodoroStore";
 import { DailyTaskList } from "@/features/todo/components/DailyTaskList";
-import { usePomodoroStore } from "@/store/usePomodoroStore";
 import { useTodoStore } from "@/store/useTodoStore";
 import { FocusCircle } from "./FocusCircle";
 
@@ -23,8 +23,8 @@ export default function HomeView() {
 	const currentTaskId = usePomodoroStore((state) => state.currentTaskId);
 	const setFocusTask = usePomodoroStore((state) => state.setFocusTask);
 	const setPhase = usePomodoroStore((state) => state.setPhase);
-	const updateSettings = usePomodoroStore((state) => state.updateSettings);
 	const fetchSettings = usePomodoroStore((state) => state.fetchSettings);
+	const settings = usePomodoroStore((state) => state.settings);
 
 	// Get current selected task
 	const currentTask = currentTaskId
@@ -67,9 +67,6 @@ export default function HomeView() {
 	}, [selectedDate]);
 
 	const startFocusSession = () => {
-		updateSettings({
-			whiteNoise: "white-noise",
-		});
 		setPhase("focus");
 		startTimer();
 		navigate("/focus");
@@ -120,7 +117,7 @@ export default function HomeView() {
 							className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white px-6 py-3 rounded-full shadow-lg"
 						>
 							<Play className="w-4 h-4 mr-2" />
-							Start Focus Session (25m)
+							Start Focus Session ({settings.focusDuration}m)
 						</Button>
 					</div>
 				</Card>
