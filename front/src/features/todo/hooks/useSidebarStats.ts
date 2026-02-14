@@ -38,8 +38,12 @@ export function useSidebarStats(taskLists: TaskList[]) {
 	const getInboxCount = useCallback(() => {
 		const inboxList = taskLists.find((l) => l.title === "Inbox");
 		return (
-			inboxList?.tasks?.filter((t) => !t.isDeleted && t.status !== "COMPLETED")
-				.length || 0
+			inboxList?.tasks?.filter(
+				(t) =>
+					!t.isDeleted &&
+					t.status !== "COMPLETED" &&
+					t.recurrenceParentId === null,
+			).length || 0
 		);
 	}, [taskLists]);
 
@@ -47,8 +51,12 @@ export function useSidebarStats(taskLists: TaskList[]) {
 		(listId: number) => {
 			const list = taskLists.find((l) => l.id === listId);
 			return (
-				list?.tasks?.filter((t) => !t.isDeleted && t.status !== "COMPLETED")
-					.length || 0
+				list?.tasks?.filter(
+					(t) =>
+						!t.isDeleted &&
+						t.status !== "COMPLETED" &&
+						t.recurrenceParentId === null,
+				).length || 0
 			);
 		},
 		[taskLists],

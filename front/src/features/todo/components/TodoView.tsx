@@ -1,13 +1,13 @@
+import { DndContext, DragOverlay } from "@dnd-kit/core";
+import { Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { AiChatPanel } from "@/features/ai/components/AiChatPanel";
 import { useTaskDragAndDrop } from "@/features/todo/hooks/useTaskDragAndDrop";
 import { cn } from "@/lib/utils";
 import { useCategoryStore } from "@/store/useCategoryStore";
 import { useTodoStore } from "@/store/useTodoStore";
-import { DndContext, DragOverlay } from "@dnd-kit/core";
-import { Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
 import { TaskDetailPanel } from "./detail-panel/TaskDetailPanel";
 import { FilteredTaskView } from "./list-view/FilteredTaskView";
 import { TaskSidebar } from "./sidebar/TaskSidebar";

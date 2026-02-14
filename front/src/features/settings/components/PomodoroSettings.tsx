@@ -1,3 +1,5 @@
+import { Volume2, VolumeX } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -18,8 +20,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { usePomodoroStore } from "@/features/pomodoro/stores/usePomodoroStore";
-import { Volume2, VolumeX } from "lucide-react";
-import { useEffect, useState } from "react";
 
 export const PomodoroSettings = () => {
 	const { settings, fetchSettings, updateSettings } = usePomodoroStore();
