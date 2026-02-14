@@ -1,5 +1,3 @@
-import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -10,7 +8,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useCategoryStore } from "@/store/useCategoryStore";
+import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
 // 12色のプリセットカラーパレット (Vivid / Tailwind 500s)
 const COLOR_PALETTE = [
@@ -62,6 +63,7 @@ export const CategorySettings = () => {
 		createCategory,
 		updateCategory,
 		deleteCategory,
+		loading,
 	} = useCategoryStore();
 	const [newCategoryName, setNewCategoryName] = useState("");
 	const [newCategoryColor, setNewCategoryColor] = useState("#6366f1"); // Indigo-500 default
@@ -143,7 +145,9 @@ export const CategorySettings = () => {
 
 					{/* Category List */}
 					<div className="space-y-2">
-						{categories.length === 0 ? (
+						{loading ? (
+							<LoadingSpinner className="py-12" />
+						) : categories.length === 0 ? (
 							<p className="text-center text-muted-foreground py-8">
 								No categories found. Create one above!
 							</p>

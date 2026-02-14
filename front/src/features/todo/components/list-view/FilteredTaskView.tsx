@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { AiSaveButton } from "@/features/ai/components/preview/AiSaveButton";
 import { useAiPreviewStore } from "@/features/ai/stores/useAiPreviewStore";
 import type { ParsedTask } from "@/features/ai/types";
@@ -10,6 +10,7 @@ import {
 	type UpdateTaskParams,
 	useTodoStore,
 } from "@/store/useTodoStore";
+import { useMemo } from "react";
 import { CreateTaskForm } from "../forms/CreateTaskForm";
 import { FilterHeader } from "./parts/FilterHeader";
 import { CompletedTaskView } from "./views/CompletedTaskView";
@@ -44,7 +45,7 @@ export function FilteredTaskView({
 		pathId,
 		searchQuery,
 	);
-	const { restoreTask, deleteTaskPermanently } = useTodoStore();
+	const { restoreTask, deleteTaskPermanently, loading } = useTodoStore();
 
 	const handleBackgroundClick = (e: React.MouseEvent) => {
 		if (e.target === e.currentTarget) {
@@ -111,7 +112,9 @@ export function FilteredTaskView({
 				className="flex-1 px-2 min-h-0 relative"
 				onClick={handleBackgroundClick}
 			>
-				{viewType === "completed" ? (
+				{loading ? (
+					<LoadingSpinner />
+				) : viewType === "completed" ? (
 					<CompletedTaskView
 						tasks={filteredTasks}
 						onUpdateTask={onUpdateTask}

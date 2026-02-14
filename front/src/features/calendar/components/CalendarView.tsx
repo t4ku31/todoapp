@@ -1,3 +1,8 @@
+import { Calendar as MiniCalendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import type { Task } from "@/features/todo/types";
+import { useTodoStore } from "@/store/useTodoStore";
 import { addHours, format, getDay, parse, startOfWeek } from "date-fns";
 import { ja } from "date-fns/locale";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -10,10 +15,6 @@ import {
 import withDragAndDrop, {
 	type EventInteractionArgs,
 } from "react-big-calendar/lib/addons/dragAndDrop";
-import { Calendar as MiniCalendar } from "@/components/ui/calendar";
-import { Input } from "@/components/ui/input";
-import type { Task } from "@/features/todo/types";
-import { useTodoStore } from "@/store/useTodoStore";
 import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./calendar.css";
@@ -75,6 +76,7 @@ export default function CalendarView() {
 	const fetchTaskLists = useTodoStore((state) => state.fetchTaskLists);
 	const updateTask = useTodoStore((state) => state.updateTask);
 	const createTask = useTodoStore((state) => state.createTask);
+	const loading = useTodoStore((state) => state.loading);
 
 	// Get Inbox list for new tasks
 	const inboxList = useMemo(
@@ -416,33 +418,37 @@ export default function CalendarView() {
 
 			{/* Main Calendar Area */}
 			<div className="flex-1 p-4 overflow-auto">
-				<DragAndDropCalendar
-					localizer={localizer}
-					events={events}
-					startAccessor="start"
-					endAccessor="end"
-					date={currentDate}
-					view={view}
-					onNavigate={handleNavigate}
-					onView={handleViewChange}
-					eventPropGetter={eventStyleGetter}
-					style={{ height: "100%" }}
-					views={calendarViews}
-					defaultView="week"
-					step={30}
-					timeslots={2}
-					min={calendarMinTime}
-					max={calendarMaxTime}
-					messages={messages}
-					components={components}
-					onEventDrop={moveEvent}
-					onEventResize={resizeEvent}
-					onSelectEvent={handleSelectEvent}
-					onSelectSlot={handleSelectSlot}
-					selectable
-					resizable
-					popup
-				/>
+				{loading ? (
+					<LoadingSpinner size="lg" />
+				) : (
+					<DragAndDropCalendar
+						localizer={localizer}
+						events={events}
+						startAccessor="start"
+						endAccessor="end"
+						date={currentDate}
+						view={view}
+						onNavigate={handleNavigate}
+						onView={handleViewChange}
+						eventPropGetter={eventStyleGetter}
+						style={{ height: "100%" }}
+						views={calendarViews}
+						defaultView="week"
+						step={30}
+						timeslots={2}
+						min={calendarMinTime}
+						max={calendarMaxTime}
+						messages={messages}
+						components={components}
+						onEventDrop={moveEvent}
+						onEventResize={resizeEvent}
+						onSelectEvent={handleSelectEvent}
+						onSelectSlot={handleSelectSlot}
+						selectable
+						resizable
+						popup
+					/>
+				)}
 			</div>
 
 			{/* Task Detail Panel */}
