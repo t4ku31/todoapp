@@ -165,7 +165,8 @@ public class TaskDto {
                         String recurrencePattern,
                         Boolean isDeleted,
                         List<SubtaskDto.Summary> subtasks,
-                        TaskStatus status) {
+                        TaskStatus status,
+                        @com.fasterxml.jackson.annotation.JsonProperty("suggestedTaskList") String suggestedTaskListTitle) {
         }
 
         @JsonIgnoreProperties(ignoreUnknown = true)
