@@ -1,11 +1,12 @@
-import { toast } from "sonner";
-import { create } from "zustand";
 import { apiClient } from "@/config/env";
 import type { Category } from "@/features/todo/types";
 import { normalizeError } from "@/utils/error";
+import { toast } from "sonner";
+import { create } from "zustand";
 
 interface CategoryState {
 	categories: Category[];
+	loading: boolean;
 	createCategory: (name: string, color: string) => Promise<Category>;
 	updateCategory: (id: number, updates: Partial<Category>) => Promise<void>;
 	deleteCategory: (id: number) => Promise<void>;
@@ -14,13 +15,16 @@ interface CategoryState {
 
 export const useCategoryStore = create<CategoryState>((set, get) => ({
 	categories: [],
+	loading: false,
 
 	fetchCategories: async () => {
+		set({ loading: true });
 		try {
 			const response = await apiClient.get<Category[]>("/api/categories");
-			set({ categories: response.data });
+			set({ categories: response.data, loading: false });
 		} catch (err) {
 			console.error("Failed to fetch categories:", err);
+			set({ loading: false });
 		}
 	},
 

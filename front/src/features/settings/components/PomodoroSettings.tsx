@@ -1,6 +1,3 @@
-import { Volume2, VolumeX } from "lucide-react";
-import { useEffect, useState } from "react";
-
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -12,6 +9,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
 	Select,
 	SelectContent,
@@ -20,9 +18,12 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { usePomodoroStore } from "@/features/pomodoro/stores/usePomodoroStore";
+import { Volume2, VolumeX } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export const PomodoroSettings = () => {
 	const { settings, fetchSettings, updateSettings } = usePomodoroStore();
+	const [loading, setLoading] = useState(true);
 	const [inputValues, setInputValues] = useState<{
 		focusDuration: string;
 		shortBreakDuration: string;
@@ -39,7 +40,12 @@ export const PomodoroSettings = () => {
 
 	// Sync local state when settings change from store (e.g. fetch or preset click)
 	useEffect(() => {
-		fetchSettings();
+		const loadSettings = async () => {
+			setLoading(true);
+			await fetchSettings();
+			setLoading(false);
+		};
+		loadSettings();
 	}, [fetchSettings]);
 
 	useEffect(() => {
@@ -86,104 +92,112 @@ export const PomodoroSettings = () => {
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<div className="space-y-3">
-							<Label htmlFor="focusDuration">Focus Duration (min)</Label>
-							<Input
-								id="focusDuration"
-								type="number"
-								min="1"
-								placeholder={(settings.focusDuration ?? 25).toString()}
-								value={inputValues.focusDuration}
-								onChange={(e) =>
-									handleDurationChange("focusDuration", e.target.value)
-								}
-							/>
-							<div className="flex flex-wrap gap-2">
-								{[15, 25, 50, 90].map((duration) => (
-									<Button
-										key={duration}
-										variant={
-											settings.focusDuration === duration
-												? "default"
-												: "outline"
-										}
-										size="sm"
-										onClick={() => updateSettings({ focusDuration: duration })}
-										className="h-7 px-2 text-xs"
-									>
-										{duration}m
-									</Button>
-								))}
-							</div>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="shortBreakDuration">Short Break (min)</Label>
-							<Input
-								id="shortBreakDuration"
-								type="number"
-								min="1"
-								placeholder={(settings.shortBreakDuration ?? 5).toString()}
-								value={inputValues.shortBreakDuration}
-								onChange={(e) =>
-									handleDurationChange("shortBreakDuration", e.target.value)
-								}
-							/>
-						</div>
-						<div className="space-y-2">
-							<div className="flex items-center justify-between">
-								<Label htmlFor="longBreakDuration">Long Break (min)</Label>
-								<div className="flex items-center space-x-2">
-									<Checkbox
-										id="longBreakEnabled"
-										checked={settings.isLongBreakEnabled}
-										onCheckedChange={(checked) =>
-											updateSettings({ isLongBreakEnabled: checked === true })
-										}
-									/>
-									<span className="text-xs text-muted-foreground">Enable</span>
+					{loading ? (
+						<LoadingSpinner className="py-12" />
+					) : (
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+							<div className="space-y-3">
+								<Label htmlFor="focusDuration">Focus Duration (min)</Label>
+								<Input
+									id="focusDuration"
+									type="number"
+									min="1"
+									placeholder={(settings.focusDuration ?? 25).toString()}
+									value={inputValues.focusDuration}
+									onChange={(e) =>
+										handleDurationChange("focusDuration", e.target.value)
+									}
+								/>
+								<div className="flex flex-wrap gap-2">
+									{[15, 25, 50, 90].map((duration) => (
+										<Button
+											key={duration}
+											variant={
+												settings.focusDuration === duration
+													? "default"
+													: "outline"
+											}
+											size="sm"
+											onClick={() =>
+												updateSettings({ focusDuration: duration })
+											}
+											className="h-7 px-2 text-xs"
+										>
+											{duration}m
+										</Button>
+									))}
 								</div>
 							</div>
-							<Input
-								id="longBreakDuration"
-								type="number"
-								min="1"
-								disabled={!settings.isLongBreakEnabled}
-								placeholder={(settings.longBreakDuration ?? 15).toString()}
-								value={inputValues.longBreakDuration}
-								onChange={(e) =>
-									handleDurationChange("longBreakDuration", e.target.value)
-								}
-							/>
+							<div className="space-y-2">
+								<Label htmlFor="shortBreakDuration">Short Break (min)</Label>
+								<Input
+									id="shortBreakDuration"
+									type="number"
+									min="1"
+									placeholder={(settings.shortBreakDuration ?? 5).toString()}
+									value={inputValues.shortBreakDuration}
+									onChange={(e) =>
+										handleDurationChange("shortBreakDuration", e.target.value)
+									}
+								/>
+							</div>
+							<div className="space-y-2">
+								<div className="flex items-center justify-between">
+									<Label htmlFor="longBreakDuration">Long Break (min)</Label>
+									<div className="flex items-center space-x-2">
+										<Checkbox
+											id="longBreakEnabled"
+											checked={settings.isLongBreakEnabled}
+											onCheckedChange={(checked) =>
+												updateSettings({ isLongBreakEnabled: checked === true })
+											}
+										/>
+										<span className="text-xs text-muted-foreground">
+											Enable
+										</span>
+									</div>
+								</div>
+								<Input
+									id="longBreakDuration"
+									type="number"
+									min="1"
+									disabled={!settings.isLongBreakEnabled}
+									placeholder={(settings.longBreakDuration ?? 15).toString()}
+									value={inputValues.longBreakDuration}
+									onChange={(e) =>
+										handleDurationChange("longBreakDuration", e.target.value)
+									}
+								/>
+							</div>
+							<div className="space-y-2">
+								<Label htmlFor="longBreakInterval">Long Break Interval</Label>
+								<Input
+									id="longBreakInterval"
+									type="number"
+									min="1"
+									disabled={!settings.isLongBreakEnabled}
+									placeholder={(settings.longBreakInterval ?? 4).toString()}
+									value={inputValues.longBreakInterval}
+									onChange={(e) =>
+										handleDurationChange("longBreakInterval", e.target.value)
+									}
+								/>
+							</div>
+							<div className="space-y-2">
+								<Label htmlFor="dailyGoal">Daily Goal (min)</Label>
+								<Input
+									id="dailyGoal"
+									type="number"
+									min="1"
+									placeholder={(settings.dailyGoal ?? 120).toString()}
+									value={inputValues.dailyGoal}
+									onChange={(e) =>
+										handleDurationChange("dailyGoal", e.target.value)
+									}
+								/>
+							</div>
 						</div>
-						<div className="space-y-2">
-							<Label htmlFor="longBreakInterval">Long Break Interval</Label>
-							<Input
-								id="longBreakInterval"
-								type="number"
-								min="1"
-								disabled={!settings.isLongBreakEnabled}
-								placeholder={(settings.longBreakInterval ?? 4).toString()}
-								value={inputValues.longBreakInterval}
-								onChange={(e) =>
-									handleDurationChange("longBreakInterval", e.target.value)
-								}
-							/>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="dailyGoal">Daily Goal (min)</Label>
-							<Input
-								id="dailyGoal"
-								type="number"
-								min="1"
-								placeholder={(settings.dailyGoal ?? 120).toString()}
-								value={inputValues.dailyGoal}
-								onChange={(e) =>
-									handleDurationChange("dailyGoal", e.target.value)
-								}
-							/>
-						</div>
-					</div>
+					)}
 				</CardContent>
 			</Card>
 
