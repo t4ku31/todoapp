@@ -120,28 +120,59 @@ export default function FocusScreen() {
 	// Preload notification sound (useRef pattern, consistent with useWhiteNoise)
 	const notificationAudioRef = useRef<HTMLAudioElement | null>(null);
 	useEffect(() => {
-		notificationAudioRef.current = new Audio(NOTIFICATION_SOUND_PATH);
+		const audio = new Audio(NOTIFICATION_SOUND_PATH);
+		notificationAudioRef.current = audio;
+		console.log("[Notification Sound] Audio element initialized", {
+			src: audio.src,
+			readyState: audio.readyState,
+		});
 	}, []);
 
 	const playNotificationSound = useCallback(() => {
 		const audio = notificationAudioRef.current;
+		console.log("[Notification Sound] Attempting to play sound", {
+			audioExists: !!audio,
+			volume: settings.volume,
+			audioSrc: audio?.src,
+		});
+
 		if (audio) {
 			audio.volume = settings.volume;
 			audio.currentTime = 0;
-			audio.play().catch((e) => {
-				console.error("Failed to play notification sound", e);
-			});
+			audio
+				.play()
+				.then(() => {
+					console.log("[Notification Sound] ✅ Sound played successfully");
+				})
+				.catch((e) => {
+					console.error("[Notification Sound] ❌ Failed to play sound", {
+						error: e,
+						errorName: e.name,
+						errorMessage: e.message,
+						volume: settings.volume,
+					});
+				});
+		} else {
+			console.error("[Notification Sound] ❌ Audio element not initialized");
 		}
 	}, [settings.volume]);
 
 	// Audio & System Notification when time is up (isOvertime transitions to true)
 	const prevOvertimeRef = useRef(false);
 	useEffect(() => {
+		console.log("[Overtime Detection]", {
+			isOvertime,
+			prevOvertime: prevOvertimeRef.current,
+			phase,
+			willTrigger: isOvertime && !prevOvertimeRef.current,
+		});
+
 		if (isOvertime && !prevOvertimeRef.current) {
 			const phaseLabel = phase === "focus" ? "フォーカス" : "リラックス";
 			const title = "時間になりました！";
 			const body = `${phaseLabel}セッションが終了しました。`;
 
+			console.log("[Overtime] 🔔 Triggering notification and sound");
 			playNotificationSound();
 			sendSystemNotification(title, body);
 		}
