@@ -3,7 +3,7 @@ import { usePomodoroStore } from "@/features/pomodoro/stores/usePomodoroStore";
 
 // Sound file mapping - keys must match usePomodoroStore.settings.whiteNoise values
 const SOUND_FILES: Record<string, string> = {
-	white_noise: "/sounds/WhiteNoise.mp3",
+	"white-noise": "/sounds/WhiteNoise.mp3",
 	// Add more sounds here later
 	// rain: '/sounds/rain.mp3',
 	// cafe: '/sounds/cafe.mp3',
@@ -18,8 +18,12 @@ export function useWhiteNoise() {
 	useEffect(() => {
 		const soundFile = SOUND_FILES[settings.whiteNoise];
 
-		// If sound is 'none' or not found, stop and cleanup
-		if (!soundFile || settings.whiteNoise === "none") {
+		// If sound is 'none', empty, or not found, stop and cleanup
+		if (
+			!soundFile ||
+			settings.whiteNoise === "none" ||
+			settings.whiteNoise === ""
+		) {
 			if (audioRef.current) {
 				audioRef.current.pause();
 				audioRef.current = null;
