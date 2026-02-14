@@ -301,8 +301,11 @@ export function EditableDate({
 				</IconBadge>
 			</PopoverTrigger>
 			<PopoverContent
-				className="w-auto p-0"
-				align="start"
+				className="w-auto p-0 py-5"
+				align="center"
+				side="right"
+				sideOffset={8}
+				collisionPadding={16}
 				onPointerDown={(e) => e.stopPropagation()}
 			>
 				{/* Tab Selector */}
@@ -349,7 +352,7 @@ export function EditableDate({
 				</div>
 
 				{/* Content based on active tab */}
-				<div className="p-2">
+				<div className="p-2 pb-3">
 					{activeTab === "single" && (
 						<Calendar
 							mode="single"
@@ -392,11 +395,11 @@ export function EditableDate({
 					)}
 
 					{activeTab === "repeat" && (
-						<div className="p-4 min-w-[320px] max-w-[360px]">
+						<div className="p-3 min-w-[280px] max-w-[320px] max-h-[350px] flex flex-col overflow-y-auto">
 							{/* Frequency Selection */}
-							<div className="space-y-3">
-								<div className="text-sm font-medium text-gray-700">Repeat</div>
-								<div className="flex flex-wrap gap-2">
+							<div className="space-y-2 flex-shrink-0">
+								<div className="text-xs font-medium text-gray-700">Repeat</div>
+								<div className="flex flex-wrap gap-1.5">
 									{[
 										{ value: "DAILY" as const, label: "Daily" },
 										{ value: "WEEKLY" as const, label: "Weekly" },
@@ -419,7 +422,7 @@ export function EditableDate({
 												}
 											}}
 											className={cn(
-												"px-3 py-2 text-sm rounded-lg border-2 transition-all font-medium",
+												"px-2.5 py-1.5 text-xs rounded-md border-2 transition-all font-medium",
 												repeatFrequency === option.value
 													? "border-indigo-500 bg-indigo-50 text-indigo-700"
 													: "border-gray-200 hover:border-indigo-300 text-gray-600",
@@ -433,8 +436,8 @@ export function EditableDate({
 
 							{/* Weekly: Day of week selection */}
 							{repeatFrequency === "WEEKLY" && (
-								<div className="mt-4 pt-4 border-t border-gray-100">
-									<div className="text-sm font-medium text-gray-700 mb-2">
+								<div className="mt-3 pt-3 border-t border-gray-100 flex-shrink-0">
+									<div className="text-xs font-medium text-gray-700 mb-1.5">
 										Days
 									</div>
 									<div className="flex gap-1">
@@ -454,7 +457,7 @@ export function EditableDate({
 														}
 													}}
 													className={cn(
-														"w-9 h-9 rounded-full text-sm font-medium transition-all",
+														"w-8 h-8 rounded-full text-xs font-medium transition-all",
 														isSelected
 															? "bg-indigo-500 text-white"
 															: "bg-gray-100 text-gray-600 hover:bg-indigo-100",
@@ -476,8 +479,8 @@ export function EditableDate({
 
 							{/* Custom: Multi-select calendar */}
 							{repeatFrequency === "CUSTOM" && (
-								<div className="mt-4 pt-4 border-t border-gray-100">
-									<div className="text-sm font-medium text-gray-700 mb-2">
+								<div className="mt-3 pt-3 border-t border-gray-100 flex-shrink-0">
+									<div className="text-xs font-medium text-gray-700 mb-1.5">
 										Select dates
 									</div>
 									<Calendar
@@ -485,7 +488,7 @@ export function EditableDate({
 										selected={customDates}
 										onSelect={handleCustomDateSelect}
 										locale={enUS}
-										className="p-3 [&_table]:w-full [&_table]:border-collapse [&_td]:w-9 [&_td]:h-9 [&_th]:w-9 [&_th]:h-9 [&_th]:text-center [&_th]:font-normal [&_th]:text-gray-500 [&_button]:w-9 [&_button]:h-9"
+										className="p-2 [&_table]:w-full [&_table]:border-collapse [&_td]:w-8 [&_td]:h-8 [&_th]:w-8 [&_th]:h-8 [&_th]:text-center [&_th]:font-normal [&_th]:text-gray-500 [&_th]:text-xs [&_button]:w-8 [&_button]:h-8 [&_button]:text-xs"
 									/>
 									{customDates.length > 0 && (
 										<div className="mt-2 flex flex-wrap gap-1">
@@ -512,9 +515,9 @@ export function EditableDate({
 
 							{/* Start Date - for daily/weekly/monthly */}
 							{repeatFrequency && repeatFrequency !== "CUSTOM" && (
-								<div className="mt-4 pt-4 border-t border-gray-100">
+								<div className="mt-3 pt-3 border-t border-gray-100">
 									<div className="flex items-center justify-between">
-										<span className="text-sm font-medium text-gray-700">
+										<span className="text-xs font-medium text-gray-700">
 											Start
 										</span>
 										<Popover>
@@ -522,7 +525,7 @@ export function EditableDate({
 												<button
 													type="button"
 													className={cn(
-														"px-3 py-1.5 text-sm rounded-lg border transition-all",
+														"px-2 py-1 text-xs rounded border transition-all",
 														repeatStartDate
 															? "border-indigo-300 bg-indigo-50 text-indigo-700"
 															: "border-gray-200 text-gray-500 hover:border-indigo-300",
@@ -555,11 +558,11 @@ export function EditableDate({
 
 							{/* Repeat End Section - for all repeat types except custom */}
 							{repeatFrequency && repeatFrequency !== "CUSTOM" && (
-								<div className="mt-4 pt-4 border-t border-gray-100">
-									<div className="text-sm font-medium text-gray-700 mb-3">
+								<div className="mt-3 pt-3 border-t border-gray-100">
+									<div className="text-xs font-medium text-gray-700 mb-2">
 										Ends
 									</div>
-									<div className="space-y-2">
+									<div className="space-y-1.5">
 										{/* Never */}
 										<label className="flex items-center gap-3 cursor-pointer">
 											<input
@@ -569,7 +572,7 @@ export function EditableDate({
 												onChange={() => setRepeatEndType("never")}
 												className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
 											/>
-											<span className="text-sm text-gray-700">Never</span>
+											<span className="text-xs text-gray-700">Never</span>
 										</label>
 
 										{/* On Date */}
@@ -581,14 +584,14 @@ export function EditableDate({
 												onChange={() => setRepeatEndType("on_date")}
 												className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
 											/>
-											<span className="text-sm text-gray-700">On</span>
+											<span className="text-xs text-gray-700">On</span>
 											{repeatEndType === "on_date" && (
 												<Popover>
 													<PopoverTrigger asChild>
 														<button
 															type="button"
 															className={cn(
-																"px-2 py-1 text-sm rounded border transition-all",
+																"px-2 py-0.5 text-xs rounded border transition-all",
 																repeatEndDate
 																	? "border-indigo-300 bg-indigo-50 text-indigo-700"
 																	: "border-gray-200 text-gray-500 hover:border-indigo-300",
@@ -629,7 +632,7 @@ export function EditableDate({
 												}}
 												className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
 											/>
-											<span className="text-sm text-gray-700">After</span>
+											<span className="text-xs text-gray-700">After</span>
 											{repeatEndType === "after_count" && (
 												<>
 													<input
@@ -642,9 +645,9 @@ export function EditableDate({
 																Number.parseInt(e.target.value, 10) || 1,
 															)
 														}
-														className="w-16 px-2 py-1 text-sm border rounded text-center focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+														className="w-14 px-2 py-0.5 text-xs border rounded text-center focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
 													/>
-													<span className="text-sm text-gray-700">times</span>
+													<span className="text-xs text-gray-700">times</span>
 												</>
 											)}
 										</label>
@@ -654,8 +657,8 @@ export function EditableDate({
 
 							{/* Summary */}
 							{repeatFrequency && (
-								<div className="mt-4 p-3 bg-indigo-50 rounded-lg">
-									<div className="text-sm text-indigo-700">
+								<div className="mt-3 p-2 bg-indigo-50 rounded-lg flex-shrink-0">
+									<div className="text-xs text-indigo-700">
 										<span className="font-medium">
 											{getRepeatLabel(repeatFrequency)}
 										</span>
@@ -693,7 +696,7 @@ export function EditableDate({
 							)}
 
 							{/* Apply button for repeat mode */}
-							<div className="mt-4 flex justify-end">
+							<div className="mt-auto pt-3 flex justify-end flex-shrink-0">
 								<Button
 									size="sm"
 									onClick={async () => {
