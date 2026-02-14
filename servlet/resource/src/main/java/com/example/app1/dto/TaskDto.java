@@ -211,7 +211,8 @@ public class TaskDto {
                         @JsonPropertyDescription("繰り返しルール") RecurrenceRuleDto recurrenceRule,
                         @JsonPropertyDescription("削除フラグ") Boolean isDeleted,
                         @JsonPropertyDescription("サブタスク（オブジェクト）のリスト") List<SubtaskDto.Summary> subtasks,
-                        @JsonPropertyDescription("ステータス（PENDING, COMPLETED）") String status) {
+                        @JsonPropertyDescription("ステータス（PENDING, COMPLETED）") String status,
+                        @com.fasterxml.jackson.annotation.JsonProperty("suggestedTaskList") @JsonPropertyDescription("提案されたタスクリスト名") String suggestedTaskListTitle) {
         }
 
         /**
