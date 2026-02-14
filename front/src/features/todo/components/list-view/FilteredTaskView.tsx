@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { AiSaveButton } from "@/features/ai/components/preview/AiSaveButton";
 import { useAiPreviewStore } from "@/features/ai/stores/useAiPreviewStore";
@@ -10,7 +11,6 @@ import {
 	type UpdateTaskParams,
 	useTodoStore,
 } from "@/store/useTodoStore";
-import { useMemo } from "react";
 import { CreateTaskForm } from "../forms/CreateTaskForm";
 import { FilterHeader } from "./parts/FilterHeader";
 import { CompletedTaskView } from "./views/CompletedTaskView";
