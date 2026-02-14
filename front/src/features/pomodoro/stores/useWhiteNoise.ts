@@ -18,14 +18,6 @@ export function useWhiteNoise() {
 	useEffect(() => {
 		const soundFile = SOUND_FILES[settings.whiteNoise];
 
-		console.log("[White Noise] Effect triggered", {
-			whiteNoiseSetting: settings.whiteNoise,
-			soundFile,
-			isActive,
-			phase,
-			audioExists: !!audioRef.current,
-		});
-
 		// If sound is 'none', empty, or not found, stop and cleanup
 		if (
 			!soundFile ||
@@ -33,7 +25,6 @@ export function useWhiteNoise() {
 			settings.whiteNoise === ""
 		) {
 			if (audioRef.current) {
-				console.log("[White Noise] Stopping and cleaning up audio");
 				audioRef.current.pause();
 				audioRef.current = null;
 			}
