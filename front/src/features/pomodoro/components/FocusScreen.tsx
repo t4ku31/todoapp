@@ -120,7 +120,8 @@ export default function FocusScreen() {
 	// Preload notification sound (useRef pattern, consistent with useWhiteNoise)
 	const notificationAudioRef = useRef<HTMLAudioElement | null>(null);
 	useEffect(() => {
-		notificationAudioRef.current = new Audio(NOTIFICATION_SOUND_PATH);
+		const audio = new Audio(NOTIFICATION_SOUND_PATH);
+		notificationAudioRef.current = audio;
 	}, []);
 
 	const playNotificationSound = useCallback(() => {
