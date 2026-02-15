@@ -59,7 +59,6 @@ export const taskSchema = z
 			.array(
 				z.object({
 					title: z.string(), // Allow empty - will be filtered in onSubmit
-					description: z.string().optional(),
 					isCompleted: z.boolean().optional(),
 					orderIndex: z.number().optional(),
 				}),
