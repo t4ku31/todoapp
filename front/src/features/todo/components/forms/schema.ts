@@ -47,8 +47,8 @@ export const taskSchema = z
 
 		// Date Configuration
 		dateMode: dateModeSchema,
-		startDate: z.date().optional(), // Start date for all modes (single/range/repeat)
-		endDate: z.date().optional(), // Range mode end
+		scheduledStartAt: z.date().optional(), // Start datetime for all modes
+		scheduledEndAt: z.date().optional(), // Range mode end
 		isRecurring: z.boolean().optional(),
 		// Recurrence Configuration - unified with RecurrenceConfig type
 		recurrenceRule: recurrenceConfigSchema.optional(),
@@ -69,14 +69,14 @@ export const taskSchema = z
 	.refine(
 		(data) => {
 			// Only validate if both dates are set
-			if (data.startDate && data.endDate) {
-				return data.endDate >= data.startDate;
+			if (data.scheduledStartAt && data.scheduledEndAt) {
+				return data.scheduledEndAt >= data.scheduledStartAt;
 			}
 			return true;
 		},
 		{
 			message: "終了日は開始日以降にしてください",
-			path: ["endDate"],
+			path: ["scheduledEndAt"],
 		},
 	);
 

@@ -16,14 +16,12 @@ interface RawTask
 	extends Omit<
 		Task,
 		| "recurrenceRule"
-		| "startDate"
 		| "dueDate"
 		| "scheduledStartAt"
 		| "scheduledEndAt"
 		| "completedAt"
 	> {
 	recurrenceRule?: RawRecurrenceConfig;
-	startDate?: string | null;
 	dueDate?: string | null;
 	scheduledStartAt?: string | null;
 	scheduledEndAt?: string | null;
@@ -61,12 +59,10 @@ const serializeDateTime = (date: Date | null | undefined): string | null => {
 	return date.toISOString();
 };
 
-// Helper to deserialize Task
 const deserializeTask = (task: RawTask): Task => {
 	return {
 		...task,
 		recurrenceRule: deserializeRecurrenceConfig(task.recurrenceRule),
-		startDate: parseLocalDate(task.startDate),
 		dueDate: parseLocalDate(task.dueDate),
 		completedAt: parseDateTime(task.completedAt),
 		scheduledStartAt: parseDateTime(task.scheduledStartAt),
@@ -74,13 +70,11 @@ const deserializeTask = (task: RawTask): Task => {
 	};
 };
 
-// Parameters for createTask
 export interface CreateTaskParams {
 	taskListId: number;
 	taskListTitle?: string;
 	title: string;
 	dueDate?: Date | null;
-	startDate?: Date | null;
 	categoryId?: number;
 	estimatedPomodoros?: number;
 	subtasks?: {
@@ -192,7 +186,6 @@ export const taskApi = {
 		const payload = {
 			...params,
 			recurrenceRule: serializeRecurrenceConfig(params.recurrenceRule),
-			startDate: serializeLocalDate(params.startDate),
 			dueDate: serializeLocalDate(params.dueDate),
 			scheduledStartAt: serializeDateTime(params.scheduledStartAt),
 			scheduledEndAt: serializeDateTime(params.scheduledEndAt),
@@ -208,7 +201,6 @@ export const taskApi = {
 		const payload = {
 			...updates,
 			recurrenceRule: serializeRecurrenceConfig(updates.recurrenceRule),
-			startDate: serializeLocalDate(updates.startDate),
 			dueDate: serializeLocalDate(updates.dueDate),
 			scheduledStartAt: serializeDateTime(updates.scheduledStartAt),
 			scheduledEndAt: serializeDateTime(updates.scheduledEndAt),
@@ -226,13 +218,15 @@ export const taskApi = {
 			status?: "PENDING" | "COMPLETED";
 			categoryId?: number;
 			taskListId?: number;
-			startDate?: Date | null;
+			scheduledStartAt?: Date | null;
 		},
 	): Promise<BulkOperationResult> => {
 		const payload = {
 			taskIds,
-			...updates,
-			startDate: serializeLocalDate(updates.startDate),
+			status: updates.status,
+			categoryId: updates.categoryId,
+			taskListId: updates.taskListId,
+			scheduledStartAt: serializeDateTime(updates.scheduledStartAt),
 		};
 		const response = await apiClient.patch<BulkOperationResult>(
 			"/api/tasks/bulk",

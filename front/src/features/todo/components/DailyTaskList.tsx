@@ -43,7 +43,9 @@ export function DailyTaskList({
 }: DailyTaskListProps) {
 	// Filter tasks by date first
 	const tasksForDate = tasks.filter(
-		(task) => task.startDate && format(task.startDate, "yyyy-MM-dd") === date,
+		(task) =>
+			task.scheduledStartAt &&
+			format(task.scheduledStartAt, "yyyy-MM-dd") === date,
 	);
 
 	// Filter for active tasks

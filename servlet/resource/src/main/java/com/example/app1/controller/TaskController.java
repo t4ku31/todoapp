@@ -402,7 +402,6 @@ public class TaskController {
                 task.getId(),
                 task.getTitle(),
                 task.getStatus(),
-                task.getStartDate(),
                 task.getTaskList() != null ? task.getTaskList().getId() : null,
                 category,
                 subtasks,

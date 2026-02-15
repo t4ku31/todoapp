@@ -65,8 +65,8 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 			defaultValues: {
 				title: "",
 				dateMode: "single",
-				startDate: defaultStartDate || new Date(),
-				endDate: undefined,
+				scheduledStartAt: defaultStartDate || new Date(),
+				scheduledEndAt: undefined,
 				recurrenceRule: undefined,
 				categoryId: defaultCategoryId || undefined,
 				estimatedPomodoros: 0,
@@ -94,7 +94,8 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 				await onCreateTask({
 					taskListId: selectedTaskListId,
 					title: data.title,
-					startDate: data.startDate ?? new Date(),
+					scheduledStartAt: data.scheduledStartAt ?? new Date(),
+					scheduledEndAt: data.scheduledEndAt,
 					categoryId: data.categoryId,
 					estimatedPomodoros: data.estimatedPomodoros,
 					// Filter out empty subtasks
@@ -105,8 +106,8 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 				form.reset({
 					title: "",
 					dateMode: "single",
-					startDate: new Date(),
-					endDate: undefined,
+					scheduledStartAt: new Date(),
+					scheduledEndAt: undefined,
 					recurrenceRule: undefined,
 					categoryId: undefined,
 					estimatedPomodoros: 0,
@@ -126,7 +127,7 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 
 			if (e.key === "Enter") {
 				e.preventDefault();
-				form.handleSubmit(onSubmit)();
+				void form.handleSubmit(onSubmit)();
 			}
 		};
 
@@ -138,7 +139,7 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 			if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
 				e.preventDefault();
 				e.stopPropagation();
-				form.handleSubmit(onSubmit)();
+				void form.handleSubmit(onSubmit)();
 			}
 		};
 
@@ -313,7 +314,7 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 								type="button"
 								size="icon"
 								className="h-7 w-7 bg-indigo-500 hover:bg-indigo-600 text-white rounded-full shrink-0"
-								onClick={() => form.handleSubmit(onSubmit)()}
+								onClick={() => void form.handleSubmit(onSubmit)()}
 								disabled={
 									disabled ||
 									form.formState.isSubmitting ||

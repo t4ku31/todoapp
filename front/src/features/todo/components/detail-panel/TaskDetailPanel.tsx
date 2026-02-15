@@ -117,7 +117,7 @@ export function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProps) {
 		return format(date, "M月d日（E）", { locale: ja });
 	};
 
-	const startDateDisplay = formatDate(task.startDate);
+	const startDateDisplay = formatDate(task.scheduledStartAt);
 	const dueDateDisplay = formatDate(task.dueDate);
 
 	const subtasks = task.subtasks || [];
@@ -254,12 +254,14 @@ export function TaskDetailPanel({ taskId, onClose }: TaskDetailPanelProps) {
 							<span>実行日</span>
 						</div>
 						<EditableDate
-							id={task.id}
-							date={task.startDate ?? null}
-							type="startDate"
-							onDateChange={(id, date) => updateTask(id, { startDate: date })}
-							onRecurrenceChange={async (id, recurrence) => {
-								await updateTask(id, {
+							id={task.id.toString()}
+							date={task.scheduledStartAt ?? undefined}
+							type="scheduledDate"
+							onDateChange={async (_id, date) =>
+								updateTask(task.id, { scheduledStartAt: date })
+							}
+							onRecurrenceChange={async (_id, recurrence) => {
+								await updateTask(task.id, {
 									isRecurring: recurrence.isRecurring,
 									recurrenceRule: recurrence.recurrenceRule,
 								});

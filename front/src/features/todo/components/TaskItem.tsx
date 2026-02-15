@@ -185,14 +185,14 @@ export const TaskItem = memo(function TaskItem({
 								/>
 
 								<EditableDate
-									id={task.id}
-									date={task.startDate ?? null}
-									type="startDate"
-									onDateChange={(id, date) =>
-										onUpdateTask(id, { startDate: date })
+									id={task.id.toString()}
+									date={task.scheduledStartAt ?? undefined}
+									type="scheduledDate"
+									onDateChange={async (_id, date) =>
+										onUpdateTask(task.id, { scheduledStartAt: date })
 									}
-									onRecurrenceChange={async (id, recurrence) => {
-										await onUpdateTask(id, {
+									onRecurrenceChange={async (_id, recurrence) => {
+										await onUpdateTask(task.id, {
 											isRecurring: recurrence.isRecurring,
 											recurrenceRule: recurrence.recurrenceRule,
 										});

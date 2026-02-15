@@ -38,10 +38,10 @@ export function WeekTaskView({
 
 		// Single pass distribution
 		for (const task of filteredTasks) {
-			if (!task.startDate) continue;
+			if (!task.scheduledStartAt) continue;
 			// Simple date comparison without heavy library calls if possible,
 			// but for correctness with timezones, let's stick to isSameDay or find index
-			const taskDate = new Date(task.startDate);
+			const taskDate = new Date(task.scheduledStartAt);
 			const dayIndex = days.findIndex((d) => isSameDay(taskDate, d));
 			if (dayIndex >= 0) {
 				tasksByDayIndex[dayIndex].push(task);

@@ -12,8 +12,8 @@ export function useSidebarStats(taskLists: TaskList[]) {
 					(t) =>
 						!t.isDeleted &&
 						t.status !== "COMPLETED" &&
-						t.startDate &&
-						format(t.startDate, "yyyy-MM-dd") === today,
+						t.scheduledStartAt &&
+						format(t.scheduledStartAt, "yyyy-MM-dd") === today,
 				).length || 0)
 			);
 		}, 0);
@@ -26,9 +26,9 @@ export function useSidebarStats(taskLists: TaskList[]) {
 			return (
 				count +
 				(list.tasks?.filter((t) => {
-					if (t.isDeleted || t.status === "COMPLETED" || !t.startDate)
+					if (t.isDeleted || t.status === "COMPLETED" || !t.scheduledStartAt)
 						return false;
-					const startDate = new Date(t.startDate);
+					const startDate = new Date(t.scheduledStartAt);
 					return startDate >= today && startDate <= next7Days;
 				}).length || 0)
 			);

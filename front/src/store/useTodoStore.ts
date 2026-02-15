@@ -56,7 +56,7 @@ interface TodoState {
 			status?: "PENDING" | "COMPLETED";
 			categoryId?: number;
 			taskListId?: number;
-			startDate?: Date | null;
+			scheduledStartAt?: Date | null;
 		},
 	) => Promise<void>;
 	bulkDeleteTasks: (taskIds: number[]) => Promise<void>;
@@ -265,7 +265,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
 	getTasksForDate: (date: Date) => {
 		return get().allTasks.filter(
-			(task) => task.startDate && isSameDay(task.startDate, date),
+			(task) => task.scheduledStartAt && isSameDay(task.scheduledStartAt, date),
 		);
 	},
 

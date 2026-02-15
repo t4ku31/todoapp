@@ -49,12 +49,13 @@ export default function FocusScreen() {
 	// Filter tasks
 	const todaysTasks = allTasks.filter(
 		(t) =>
-			t.startDate &&
-			format(t.startDate, "yyyy-MM-dd") === today &&
+			t.scheduledStartAt &&
+			format(t.scheduledStartAt, "yyyy-MM-dd") === today &&
 			t.status !== "COMPLETED",
 	);
 	const allTodayTasks = allTasks.filter(
-		(t) => t.startDate && format(t.startDate, "yyyy-MM-dd") === today,
+		(t) =>
+			t.scheduledStartAt && format(t.scheduledStartAt, "yyyy-MM-dd") === today,
 	);
 	const currentTask = currentTaskId
 		? allTasks.find((t) => t.id === currentTaskId)

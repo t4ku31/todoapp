@@ -1,6 +1,5 @@
 package com.example.app1.model;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -74,15 +73,10 @@ public class Task {
     private Integer estimatedPomodoros = 0;
 
     /**
-     * Start date for the task (unified date field, replaces executionDate)
+     * Scheduled start datetime (primary date field for all tasks)
+     * For date-only tasks, time is set to 00:00:00 with isAllDay=true
      */
-    @Column(name = "start_date")
-    private LocalDate startDate;
-
-    /**
-     * Scheduled start datetime for calendar events
-     */
-    @Column(name = "scheduled_start_at")
+    @Column(name = "scheduled_start_at", nullable = false)
     private java.time.OffsetDateTime scheduledStartAt;
 
     /**

@@ -64,7 +64,6 @@ export const taskToParsedTask = (task: Task): ParsedTask => ({
 	id: task.id, // Task.id is number, keeping it as is
 	title: task.title,
 	description: task.description,
-	startDate: task.startDate,
 	scheduledStartAt: task.scheduledStartAt,
 	scheduledEndAt: task.scheduledEndAt,
 	isAllDay: task.isAllDay,
@@ -77,15 +76,6 @@ export const taskToParsedTask = (task: Task): ParsedTask => ({
 	selected: false, // Default to unselected for existing tasks context, or true if selection mode
 	originalTask: task, // Keep reference
 });
-
-// Helper to serialize date to yyyy-MM-dd string
-const serializeLocalDate = (date: Date | null | undefined): string | null => {
-	if (!date) return null;
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, "0");
-	const day = String(date.getDate()).padStart(2, "0");
-	return `${year}-${month}-${day}`;
-};
 
 // Helper to serialize datetime to ISO string
 const serializeDateTime = (
@@ -101,7 +91,6 @@ export const toSyncTask = (task: Task | ParsedTask): SyncTask => {
 		id: task.id > 0 ? task.id : undefined, // Negative ID -> undefined (create)
 		title: task.title,
 		description: task.description,
-		startDate: serializeLocalDate(task.startDate),
 		scheduledStartAt: serializeDateTime(task.scheduledStartAt),
 		scheduledEndAt: serializeDateTime(task.scheduledEndAt),
 		isAllDay: task.isAllDay,
@@ -251,7 +240,6 @@ export const createPreviewTasks = (
 			description: t.description,
 			status: (t.status as TaskStatus) || "PENDING",
 			taskListId: taskListId,
-			startDate: t.startDate,
 			scheduledStartAt: t.scheduledStartAt,
 			scheduledEndAt: t.scheduledEndAt,
 			isAllDay: t.isAllDay,
@@ -284,7 +272,7 @@ export const prepareTasksForSave = (
 			title: task.title,
 			taskListId,
 			taskListTitle,
-			startDate: task.startDate || null,
+			scheduledStartAt: task.scheduledStartAt || null,
 			categoryId: categoryId,
 			estimatedPomodoros: task.estimatedPomodoros,
 			isRecurring: task.isRecurring || false,
@@ -292,7 +280,6 @@ export const prepareTasksForSave = (
 				task.isRecurring && task.recurrenceRule
 					? task.recurrenceRule
 					: undefined,
-			scheduledStartAt: task.scheduledStartAt || null,
 			scheduledEndAt: task.scheduledEndAt || null,
 			isAllDay: task.isAllDay ?? true,
 			status: task.status,
