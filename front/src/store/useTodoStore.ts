@@ -1,7 +1,3 @@
-import { isSameDay } from "date-fns";
-import * as React from "react";
-import { toast } from "sonner";
-import { create } from "zustand";
 import type { SyncResult, SyncTask } from "@/features/ai/types";
 import {
 	type BulkOperationResult,
@@ -12,6 +8,10 @@ import {
 import type { Task, TaskList } from "@/features/todo/types";
 import { sortTasks } from "@/features/todo/utils/taskSorter";
 import { normalizeError } from "@/utils/error";
+import { isSameDay } from "date-fns";
+import * as React from "react";
+import { toast } from "sonner";
+import { create } from "zustand";
 
 // Parameters for createTask
 export type { CreateTaskParams, UpdateTaskParams };
@@ -22,8 +22,9 @@ interface TodoState {
 	trashTasks: Task[];
 	loading: boolean;
 	error: string | null;
+	isInitialized: boolean;
 
-	fetchTaskLists: () => Promise<void>;
+	fetchTaskLists: (force?: boolean) => Promise<void>;
 	fetchTrashTasks: () => Promise<void>;
 	restoreTask: (id: number) => Promise<void>;
 	deleteTaskPermanently: (id: number) => Promise<void>;
@@ -170,8 +171,18 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 	trashTasks: [],
 	loading: false,
 	error: null,
+	isInitialized: false,
 
-	fetchTaskLists: async () => {
+	fetchTaskLists: async (force = false) => {
+		const state = get();
+		// Avoid double fetch if already loading
+		if (state.loading && !force) return;
+
+		// If already initialized and not forced, we can skip setting loading=true
+		// to avoid UI flicker, but we might still want to fetch in background.
+		// For now, if initialized, return immediately unless forced.
+		if (state.isInitialized && !force) return;
+
 		set({ loading: true, error: null });
 		try {
 			const data = await taskApi.fetchTaskLists();
@@ -181,7 +192,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 				tasks: sortTasks(list.tasks || []),
 			}));
 			const allTasks = taskLists.flatMap((list) => list.tasks || []);
-			set({ taskLists, allTasks, loading: false });
+			set({ taskLists, allTasks, loading: false, isInitialized: true });
 		} catch (err) {
 			console.error("Failed to fetch task lists:", err);
 			set({ error: "タスクリストの取得に失敗しました", loading: false });
