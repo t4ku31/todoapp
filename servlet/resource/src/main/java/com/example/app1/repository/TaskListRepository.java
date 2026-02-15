@@ -26,7 +26,7 @@ public interface TaskListRepository extends JpaRepository<TaskList, Long> {
      * @param userId Auth0 sub claim identifying the user
      * @return List of task lists owned by the user
      */
-    @Query("SELECT tl FROM TaskList tl WHERE tl.userId = :userId")
+    @Query("SELECT DISTINCT tl FROM TaskList tl LEFT JOIN FETCH tl.tasks WHERE tl.userId = :userId")
     List<TaskList> findByUserId(@Param("userId") String userId);
 
     /**

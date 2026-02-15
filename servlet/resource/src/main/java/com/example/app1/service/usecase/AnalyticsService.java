@@ -376,7 +376,8 @@ public class AnalyticsService {
             }
         }
 
-        List<Task> tasksToProcess = taskRepository.findByUserIdAndStartDateBetween(userId, startDate, endDate);
+        List<Task> tasksToProcess = taskRepository.findByUserIdAndScheduledStartAtDateBetween(userId, startDate,
+                endDate);
 
         // Get pomodoro focus duration setting
         int focusDuration = pomodoroSettingRepository.findByUserId(userId)
@@ -418,7 +419,7 @@ public class AnalyticsService {
                     estimatedMinutes,
                     progress,
                     task.getRecurrenceParentId(),
-                    task.getStartDate()));
+                    task.getScheduledStartAt() != null ? task.getScheduledStartAt().toLocalDate() : null));
         }
 
         return result;
@@ -606,14 +607,14 @@ public class AnalyticsService {
         EfficiencyStats efficiency = getEfficiencyStats(userId, startDate, endDate);
 
         // 3. Tasks Completed (using startDate range)
-        Long tasksCompletedLong = taskRepository.countCompletedByUserIdAndStartDateBetween(
+        Long tasksCompletedLong = taskRepository.countCompletedByUserIdAndScheduledStartAtDateBetween(
                 userId, startDate, endDate);
         int tasksCompleted = tasksCompletedLong != null ? tasksCompletedLong.intValue() : 0;
-        Long tasksTotalLong = taskRepository.countByUserIdAndStartDateBetween(userId, startDate, endDate);
+        Long tasksTotalLong = taskRepository.countByUserIdAndScheduledStartAtDateBetween(userId, startDate, endDate);
         int tasksTotal = tasksTotalLong != null ? tasksTotalLong.intValue() : 0;
 
         // Previous week tasks comparison
-        Long prevTasksCompletedLong = taskRepository.countCompletedByUserIdAndStartDateBetween(
+        Long prevTasksCompletedLong = taskRepository.countCompletedByUserIdAndScheduledStartAtDateBetween(
                 userId, prevStart, prevEnd);
         int prevTasksCompleted = prevTasksCompletedLong != null ? prevTasksCompletedLong.intValue() : 0;
         double taskComparison = prevTasksCompleted > 0
@@ -624,7 +625,7 @@ public class AnalyticsService {
         int focusDuration = pomodoroSettingRepository.findByUserId(userId)
                 .map(s -> s.getFocusDuration())
                 .orElse(25);
-        List<Task> completedTasks = taskRepository.findCompletedByUserIdAndStartDateBetween(
+        List<Task> completedTasks = taskRepository.findCompletedByUserIdAndScheduledStartAtDateBetween(
                 userId, startDate, endDate);
         int totalEstimated = 0;
         int totalActual = 0;
@@ -740,7 +741,7 @@ public class AnalyticsService {
         int focusDuration = pomodoroSettingRepository.findByUserId(userId)
                 .map(s -> s.getFocusDuration())
                 .orElse(25);
-        List<Task> tasks = taskRepository.findByUserIdAndStartDate(userId, date);
+        List<Task> tasks = taskRepository.findByUserIdAndScheduledStartAtDate(userId, date);
         int totalEstimated = 0;
         int tasksCompleted = 0;
         for (Task task : tasks) {

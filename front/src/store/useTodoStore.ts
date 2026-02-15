@@ -1,7 +1,3 @@
-import { isSameDay } from "date-fns";
-import * as React from "react";
-import { toast } from "sonner";
-import { create } from "zustand";
 import type { SyncResult, SyncTask } from "@/features/ai/types";
 import {
 	type BulkOperationResult,
@@ -12,6 +8,10 @@ import {
 import type { Task, TaskList } from "@/features/todo/types";
 import { sortTasks } from "@/features/todo/utils/taskSorter";
 import { normalizeError } from "@/utils/error";
+import { isSameDay } from "date-fns";
+import * as React from "react";
+import { toast } from "sonner";
+import { create } from "zustand";
 
 // Parameters for createTask
 export type { CreateTaskParams, UpdateTaskParams };
@@ -22,8 +22,12 @@ interface TodoState {
 	trashTasks: Task[];
 	loading: boolean;
 	error: string | null;
+	isInitialized: boolean;
 
-	fetchTaskLists: () => Promise<void>;
+	fetchTaskLists: (options?: {
+		force?: boolean;
+		background?: boolean;
+	}) => Promise<void>;
 	fetchTrashTasks: () => Promise<void>;
 	restoreTask: (id: number) => Promise<void>;
 	deleteTaskPermanently: (id: number) => Promise<void>;
@@ -56,7 +60,7 @@ interface TodoState {
 			status?: "PENDING" | "COMPLETED";
 			categoryId?: number;
 			taskListId?: number;
-			startDate?: Date | null;
+			scheduledStartAt?: Date | null;
 		},
 	) => Promise<void>;
 	bulkDeleteTasks: (taskIds: number[]) => Promise<void>;
@@ -170,9 +174,26 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 	trashTasks: [],
 	loading: false,
 	error: null,
+	isInitialized: false,
 
-	fetchTaskLists: async () => {
-		set({ loading: true, error: null });
+	fetchTaskLists: async (options = {}) => {
+		const { force = false, background = false } = options;
+		const state = get();
+		// Avoid double fetch if already loading
+		if (state.loading && !force) return;
+
+		// If already initialized and not forced/background, we can skip setting loading=true
+		// to avoid UI flicker.
+		// If background=true, we proceed but DON'T set loading=true.
+		if (state.isInitialized && !force && !background) return;
+
+		if (!background) {
+			set({ loading: true, error: null });
+		} else {
+			// Clear error if any, but don't set loading
+			set({ error: null });
+		}
+
 		try {
 			const data = await taskApi.fetchTaskLists();
 			// Ensure tasks are sorted
@@ -181,7 +202,14 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 				tasks: sortTasks(list.tasks || []),
 			}));
 			const allTasks = taskLists.flatMap((list) => list.tasks || []);
-			set({ taskLists, allTasks, loading: false });
+
+			// Always update data
+			set({ taskLists, allTasks, isInitialized: true });
+
+			// Only turn off loading if we turned it on
+			if (!background) {
+				set({ loading: false });
+			}
 		} catch (err) {
 			console.error("Failed to fetch task lists:", err);
 			set({ error: "タスクリストの取得に失敗しました", loading: false });
@@ -265,7 +293,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
 	getTasksForDate: (date: Date) => {
 		return get().allTasks.filter(
-			(task) => task.startDate && isSameDay(task.startDate, date),
+			(task) => task.scheduledStartAt && isSameDay(task.scheduledStartAt, date),
 		);
 	},
 
@@ -484,7 +512,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 				updates.categoryId !== undefined ||
 				updates.isRecurring
 			) {
-				await get().fetchTaskLists();
+				await get().fetchTaskLists({ background: true });
 			}
 		} catch (err) {
 			console.error("Failed to update task:", err);

@@ -29,7 +29,6 @@ export interface Task {
 	status: TaskStatus;
 	taskListId: number;
 	dueDate: Date | null;
-	startDate: Date | null;
 	category?: Category;
 	estimatedPomodoros?: number;
 	subtasks?: Subtask[];

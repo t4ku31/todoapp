@@ -15,7 +15,6 @@ public class TaskDto {
         public record Create(
                         @Schema(description = "Task title", example = "Buy milk") String title,
                         @Schema(description = "Task list ID", example = "1") Long taskListId,
-                        @Schema(description = "Start date", example = "2023-12-24") LocalDate startDate,
                         @Schema(description = "Category ID", example = "1") Long categoryId,
                         @Schema(description = "Subtasks list") List<SubtaskDto.Create> subtasks,
                         @Schema(description = "Estimated number of pomodoros", example = "2") Integer estimatedPomodoros,
@@ -33,7 +32,6 @@ public class TaskDto {
         public record Update(
                         @Schema(description = "Task title", example = "Buy milk") String title,
                         @Schema(description = "Task status", example = "COMPLETED") TaskStatus status,
-                        @Schema(description = "Start date", example = "2023-12-24") LocalDate startDate,
                         @Schema(description = "Category ID", example = "1") Long categoryId,
                         @Schema(description = "Task list ID", example = "1") Long taskListId,
                         @Schema(description = "Completed at timestamp", example = "2023-12-24T10:00:00") LocalDateTime completedAt,
@@ -52,7 +50,6 @@ public class TaskDto {
                         @Schema(description = "Task ID", example = "1") Long id,
                         @Schema(description = "Task title", example = "Buy milk") String title,
                         @Schema(description = "Task status", example = "COMPLETED") TaskStatus status,
-                        @Schema(description = "Start date", example = "2023-12-24") LocalDate startDate,
                         @Schema(description = "Task list ID", example = "1") Long taskListId,
                         @Schema(description = "Category details") CategoryDto.Response category,
                         @Schema(description = "Subtasks list") List<SubtaskDto.Summary> subtasks,
@@ -74,7 +71,6 @@ public class TaskDto {
                         String title,
                         LocalDateTime completedAt,
                         Integer estimatedPomodoros,
-                        LocalDate startDate,
                         java.time.OffsetDateTime scheduledStartAt,
                         java.time.OffsetDateTime scheduledEndAt,
                         Boolean isAllDay,
@@ -94,7 +90,6 @@ public class TaskDto {
 
         @Schema(name = "TaskStats")
         public record Stats(
-                        @Schema(description = "Start date") LocalDate startDate,
                         @Schema(description = "End date") LocalDate endDate,
                         @Schema(description = "Completed tasks count") Long completedCount,
                         @Schema(description = "Total tasks count") Long totalCount,
@@ -108,7 +103,7 @@ public class TaskDto {
                         @Schema(description = "New status for all tasks") TaskStatus status,
                         @Schema(description = "New category ID for all tasks") Long categoryId,
                         @Schema(description = "New task list ID for all tasks") Long taskListId,
-                        @Schema(description = "New start date for all tasks") LocalDate startDate) {
+                        @Schema(description = "New scheduled start time for all tasks") java.time.OffsetDateTime scheduledStartAt) {
         }
 
         @Schema(name = "TaskBulkDelete")
@@ -154,7 +149,6 @@ public class TaskDto {
                         Long id,
                         String title,
                         String description,
-                        String startDate,
                         String scheduledStartAt,
                         String scheduledEndAt,
                         Boolean isAllDay,

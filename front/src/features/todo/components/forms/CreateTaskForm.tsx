@@ -1,3 +1,8 @@
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import type { Subtask, Task } from "@/features/todo/types";
+import { cn } from "@/lib/utils";
+import type { CreateTaskParams } from "@/store/useTodoStore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus } from "lucide-react";
 import { forwardRef, useEffect, useState } from "react";
@@ -7,17 +12,12 @@ import {
 	useFieldArray,
 	useForm,
 } from "react-hook-form";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import type { Subtask, Task } from "@/features/todo/types";
-import { cn } from "@/lib/utils";
-import type { CreateTaskParams } from "@/store/useTodoStore";
 import { AddSubtaskButton } from "../ui/AddSubtaskButton";
 import { CategorySelect } from "../ui/CategorySelect";
 import { DateScheduler } from "../ui/DateScheduler";
 import { PomodoroInput } from "../ui/PomodoroInput";
+import { SortableSubtaskList } from "../ui/SortableSubtaskList";
 import { SubtaskButton } from "../ui/SubtaskButton";
-import { TaskItemSubtaskList } from "../ui/TaskItemSubtaskList";
 import { type TaskFormValues, taskSchema } from "./schema";
 
 interface CreateTaskFormProps {
@@ -65,8 +65,8 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 			defaultValues: {
 				title: "",
 				dateMode: "single",
-				startDate: defaultStartDate || new Date(),
-				endDate: undefined,
+				scheduledStartAt: defaultStartDate || new Date(),
+				scheduledEndAt: undefined,
 				recurrenceRule: undefined,
 				categoryId: defaultCategoryId || undefined,
 				estimatedPomodoros: 0,
@@ -94,7 +94,8 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 				await onCreateTask({
 					taskListId: selectedTaskListId,
 					title: data.title,
-					startDate: data.startDate ?? new Date(),
+					scheduledStartAt: data.scheduledStartAt ?? new Date(),
+					scheduledEndAt: data.scheduledEndAt,
 					categoryId: data.categoryId,
 					estimatedPomodoros: data.estimatedPomodoros,
 					// Filter out empty subtasks
@@ -105,8 +106,8 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 				form.reset({
 					title: "",
 					dateMode: "single",
-					startDate: new Date(),
-					endDate: undefined,
+					scheduledStartAt: new Date(),
+					scheduledEndAt: undefined,
 					recurrenceRule: undefined,
 					categoryId: undefined,
 					estimatedPomodoros: 0,
@@ -126,7 +127,7 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 
 			if (e.key === "Enter") {
 				e.preventDefault();
-				form.handleSubmit(onSubmit)();
+				void form.handleSubmit(onSubmit)();
 			}
 		};
 
@@ -138,7 +139,7 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 			if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
 				e.preventDefault();
 				e.stopPropagation();
-				form.handleSubmit(onSubmit)();
+				void form.handleSubmit(onSubmit)();
 			}
 		};
 
@@ -161,10 +162,6 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 					updates.orderIndex !== undefined
 						? updates.orderIndex
 						: currentSubtask.orderIndex || 0,
-				description:
-					updates.description !== undefined
-						? updates.description
-						: currentSubtask.description || "",
 			});
 		};
 
@@ -177,7 +174,6 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 			appendSubtask({
 				title,
 				isCompleted: false,
-				description: "",
 				orderIndex: subtaskFields.length,
 			});
 		};
@@ -193,16 +189,20 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 			);
 		};
 
-		// Toggle for subtask expansion? Or always show if present?
-		// If has subtasks, we show them.
+		// Watch subtasks to get current values for controlled inputs
+		const watchedSubtasks = form.watch("subtasks");
 
-		const mappedSubtasks = subtaskFields.map((f, i) => ({
-			...f,
-			id: -i - 1,
-			title: f.title || "",
-			isCompleted: f.isCompleted || false,
-			orderIndex: i,
-		})) as Subtask[];
+		const mappedSubtasks = subtaskFields.map((f, i) => {
+			const watched = watchedSubtasks?.[i];
+			return {
+				...f,
+				...watched,
+				id: -i - 1,
+				title: watched?.title || f.title || "",
+				isCompleted: watched?.isCompleted || f.isCompleted || false,
+				orderIndex: i,
+			};
+		}) as Subtask[];
 
 		const hasSubtasks = subtaskFields.length > 0;
 
@@ -241,7 +241,6 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 								onClick={() => {
 									appendSubtask({
 										title: "",
-										description: "",
 										isCompleted: false,
 										orderIndex: subtaskFields.length,
 									});
@@ -313,7 +312,7 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 								type="button"
 								size="icon"
 								className="h-7 w-7 bg-indigo-500 hover:bg-indigo-600 text-white rounded-full shrink-0"
-								onClick={() => form.handleSubmit(onSubmit)()}
+								onClick={() => void form.handleSubmit(onSubmit)()}
 								disabled={
 									disabled ||
 									form.formState.isSubmitting ||
@@ -337,13 +336,12 @@ export const CreateTaskForm = forwardRef<HTMLInputElement, CreateTaskFormProps>(
 							)}
 						>
 							<div className="px-2 pt-1">
-								<TaskItemSubtaskList
+								<SortableSubtaskList
 									subtasks={mappedSubtasks}
 									onUpdate={handleUpdateSubtask}
 									onDelete={handleDeleteSubtask}
 									onAdd={handleAddSubtask}
 									onReorder={handleReorderSubtasks}
-									className="mt-0 pl-0 border-none ml-0"
 								/>
 							</div>
 						</div>

@@ -1,3 +1,8 @@
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import type { Subtask } from "@/features/todo/types";
+import { cn } from "@/lib/utils";
 import {
 	closestCenter,
 	DndContext,
@@ -15,12 +20,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import type { Subtask } from "@/features/todo/types";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 interface SortableSubtaskListProps {
 	subtasks: Subtask[];
@@ -43,9 +43,6 @@ function SortableSubtaskItem({
 	onUpdate,
 	onDelete,
 }: SortableSubtaskItemProps) {
-	const [isEditing, setIsEditing] = useState(false);
-	const [editTitle, setEditTitle] = useState(subtask.title);
-
 	const {
 		attributes,
 		listeners,
@@ -69,32 +66,6 @@ function SortableSubtaskItem({
 		position: isDragging ? ("relative" as const) : undefined,
 	};
 
-	const handleTitleSave = () => {
-		if (editTitle.trim() && editTitle !== subtask.title) {
-			onUpdate(subtask.id, { title: editTitle.trim() });
-		} else if (!editTitle.trim() && subtask.title === "") {
-			// If empty and was already empty (e.g. just added), delete it
-			onDelete(subtask.id);
-		}
-		setIsEditing(false);
-	};
-
-	const handleKeyDown = (e: React.KeyboardEvent) => {
-		if (e.key === "Enter") {
-			handleTitleSave();
-		} else if (e.key === "Escape") {
-			setEditTitle(subtask.title);
-			setIsEditing(false);
-		}
-	};
-
-	// Focus if title is empty (newly added)
-	useEffect(() => {
-		if (subtask.title === "") {
-			setIsEditing(true);
-		}
-	}, [subtask.title]);
-
 	return (
 		<div
 			ref={setNodeRef}
@@ -117,29 +88,12 @@ function SortableSubtaskItem({
 				className="h-3.5 w-3.5 rounded-sm border-gray-300 data-[state=checked]:bg-slate-500 data-[state=checked]:border-slate-500 transition-all"
 			/>
 
-			{isEditing ? (
-				<Input
-					value={editTitle}
-					onChange={(e) => setEditTitle(e.target.value)}
-					onBlur={handleTitleSave}
-					onKeyDown={handleKeyDown}
-					className="h-6 text-sm flex-1 py-0 px-1"
-					autoFocus
-				/>
-			) : (
-				<button
-					type="button"
-					onClick={() => setIsEditing(true)}
-					className={cn(
-						"text-sm flex-1 truncate cursor-text hover:bg-slate-100 rounded px-1 text-left",
-						subtask.isCompleted
-							? "line-through text-gray-400"
-							: "text-gray-600",
-					)}
-				>
-					{subtask.title}
-				</button>
-			)}
+			<Input
+				value={subtask.title}
+				onChange={(e) => onUpdate(subtask.id, { title: e.target.value })}
+				className="h-6 text-sm flex-1 py-0 px-1 border-none bg-transparent hover:bg-slate-100 focus:bg-white focus:ring-0"
+				placeholder="サブタスクを入力..."
+			/>
 
 			<Button
 				variant="ghost"
@@ -211,12 +165,16 @@ export function SortableSubtaskList({
 		if (newSubtaskTitle.trim()) {
 			onAdd(newSubtaskTitle.trim());
 			setNewSubtaskTitle("");
+			// Keep adding mode for continuous entry? Or close it?
+			// Let's keep it open for quick entry of multiple items
+		} else {
 			setIsAdding(false);
 		}
 	};
 
 	const handleAddKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === "Enter") {
+			e.preventDefault(); // Prevent form submission if inside a form
 			handleAddSubtask();
 		} else if (e.key === "Escape") {
 			setNewSubtaskTitle("");
@@ -250,8 +208,16 @@ export function SortableSubtaskList({
 
 			{isAdding ? (
 				<div className="flex items-center gap-2 py-1.5 px-2">
-					<div className="w-3" />
-					<div className="w-3.5" />
+					<Button
+						type="button"
+						size="icon"
+						className="h-7 w-7 bg-indigo-500 hover:bg-indigo-600 text-white rounded-full shrink-0"
+						onClick={handleAddSubtask}
+						disabled={!newSubtaskTitle.trim()}
+					>
+						<Plus className="h-4 w-4" />
+					</Button>
+
 					<Input
 						value={newSubtaskTitle}
 						onChange={(e) => setNewSubtaskTitle(e.target.value)}
@@ -264,7 +230,7 @@ export function SortableSubtaskList({
 						}}
 						onKeyDown={handleAddKeyDown}
 						placeholder={placeholder}
-						className="h-6 text-sm flex-1 py-0 px-1"
+						className="h-6 text-sm flex-1 py-0 px-1 border-none bg-transparent hover:bg-slate-100 focus:bg-white focus:ring-0"
 						autoFocus
 					/>
 				</div>

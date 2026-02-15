@@ -99,70 +99,69 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
         boolean existsByIdAndUserId(Long id, String userId);
 
         /**
-         * Count completed tasks for a user within an execution date range.
+         * Count completed tasks for a user within a date range.
          */
         @Query("SELECT COUNT(t) FROM Task t WHERE t.userId = :userId " +
                         "AND t.status = com.example.app1.model.TaskStatus.COMPLETED " +
-                        "AND t.startDate BETWEEN :startDate AND :endDate")
-        Long countCompletedByUserIdAndStartDateBetween(
+                        "AND DATE(t.scheduledStartAt) BETWEEN :startDate AND :endDate")
+        Long countCompletedByUserIdAndScheduledStartAtDateBetween(
                         @Param("userId") String userId,
                         @Param("startDate") java.time.LocalDate startDate,
                         @Param("endDate") java.time.LocalDate endDate);
 
         /**
-         * Count total tasks for a user within an execution date range.
+         * Count total tasks for a user within a date range.
          */
         @Query("SELECT COUNT(t) FROM Task t WHERE t.userId = :userId " +
-                        "AND t.startDate BETWEEN :startDate AND :endDate")
-        Long countByUserIdAndStartDateBetween(
+                        "AND DATE(t.scheduledStartAt) BETWEEN :startDate AND :endDate")
+        Long countByUserIdAndScheduledStartAtDateBetween(
                         @Param("userId") String userId,
                         @Param("startDate") java.time.LocalDate startDate,
                         @Param("endDate") java.time.LocalDate endDate);
 
         /**
-         * Find all tasks for a user within an execution date range.
+         * Find all tasks for a user within a date range.
          */
         @Query("SELECT t FROM Task t LEFT JOIN FETCH t.category WHERE t.userId = :userId " +
-                        "AND t.startDate BETWEEN :startDate AND :endDate")
-        List<Task> findByUserIdAndStartDateBetween(
+                        "AND DATE(t.scheduledStartAt) BETWEEN :startDate AND :endDate")
+        List<Task> findByUserIdAndScheduledStartAtDateBetween(
                         @Param("userId") String userId,
                         @Param("startDate") java.time.LocalDate startDate,
                         @Param("endDate") java.time.LocalDate endDate);
 
         /**
-         * Find completed tasks for a user within an execution date range.
+         * Find completed tasks for a user within a date range.
          */
         @Query("SELECT t FROM Task t WHERE t.userId = :userId " +
                         "AND t.status = com.example.app1.model.TaskStatus.COMPLETED " +
-                        "AND t.startDate BETWEEN :startDate AND :endDate")
-        List<Task> findCompletedByUserIdAndStartDateBetween(
+                        "AND DATE(t.scheduledStartAt) BETWEEN :startDate AND :endDate")
+        List<Task> findCompletedByUserIdAndScheduledStartAtDateBetween(
                         @Param("userId") String userId,
                         @Param("startDate") java.time.LocalDate startDate,
                         @Param("endDate") java.time.LocalDate endDate);
 
         /**
-         * Find all tasks for a user on a specific execution date with category eagerly
-         * loaded.
+         * Find all tasks for a user on a specific date with category eagerly loaded.
          */
         @Query("SELECT t FROM Task t LEFT JOIN FETCH t.category WHERE t.userId = :userId " +
-                        "AND t.startDate = :startDate")
-        List<Task> findByUserIdAndStartDate(
+                        "AND DATE(t.scheduledStartAt) = :date")
+        List<Task> findByUserIdAndScheduledStartAtDate(
                         @Param("userId") String userId,
-                        @Param("startDate") java.time.LocalDate startDate);
+                        @Param("date") java.time.LocalDate date);
 
         /**
-         * Count total tasks for a user on a specific execution date.
+         * Count total tasks for a user on a specific date.
          */
-        @Query("SELECT COUNT(t) FROM Task t WHERE t.userId = :userId AND t.startDate = :startDate")
-        Long countByUserIdAndStartDate(@Param("userId") String userId,
-                        @Param("startDate") java.time.LocalDate startDate);
+        @Query("SELECT COUNT(t) FROM Task t WHERE t.userId = :userId AND DATE(t.scheduledStartAt) = :date")
+        Long countByUserIdAndScheduledStartAtDate(@Param("userId") String userId,
+                        @Param("date") java.time.LocalDate date);
 
         /**
-         * Count tasks by status for a user on a specific execution date.
+         * Count tasks by status for a user on a specific date.
          */
-        @Query("SELECT COUNT(t) FROM Task t WHERE t.userId = :userId AND t.startDate = :startDate AND t.status = :status")
-        Long countByUserIdAndStartDateAndStatus(@Param("userId") String userId,
-                        @Param("startDate") java.time.LocalDate startDate,
+        @Query("SELECT COUNT(t) FROM Task t WHERE t.userId = :userId AND DATE(t.scheduledStartAt) = :date AND t.status = :status")
+        Long countByUserIdAndScheduledStartAtDateAndStatus(@Param("userId") String userId,
+                        @Param("date") java.time.LocalDate date,
                         @Param("status") com.example.app1.model.TaskStatus status);
 
         /**

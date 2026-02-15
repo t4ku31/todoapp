@@ -40,8 +40,8 @@ export function useTaskFilter(
 					(t) =>
 						!t.isDeleted &&
 						t.status !== "COMPLETED" &&
-						t.startDate &&
-						format(t.startDate, "yyyy-MM-dd") === todayStr,
+						t.scheduledStartAt &&
+						format(t.scheduledStartAt, "yyyy-MM-dd") === todayStr,
 				);
 			case "week":
 				// Show all tasks including recurring children for date-based views
@@ -49,9 +49,9 @@ export function useTaskFilter(
 					(t) =>
 						!t.isDeleted &&
 						t.status !== "COMPLETED" &&
-						t.startDate &&
-						new Date(t.startDate) >= today &&
-						new Date(t.startDate) <= next7Days,
+						t.scheduledStartAt &&
+						new Date(t.scheduledStartAt) >= today &&
+						new Date(t.scheduledStartAt) <= next7Days,
 				);
 			case "inbox": {
 				const inboxList = taskLists.find((l) => l.title === "Inbox");
@@ -128,13 +128,13 @@ export function useTaskFilter(
 				return allTasks.filter(
 					(t) =>
 						t.status === "COMPLETED" &&
-						t.startDate &&
-						format(t.startDate, "yyyy-MM-dd") === todayStr,
+						t.scheduledStartAt &&
+						format(t.scheduledStartAt, "yyyy-MM-dd") === todayStr,
 				);
 			case "week":
 				return allTasks.filter((t) => {
-					if (t.status !== "COMPLETED" || !t.startDate) return false;
-					const execDate = new Date(t.startDate);
+					if (t.status !== "COMPLETED" || !t.scheduledStartAt) return false;
+					const execDate = new Date(t.scheduledStartAt);
 					return execDate >= today && execDate <= next7Days;
 				});
 			case "inbox": {
