@@ -180,7 +180,10 @@ public class TaskListService {
                 .map(req -> Task.builder()
                         .title(req.title())
                         .status(TaskStatus.PENDING)
-                        .startDate(req.startDate())
+                        .scheduledStartAt(req.scheduledStartAt() != null
+                                ? req.scheduledStartAt()
+                                : java.time.LocalDate.now().atStartOfDay().atOffset(java.time.ZoneOffset.UTC))
+                        .isAllDay(req.isAllDay() != null ? req.isAllDay() : true)
                         .category(req.categoryId() != null ? categoryMap.get(req.categoryId()) : null)
                         .userId(userId)
                         .taskList(taskList)

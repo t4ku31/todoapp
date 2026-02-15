@@ -126,9 +126,9 @@ export default function CalendarView() {
 					};
 				}
 
-				// Fall back to startDate as all-day event
-				if (task.startDate) {
-					const date = new Date(task.startDate);
+				// Fall back to scheduledStartAt as all-day event
+				if (task.scheduledStartAt) {
+					const date = new Date(task.scheduledStartAt);
 					return {
 						id: task.id,
 						title: task.title,
@@ -248,7 +248,6 @@ export default function CalendarView() {
 			await createTask({
 				taskListId,
 				title,
-				startDate: newEventDraft.start,
 				scheduledStartAt: newEventDraft.start,
 				scheduledEndAt: newEventDraft.end,
 				isAllDay: newEventDraft.allDay,

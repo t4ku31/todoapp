@@ -81,9 +81,11 @@ export function useTaskDragAndDrop({
 			const todayString = today.toISOString().split("T")[0];
 
 			if (tasksToMove.length > 1) {
-				bulkUpdateTasks(tasksToMove, { startDate: today });
-			} else if (task.startDate?.toISOString().split("T")[0] !== todayString) {
-				updateTask(task.id, { startDate: today });
+				bulkUpdateTasks(tasksToMove, { scheduledStartAt: today });
+			} else if (
+				task.scheduledStartAt?.toISOString().split("T")[0] !== todayString
+			) {
+				updateTask(task.id, { scheduledStartAt: today });
 			}
 		} else if (targetId === "inbox") {
 			const inboxList = taskLists.find((l) => l.title === "Inbox");

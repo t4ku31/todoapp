@@ -67,8 +67,8 @@ class TaskServiceTest {
     void createTask_Basic() {
         // Arrange
         TaskDto.Create request = new TaskDto.Create(
-                "Test Task", 1L, null, LocalDate.now(), 1L, null, null, 2, false, null, null, null, null, null, null,
-                null);
+                "Test Task", 1L, null, 1L, null, null, 2, false, null, null,
+                java.time.LocalDate.now().atStartOfDay().atOffset(java.time.ZoneOffset.UTC), null, true, null, null);
 
         when(taskListRepository.existsByIdAndUserId(1L, userId)).thenReturn(true);
         when(taskListRepository.getReferenceById(1L)).thenReturn(mockTaskList);
@@ -96,7 +96,7 @@ class TaskServiceTest {
                 LocalDate.of(2026, 1, 1),
                 LocalDate.of(2026, 1, 5));
         TaskDto.Create request = new TaskDto.Create(
-                "Multi Date Task", 1L, null, null, 1L, null, null, 1, false, null, dates, null, null, null, null, null);
+                "Multi Date Task", 1L, null, 1L, null, null, 1, false, null, dates, null, null, true, null, null);
 
         when(taskListRepository.existsByIdAndUserId(1L, userId)).thenReturn(true);
         when(taskListRepository.getReferenceById(1L)).thenReturn(mockTaskList);
@@ -125,8 +125,8 @@ class TaskServiceTest {
         LocalDate startDate = LocalDate.of(2026, 1, 5); // Monday
 
         TaskDto.Create request = new TaskDto.Create(
-                "Recurring Task", 1L, null, startDate, 1L, null, null, 1, true, recurrenceRule, null, null, null, null,
-                null, null);
+                "Recurring Task", 1L, null, 1L, null, null, 1, true, recurrenceRule, null,
+                startDate.atStartOfDay().atOffset(java.time.ZoneOffset.UTC), null, true, null, null);
 
         when(taskListRepository.existsByIdAndUserId(1L, userId)).thenReturn(true);
         when(taskListRepository.getReferenceById(1L)).thenReturn(mockTaskList);
@@ -151,13 +151,13 @@ class TaskServiceTest {
 
         // First task (Parent)
         Task t1 = capturedTasks.get(0);
-        assertEquals(startDate, t1.getStartDate());
+        assertEquals(startDate, t1.getScheduledStartAt().toLocalDate());
         assertTrue(t1.getIsRecurring());
 
         // Children
-        assertEquals(LocalDate.of(2026, 1, 7), capturedTasks.get(1).getStartDate());
-        assertEquals(LocalDate.of(2026, 1, 12), capturedTasks.get(2).getStartDate());
-        assertEquals(LocalDate.of(2026, 1, 14), capturedTasks.get(3).getStartDate());
+        assertEquals(LocalDate.of(2026, 1, 7), capturedTasks.get(1).getScheduledStartAt().toLocalDate());
+        assertEquals(LocalDate.of(2026, 1, 12), capturedTasks.get(2).getScheduledStartAt().toLocalDate());
+        assertEquals(LocalDate.of(2026, 1, 14), capturedTasks.get(3).getScheduledStartAt().toLocalDate());
 
         // Check parent linkage
         assertEquals(t1.getId(), capturedTasks.get(1).getRecurrenceParentId());
@@ -173,8 +173,8 @@ class TaskServiceTest {
         LocalDate startDate = LocalDate.of(2026, 1, 1);
 
         TaskDto.Create request = new TaskDto.Create(
-                "Daily Task", 1L, null, startDate, 1L, null, null, 1, true, recurrenceRule, null, null, null, null,
-                null, null);
+                "Daily Task", 1L, null, 1L, null, null, 1, true, recurrenceRule, null,
+                startDate.atStartOfDay().atOffset(java.time.ZoneOffset.UTC), null, true, null, null);
 
         when(taskListRepository.existsByIdAndUserId(1L, userId)).thenReturn(true);
         when(taskListRepository.getReferenceById(1L)).thenReturn(mockTaskList);
@@ -197,11 +197,11 @@ class TaskServiceTest {
     void bulkCreateTasks() {
         // Arrange
         TaskDto.Create request1 = new TaskDto.Create(
-                "Task 1", 1L, null, LocalDate.now(), 1L, null, null, 1, false, null, null, null, null, null, null,
-                null);
+                "Task 1", 1L, null, 1L, null, null, 1, false, null, null,
+                java.time.LocalDate.now().atStartOfDay().atOffset(java.time.ZoneOffset.UTC), null, true, null, null);
         TaskDto.Create request2 = new TaskDto.Create(
-                "Task 2", 1L, null, LocalDate.now(), 1L, null, null, 1, false, null, null, null, null, null, null,
-                null);
+                "Task 2", 1L, null, 1L, null, null, 1, false, null, null,
+                java.time.LocalDate.now().atStartOfDay().atOffset(java.time.ZoneOffset.UTC), null, true, null, null);
         List<TaskDto.Create> requests = Arrays.asList(request1, request2);
 
         when(taskListRepository.existsByIdAndUserId(1L, userId)).thenReturn(true);

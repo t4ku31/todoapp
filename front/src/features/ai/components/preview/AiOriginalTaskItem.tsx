@@ -43,7 +43,9 @@ export const AiOriginalTaskItem = memo(function AiOriginalTaskItem({
 					<div className="flex items-center gap-1.5 px-2 py-1 bg-white/50 rounded-md border border-gray-100 text-gray-400">
 						<Calendar className="w-3.5 h-3.5" />
 						<span className="text-xs">
-							{task.startDate ? task.startDate.toLocaleDateString() : "No Date"}
+							{task.scheduledStartAt
+								? task.scheduledStartAt.toLocaleDateString()
+								: "No Date"}
 						</span>
 					</div>
 

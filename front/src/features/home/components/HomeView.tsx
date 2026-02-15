@@ -44,8 +44,8 @@ export default function HomeView() {
 	// Auto-select first task if none selected
 	const todaysTasks = allTasks.filter(
 		(t) =>
-			t.startDate &&
-			format(t.startDate, "yyyy-MM-dd") === selectedDate &&
+			t.scheduledStartAt &&
+			format(t.scheduledStartAt, "yyyy-MM-dd") === selectedDate &&
 			t.status !== "COMPLETED",
 	);
 

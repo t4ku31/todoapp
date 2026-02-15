@@ -228,11 +228,13 @@ export const AiPreviewTaskItem = memo(function AiPreviewTaskItem({
 							{/* Date */}
 							<div>
 								<EditableDate
-									id={0}
-									date={task.startDate ?? null}
-									type="startDate"
+									id={"0"}
+									date={task.scheduledStartAt ?? undefined}
+									type="scheduledDate"
 									onDateChange={async (_, date) =>
-										onUpdateTask(task.id, { startDate: date ?? undefined })
+										onUpdateTask(task.id, {
+											scheduledStartAt: date ?? undefined,
+										})
 									}
 									isRecurring={false} // Preview doesn't support manual recurrence edit yet
 									onRecurrenceChange={async () => {}}

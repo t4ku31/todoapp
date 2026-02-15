@@ -1,6 +1,9 @@
 package com.example.app1.service.domain;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -127,7 +130,7 @@ public class TaskService {
             log.info("Resolved task list by title '{}' to id: {}", taskCreateRequest.taskListTitle(), taskListId);
         } else if (taskListId == null || taskListId == 0) {
             log.info("TaskListId is {} - resolving to user's Inbox", taskListId);
-            com.example.app1.model.TaskList inbox = taskListService.getOrCreateInbox(userId);
+            TaskList inbox = taskListService.getOrCreateInbox(userId);
             taskListId = inbox.getId();
             log.info("Resolved to Inbox with id: {}", taskListId);
         }
@@ -146,7 +149,9 @@ public class TaskService {
 
             Task firstTask = null;
             for (LocalDate date : taskCreateRequest.customDates()) {
-                Task task = createSimpleTask(taskCreateRequest, userId, date, finalTaskListId);
+                OffsetDateTime scheduledStartAt = date.atStartOfDay().atOffset(ZoneOffset.UTC);
+                Task task = createSimpleTask(taskCreateRequest, userId, scheduledStartAt,
+                        taskCreateRequest.scheduledEndAt(), finalTaskListId);
                 if (firstTask == null) {
                     firstTask = task;
                 }
@@ -163,8 +168,16 @@ public class TaskService {
             return createRecurringTasks(taskCreateRequest, userId, rruleString, finalTaskListId);
         }
 
-        return createSimpleTask(taskCreateRequest, userId, taskCreateRequest.startDate(),
-                finalTaskListId);
+        // Use scheduledStartAt if provided, otherwise use today at midnight UTC
+        OffsetDateTime startAt = taskCreateRequest.scheduledStartAt() != null
+                ? taskCreateRequest.scheduledStartAt()
+                : LocalDate.now().atStartOfDay().atOffset(ZoneOffset.UTC);
+
+        OffsetDateTime endAt = taskCreateRequest.scheduledEndAt() != null
+                ? taskCreateRequest.scheduledEndAt()
+                : LocalDate.now().atStartOfDay().atOffset(ZoneOffset.UTC);
+
+        return createSimpleTask(taskCreateRequest, userId, startAt, endAt, finalTaskListId);
     }
 
     /**
@@ -192,9 +205,11 @@ public class TaskService {
 
         // Calculate occurrences using ical4j
         // Start from the task's execution date, or today if not set
-        LocalDate startDate = taskCreateRequest.startDate() != null
-                ? taskCreateRequest.startDate()
-                : LocalDate.now();
+        // Use scheduledStartAt if provided, otherwise use today
+        OffsetDateTime startAt = taskCreateRequest.scheduledStartAt() != null
+                ? taskCreateRequest.scheduledStartAt()
+                : LocalDate.now().atStartOfDay().atOffset(ZoneOffset.UTC);
+        LocalDate startDate = startAt.toLocalDate();
 
         // Default limit: 1 year from start if no end condition
         LocalDate rangeEnd = startDate.plusYears(1);
@@ -211,13 +226,13 @@ public class TaskService {
         log.info("Generated {} dates for recurring task", dates.size());
 
         // Create parent task first
-        Task parentTask = createRecurringParent(taskCreateRequest, userId, dates.get(0), recurrenceRule,
-                resolvedTaskListId);
+        Task parentTask = createRecurringParent(taskCreateRequest, userId, dates.get(0),
+                taskCreateRequest.scheduledEndAt(), recurrenceRule, resolvedTaskListId);
 
         // Create child tasks for remaining dates
         for (int i = 1; i < dates.size(); i++) {
-            createRecurringChild(taskCreateRequest, userId, dates.get(i), parentTask.getId(),
-                    resolvedTaskListId);
+            createRecurringChild(taskCreateRequest, userId, dates.get(i),
+                    taskCreateRequest.scheduledEndAt(), parentTask.getId(), resolvedTaskListId);
         }
 
         return parentTask;
@@ -226,31 +241,37 @@ public class TaskService {
     /**
      * Internal method to create a simple standalone task.
      */
-    private Task createSimpleTask(TaskDto.Create request, String userId, LocalDate startDate, Long taskListId) {
-        return createSingleTask(request, userId, startDate, false, null, null, taskListId);
+    private Task createSimpleTask(TaskDto.Create request, String userId, OffsetDateTime scheduledStartAt,
+            OffsetDateTime scheduledEndAt, Long taskListId) {
+        return createSingleTask(request, userId, scheduledStartAt, scheduledEndAt, false, null, null, taskListId);
     }
 
     /**
      * Internal method to create the parent instance of a recurring task.
      */
     private Task createRecurringParent(TaskDto.Create request, String userId, LocalDate startDate,
+            OffsetDateTime scheduledEndAt,
             String rule, Long taskListId) {
-        return createSingleTask(request, userId, startDate, true, rule, null, taskListId);
+        OffsetDateTime scheduledStartAt = startDate.atStartOfDay().atOffset(ZoneOffset.UTC);
+        return createSingleTask(request, userId, scheduledStartAt, scheduledEndAt, true, rule, null, taskListId);
     }
 
     /**
      * Internal method to create a linked child instance of a recurring task.
      */
     private Task createRecurringChild(TaskDto.Create request, String userId, LocalDate startDate,
+            OffsetDateTime scheduledEndAt,
             Long parentId, Long taskListId) {
-        return createSingleTask(request, userId, startDate, false, null, parentId, taskListId);
+        OffsetDateTime scheduledStartAt = startDate.atStartOfDay().atOffset(ZoneOffset.UTC);
+        return createSingleTask(request, userId, scheduledStartAt, scheduledEndAt, false, null, parentId, taskListId);
     }
 
     /**
      * Internal method to create a single task.
      */
     private Task createSingleTask(TaskDto.Create taskCreateRequest, String userId,
-            java.time.LocalDate startDate, boolean isRecurring, String recurrenceRule, Long recurrenceParentId,
+            OffsetDateTime scheduledStartAt, OffsetDateTime scheduledEndAt, boolean isRecurring, String recurrenceRule,
+            Long recurrenceParentId,
             Long resolvedTaskListId) {
 
         // Set default status
@@ -259,19 +280,17 @@ public class TaskService {
         // Fetch TaskList reference
         TaskList taskList = taskListRepository.getReferenceById(resolvedTaskListId);
 
+        // Determine isAllDay - default to true if not specified
+        Boolean isAllDay = taskCreateRequest.isAllDay() != null ? taskCreateRequest.isAllDay() : true;
+
         Task.TaskBuilder taskBuilder = Task.builder()
                 .title(taskCreateRequest.title())
                 .status(status)
-                .startDate(startDate)
+                .scheduledStartAt(scheduledStartAt)
                 .userId(userId)
                 .taskList(taskList)
-                .scheduledStartAt(taskCreateRequest.scheduledStartAt() != null && startDate != null
-                        ? taskCreateRequest.scheduledStartAt().with(startDate.atStartOfDay().toLocalDate())
-                        : taskCreateRequest.scheduledStartAt())
-                .scheduledEndAt(taskCreateRequest.scheduledEndAt() != null && startDate != null
-                        ? taskCreateRequest.scheduledEndAt().with(startDate.atStartOfDay().toLocalDate())
-                        : taskCreateRequest.scheduledEndAt())
-                .isAllDay(taskCreateRequest.isAllDay())
+                .scheduledEndAt(taskCreateRequest.scheduledEndAt())
+                .isAllDay(isAllDay)
                 .description(taskCreateRequest.description());
 
         // Set recurring fields
@@ -476,9 +495,7 @@ public class TaskService {
             existing.setStatus(request.status());
         }
 
-        if (request.startDate() != null) {
-            existing.setStartDate(request.startDate());
-        }
+        // startDate is removed, scheduledStartAt is handled below }
         if (request.categoryId() != null) {
             Category category = categoryRepository.findById(request.categoryId())
                     .orElseThrow(() -> new IllegalArgumentException("Category not found"));
@@ -640,13 +657,16 @@ public class TaskService {
                 updated = true;
             }
 
-            // Propagate scheduling (keep the child's execution date, but update the time)
-            if (request.scheduledStartAt() != null && child.getStartDate() != null) {
-                child.setScheduledStartAt(request.scheduledStartAt().with(child.getStartDate()));
+            // Propagate scheduling (keep the child's date, but update the time)
+            if (request.scheduledStartAt() != null && child.getScheduledStartAt() != null) {
+                // Keep the date from child, update time from request
+                LocalDate childDate = child.getScheduledStartAt().toLocalDate();
+                child.setScheduledStartAt(request.scheduledStartAt().with(childDate.atStartOfDay().toLocalDate()));
                 updated = true;
             }
-            if (request.scheduledEndAt() != null && child.getStartDate() != null) {
-                child.setScheduledEndAt(request.scheduledEndAt().with(child.getStartDate()));
+            if (request.scheduledEndAt() != null && child.getScheduledStartAt() != null) {
+                LocalDate childDate = child.getScheduledStartAt().toLocalDate();
+                child.setScheduledEndAt(request.scheduledEndAt().with(childDate.atStartOfDay().toLocalDate()));
                 updated = true;
             }
             if (request.isAllDay() != null) {
@@ -669,9 +689,9 @@ public class TaskService {
     private void generateRecurringInstances(Task parentTask, String recurrenceRule, String userId) {
         // Generate dates using ical4j
         // Start from the parent task's execution date, or today if not set
-        LocalDate startDate = parentTask.getStartDate() != null
-                ? parentTask.getStartDate()
-                : java.time.LocalDate.now();
+        LocalDate startDate = parentTask.getScheduledStartAt() != null
+                ? parentTask.getScheduledStartAt().toLocalDate()
+                : LocalDate.now();
 
         LocalDate rangeEnd = startDate.plusYears(1);
 
@@ -687,7 +707,7 @@ public class TaskService {
             Task childTask = Task.builder()
                     .title(parentTask.getTitle())
                     .status(TaskStatus.PENDING)
-                    .startDate(date)
+                    .scheduledStartAt(date.atStartOfDay().atOffset(ZoneOffset.UTC))
                     .userId(userId)
                     .taskList(parentTask.getTaskList())
                     .category(parentTask.getCategory())
@@ -710,13 +730,14 @@ public class TaskService {
     @Transactional(readOnly = true)
     public TaskDto.Stats getTaskStatsInRange(String userId, LocalDate startDate,
             LocalDate endDate) {
-        Long completedCount = taskRepository.countCompletedByUserIdAndStartDateBetween(
+        Long completedCount = taskRepository.countCompletedByUserIdAndScheduledStartAtDateBetween(
                 userId, startDate, endDate);
-        Long totalCount = taskRepository.countByUserIdAndStartDateBetween(
+        Long totalCount = taskRepository.countByUserIdAndScheduledStartAtDateBetween(
                 userId, startDate, endDate);
 
         // Logic for Estimation Accuracy
-        List<Task> completedTasks = taskRepository.findCompletedByUserIdAndStartDateBetween(userId, startDate,
+        List<Task> completedTasks = taskRepository.findCompletedByUserIdAndScheduledStartAtDateBetween(userId,
+                startDate,
                 endDate);
         log.info("Completed tasks: {}", completedTasks);
 
@@ -1019,7 +1040,7 @@ public class TaskService {
             }
 
             // Apply updates to valid tasks
-            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            LocalDateTime now = LocalDateTime.now();
             for (Task task : tasksToUpdate) {
                 if (request.status() != null) {
                     task.setStatus(request.status());
@@ -1035,8 +1056,8 @@ public class TaskService {
                 if (taskList != null) {
                     task.setTaskList(taskList);
                 }
-                if (request.startDate() != null) {
-                    task.setStartDate(request.startDate());
+                if (request.scheduledStartAt() != null) {
+                    task.setScheduledStartAt(request.scheduledStartAt());
                 }
                 if (request.estimatedPomodoros() != null) {
                     task.setEstimatedPomodoros(request.estimatedPomodoros());
@@ -1199,15 +1220,7 @@ public class TaskService {
     }
 
     private TaskDto.Create convertToCreate(TaskDto.SyncTaskDto req) {
-        LocalDate startDate = null;
-        if (req.startDate() != null) {
-            try {
-                startDate = LocalDate.parse(req.startDate());
-            } catch (Exception e) {
-                log.warn("Invalid startDate format: {}", req.startDate());
-            }
-        }
-
+        // Parse scheduledStartAt from string
         java.time.OffsetDateTime startAt = null;
         if (req.scheduledStartAt() != null) {
             try {
@@ -1217,6 +1230,7 @@ public class TaskService {
             }
         }
 
+        // Parse scheduledEndAt from string
         java.time.OffsetDateTime endAt = null;
         if (req.scheduledEndAt() != null) {
             try {
@@ -1226,28 +1240,28 @@ public class TaskService {
             }
         }
 
-        List<SubtaskDto.Create> subtasks = null;
-        if (req.subtasks() != null) {
-            subtasks = req.subtasks().stream()
-                    .map(summary -> new SubtaskDto.Create(null, summary.title(), summary.description(),
-                            summary.isCompleted(), summary.orderIndex()))
-                    .toList();
-        }
+        // Convert subtasks
+        List<SubtaskDto.Create> subtasks = req.subtasks() != null
+                ? req.subtasks().stream()
+                        .map(s -> new SubtaskDto.Create(null, s.title(), s.description(), s.isCompleted(),
+                                s.orderIndex()))
+                        .toList()
+                : null;
 
+        // Parse status
         TaskStatus status = null;
-        if (req.status() != null && !req.status().isBlank()) {
+        if (req.status() != null) {
             try {
-                status = TaskStatus.valueOf(req.status().trim().toUpperCase());
-            } catch (Exception e) {
-                log.warn("Invalid status value: {}", req.status());
+                status = TaskStatus.valueOf(req.status().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid status: {}", req.status());
             }
         }
 
         return new TaskDto.Create(
                 req.title(),
-                null, // taskListId (resolved by title or default)
+                null, // taskListId
                 req.taskListTitle(),
-                startDate,
                 null, // categoryId
                 req.categoryName(),
                 subtasks,
@@ -1263,45 +1277,35 @@ public class TaskService {
     }
 
     private TaskDto.Update convertToUpdate(TaskDto.SyncTaskDto req) {
-        LocalDate startDate = null;
-        if (req.startDate() != null) {
-            try {
-                startDate = LocalDate.parse(req.startDate());
-            } catch (Exception e) {
-                log.warn("Invalid startDate format: {}", req.startDate());
-            }
-        }
-
-        java.time.OffsetDateTime startAt = null;
+        OffsetDateTime startAt = null;
         if (req.scheduledStartAt() != null) {
             try {
-                startAt = java.time.OffsetDateTime.parse(req.scheduledStartAt());
+                startAt = OffsetDateTime.parse(req.scheduledStartAt());
             } catch (Exception e) {
                 log.warn("Invalid scheduledStartAt format: {}", req.scheduledStartAt());
             }
         }
 
-        java.time.OffsetDateTime endAt = null;
+        OffsetDateTime endAt = null;
         if (req.scheduledEndAt() != null) {
             try {
-                endAt = java.time.OffsetDateTime.parse(req.scheduledEndAt());
+                endAt = OffsetDateTime.parse(req.scheduledEndAt());
             } catch (Exception e) {
                 log.warn("Invalid scheduledEndAt format: {}", req.scheduledEndAt());
             }
         }
 
         TaskStatus status = null;
-        if (req.status() != null && !req.status().isBlank()) {
+        if (req.status() != null) {
             try {
-                status = TaskStatus.valueOf(req.status().trim().toUpperCase());
-            } catch (Exception e) {
-                log.warn("Invalid status value: {}", req.status());
+                status = TaskStatus.valueOf(req.status().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid status: {}", req.status());
             }
         }
         TaskDto.Update update = new TaskDto.Update(
                 req.title(),
                 status,
-                startDate,
                 null, // categoryId
                 req.categoryName(),
                 null, // taskListId
