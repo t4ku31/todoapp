@@ -24,7 +24,10 @@ interface TodoState {
 	error: string | null;
 	isInitialized: boolean;
 
-	fetchTaskLists: (force?: boolean) => Promise<void>;
+	fetchTaskLists: (options?: {
+		force?: boolean;
+		background?: boolean;
+	}) => Promise<void>;
 	fetchTrashTasks: () => Promise<void>;
 	restoreTask: (id: number) => Promise<void>;
 	deleteTaskPermanently: (id: number) => Promise<void>;
@@ -173,17 +176,24 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 	error: null,
 	isInitialized: false,
 
-	fetchTaskLists: async (force = false) => {
+	fetchTaskLists: async (options = {}) => {
+		const { force = false, background = false } = options;
 		const state = get();
 		// Avoid double fetch if already loading
 		if (state.loading && !force) return;
 
-		// If already initialized and not forced, we can skip setting loading=true
-		// to avoid UI flicker, but we might still want to fetch in background.
-		// For now, if initialized, return immediately unless forced.
-		if (state.isInitialized && !force) return;
+		// If already initialized and not forced/background, we can skip setting loading=true
+		// to avoid UI flicker.
+		// If background=true, we proceed but DON'T set loading=true.
+		if (state.isInitialized && !force && !background) return;
 
-		set({ loading: true, error: null });
+		if (!background) {
+			set({ loading: true, error: null });
+		} else {
+			// Clear error if any, but don't set loading
+			set({ error: null });
+		}
+
 		try {
 			const data = await taskApi.fetchTaskLists();
 			// Ensure tasks are sorted
@@ -192,7 +202,14 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 				tasks: sortTasks(list.tasks || []),
 			}));
 			const allTasks = taskLists.flatMap((list) => list.tasks || []);
-			set({ taskLists, allTasks, loading: false, isInitialized: true });
+
+			// Always update data
+			set({ taskLists, allTasks, isInitialized: true });
+
+			// Only turn off loading if we turned it on
+			if (!background) {
+				set({ loading: false });
+			}
 		} catch (err) {
 			console.error("Failed to fetch task lists:", err);
 			set({ error: "タスクリストの取得に失敗しました", loading: false });
@@ -495,7 +512,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 				updates.categoryId !== undefined ||
 				updates.isRecurring
 			) {
-				await get().fetchTaskLists();
+				await get().fetchTaskLists({ background: true });
 			}
 		} catch (err) {
 			console.error("Failed to update task:", err);
