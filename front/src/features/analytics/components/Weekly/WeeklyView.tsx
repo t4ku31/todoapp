@@ -1,12 +1,9 @@
-import { endOfWeek, format, startOfWeek } from "date-fns";
-import { useEffect } from "react";
 import { useAnalyticsStore } from "@/features/analytics/stores/useAnalyticsStore";
+import { addWeeks, formatISO, startOfWeek } from "date-fns";
+import { useEffect } from "react";
 // Shared Cards (Unified UX)
-import { AnalyticsEfficiencyCard } from "../shared/cards/AnalyticsEfficiencyCard";
-import { AnalyticsFocusCard } from "../shared/cards/AnalyticsFocusCard";
-import { AnalyticsTasksCard } from "../shared/cards/AnalyticsTasksCard";
-import { EstimationAccuracyCard } from "../shared/EstimationAccuracyCard";
-import { TaskSummaryCard } from "../shared/TaskSummaryCard";
+import { AnalyticsKpiGrid } from "../shared/AnalyticsKpiGrid";
+import { AnalyticsTaskList } from "../shared/AnalyticsTaskList";
 import { CategoryPieChart } from "./cards/CategoryPieChart";
 import { ProductivityChart } from "./cards/ProductivityChart";
 
@@ -14,12 +11,17 @@ import { ProductivityChart } from "./cards/ProductivityChart";
 export default function WeeklyView() {
 	const today = new Date();
 	const weekStart = startOfWeek(today, { weekStartsOn: 1 });
-	const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
+	const weekNextStart = addWeeks(weekStart, 1);
 
-	const startStr = format(weekStart, "yyyy-MM-dd");
-	const endStr = format(weekEnd, "yyyy-MM-dd");
+	const startStr = formatISO(weekStart);
+	const endStr = formatISO(weekNextStart);
 
-	const { weeklyData, isLoading, fetchWeeklyAnalytics } = useAnalyticsStore();
+	const {
+		weeklyData,
+		isLoading,
+		fetchWeeklyAnalytics,
+		updateWeeklyTaskStatus,
+	} = useAnalyticsStore();
 
 	useEffect(() => {
 		fetchWeeklyAnalytics(startStr, endStr);
@@ -31,66 +33,62 @@ export default function WeeklyView() {
 	const estimationData = {
 		startDate: startStr,
 		endDate: endStr,
-		completedCount: data?.tasksCompletedCount ?? 0,
-		totalCount: data?.tasksTotalCount ?? 0,
-		totalEstimatedMinutes: data?.totalEstimatedMinutes ?? 0,
-		totalActualMinutes: data?.totalActualMinutes ?? 0,
+		completedCount: data?.kpi.tasksCompletedCount ?? 0,
+		totalCount: data?.kpi.tasksTotalCount ?? 0,
+		totalEstimatedMinutes: data?.kpi.totalEstimatedMinutes ?? 0,
+		totalActualMinutes: data?.kpi.totalActualMinutes ?? 0,
 	};
 
 	return (
-		<div className="h-full flex gap-3 overflow-hidden">
-			{/* Left Column: Charts and KPIs (flex-[5]) */}
-			<div className="flex-[5] flex flex-col gap-3 min-w-0">
-				{/* Top Row: KPI Cards (h-[120px] - increased to match Monthly new default) */}
-				<div className="shrink-0 grid grid-cols-4 gap-3 h-[120px]">
-					<AnalyticsFocusCard
-						minutes={data?.totalFocusMinutes ?? 0}
-						comparisonPercent={data?.focusComparisonPercentage}
+		<div className="h-full flex flex-col gap-3 overflow-hidden">
+			<div className="flex bg-white rounded-lg p-1 overflow-auto h-full gap-3">
+				{/* Left Column: Charts and KPIs (flex-[5]) */}
+				<div className="flex-[5] flex flex-col gap-3 min-w-0">
+					{/* Top Row: KPI Cards (h-[120px] - increased to match Monthly new default) */}
+					<AnalyticsKpiGrid
 						isLoading={isLoading}
+						focusMinutes={data?.kpi.totalFocusMinutes ?? 0}
+						focusComparisonDiffMinutes={data?.kpi.focusComparisonDiffMinutes}
+						efficiencyScore={data?.kpi.efficiencyScore ?? 0}
+						rhythmQuality={data?.kpi.rhythmQuality}
+						volumeBalance={data?.kpi.volumeBalance}
+						tasksCompletedCount={data?.kpi.tasksCompletedCount ?? 0}
+						tasksTotalCount={data?.kpi.tasksTotalCount ?? 0}
+						taskCompletionRateGrowth={data?.kpi.taskCompletionRateGrowth}
+						estimationData={estimationData}
+						comparisonLabel="vs last week"
 					/>
-					<AnalyticsEfficiencyCard
-						efficiency={data?.efficiencyScore ?? 0}
-						rhythm={data?.rhythmQuality}
-						volume={data?.volumeBalance}
-						isLoading={isLoading}
-					/>
-					<AnalyticsTasksCard
-						completed={data?.tasksCompletedCount ?? 0}
-						total={data?.tasksTotalCount ?? 0}
-						isLoading={isLoading}
-					/>
-					<EstimationAccuracyCard
-						variant="compact"
-						className="h-full"
-						data={estimationData}
-						isLoading={isLoading}
-					/>
-				</div>
 
-				{/* Bottom Row: Charts (Bar 5 : Pie 2) */}
-				<div className="flex-1 flex gap-3 min-h-0">
-					{/* Productivity Chart (Bar) - Larger */}
-					<div className="flex-[5] min-w-0">
-						<ProductivityChart
-							className="h-full"
-							data={data?.dailyFocusData}
-							isLoading={isLoading}
-						/>
-					</div>
-					{/* Category Pie Chart - Smaller */}
-					<div className="flex-[3] min-w-0">
-						<CategoryPieChart
-							className="h-full"
-							data={data?.categoryAggregation}
-							isLoading={isLoading}
-						/>
+					{/* Bottom Row: Charts (Bar 5 : Pie 2) */}
+					<div className="flex-1 flex gap-3 min-h-0">
+						{/* Productivity Chart (Bar) - Larger */}
+						<div className="flex-[5] min-w-0">
+							<ProductivityChart
+								className="h-full"
+								data={data?.dailyFocusData}
+								isLoading={isLoading}
+							/>
+						</div>
+						{/* Category Pie Chart - Smaller */}
+						<div className="flex-[3] min-w-0">
+							<CategoryPieChart
+								className="h-full"
+								data={data?.categoryAggregation}
+								isLoading={isLoading}
+							/>
+						</div>
 					</div>
 				</div>
-			</div>
 
-			{/* Right Column: Detailed List (flex-[2], Full Height) */}
-			<div className="flex-[2] min-w-0">
-				<TaskSummaryCard data={data?.taskSummaries} isLoading={isLoading} />
+				{/* Right Column: Detailed List (flex-[2], Full Height) */}
+				<div className="flex-[2] min-w-0">
+					<AnalyticsTaskList
+						data={data?.taskSummaries}
+						isLoading={isLoading}
+						onStatusChange={updateWeeklyTaskStatus}
+						title="Weekly Tasks"
+					/>
+				</div>
 			</div>
 		</div>
 	);

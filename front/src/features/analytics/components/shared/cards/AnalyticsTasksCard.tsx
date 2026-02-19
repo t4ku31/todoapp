@@ -3,7 +3,9 @@ import { KPICard } from "../KPICard";
 
 interface AnalyticsTasksCardProps {
 	completed: number;
-	total?: number;
+	total: number;
+	completionRateGrowth?: number;
+	comparisonLabel?: string;
 	className?: string;
 	isLoading?: boolean;
 }
@@ -11,25 +13,33 @@ interface AnalyticsTasksCardProps {
 export function AnalyticsTasksCard({
 	completed,
 	total,
+	completionRateGrowth,
+	comparisonLabel,
 	className,
 	isLoading = false,
 }: AnalyticsTasksCardProps) {
-	let value = isLoading ? "..." : String(completed);
+	const value = isLoading ? "..." : `${completed}/${total}`;
+	const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
 	let sub = "";
 	let trend: "up" | "down" | undefined;
 
-	if (!isLoading) {
-		if (total !== undefined && total > 0) {
-			value = `${completed} / ${total}`;
-			sub = `${Math.round((completed / total) * 100)}% completion rate`;
-			trend = completed >= total / 2 ? "up" : "down";
+	if (completionRateGrowth !== undefined && !isLoading) {
+		const isPositive = completionRateGrowth >= 0;
+		const absGrowth = Math.abs(Math.round(completionRateGrowth));
+		const formattedGrowth = `${absGrowth}%`;
+		const label = comparisonLabel || "vs last week";
+
+		if (isPositive) {
+			sub = `↗ +${formattedGrowth} ${label}`;
+			trend = "up";
 		} else {
-			sub = "Tasks completed";
-			// For monthly where total is not available, we can assume 'up' if > 0? or just neutral.
-			// Let's make it purple (neutral) by not setting trend, unless we have a target.
-			// The original Monthly Tasks Card was generic purple.
-			trend = undefined;
+			sub = `↘ -${formattedGrowth} ${label}`;
+			trend = "down";
 		}
+	} else if (!isLoading) {
+		sub = `${rate}% completion rate`;
+		// If completionRateGrowth is not provided, trend remains undefined (neutral)
 	}
 
 	return (
