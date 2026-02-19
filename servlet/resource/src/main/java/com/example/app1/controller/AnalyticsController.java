@@ -1,6 +1,7 @@
 package com.example.app1.controller;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
@@ -66,8 +67,8 @@ public class AnalyticsController {
      */
     @GetMapping("/efficiency/range")
     public ResponseEntity<AnalyticsDto.EfficiencyStats> getEfficiencyStats(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime endDate,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
         log.info("Getting efficiency stats for user {} from {} to {}", userId, startDate, endDate);
@@ -81,8 +82,8 @@ public class AnalyticsController {
      */
     @GetMapping("/focus-by-category")
     public ResponseEntity<List<AnalyticsDto.DailyFocusByCategory>> getDailyFocusByCategory(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime endDate,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
         log.info("Getting daily focus by category for user {} from {} to {}", userId, startDate, endDate);
@@ -97,8 +98,8 @@ public class AnalyticsController {
      */
     @GetMapping("/category-aggregation")
     public ResponseEntity<AnalyticsDto.WeeklyCategoryAggregation> getCategoryAggregation(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime endDate,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
         log.info("Getting category aggregation for user {} from {} to {}", userId, startDate, endDate);
@@ -114,13 +115,19 @@ public class AnalyticsController {
      */
     @GetMapping("/task-summary")
     public ResponseEntity<List<AnalyticsDto.GroupedTaskSummary>> getTaskSummary(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime endDate,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
-        // If only startDate is provided, assume single day
+        // If only startDate is provided, assume single day range (start + 24h) handled
+        // by service or client should provide end
+        // But for task summary, typically a range is expected. If endDate is null,
+        // let's defer defaults to client or service.
+        // For now, if endDate is null, we can default to startDate + 1 day logic in
+        // service if needed,
+        // but typically client should send both.
         if (endDate == null) {
-            endDate = startDate;
+            endDate = startDate.plusDays(1);
         }
         log.info("Getting task summary for user {} from {} to {}", userId, startDate, endDate);
 
@@ -134,7 +141,7 @@ public class AnalyticsController {
      * @param month Month in format yyyy-MM (e.g., 2024-01)
      */
     @GetMapping("/monthly")
-    public ResponseEntity<com.example.app1.dto.MonthlyAnalyticsDto> getMonthlyAnalytics(
+    public ResponseEntity<AnalyticsDto.MonthlyAnalyticsDto> getMonthlyAnalytics(
             @RequestParam String month,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
@@ -146,8 +153,9 @@ public class AnalyticsController {
 
         log.info("Getting monthly analytics for user {} for {}-{}", userId, year, monthValue);
 
-        com.example.app1.dto.MonthlyAnalyticsDto response = analyticsService.getMonthlyAnalytics(userId, year,
+        AnalyticsDto.MonthlyAnalyticsDto response = analyticsService.getMonthlyAnalytics(userId, year,
                 monthValue);
+        log.info("Monthly analytics for user {}: {}", userId, response);
         return ResponseEntity.ok(response);
     }
 
@@ -156,14 +164,14 @@ public class AnalyticsController {
      * Returns all data needed for the Weekly view in a single response.
      */
     @GetMapping("/weekly")
-    public ResponseEntity<com.example.app1.dto.WeeklyAnalyticsDto> getWeeklyAnalytics(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+    public ResponseEntity<AnalyticsDto.WeeklyAnalyticsDto> getWeeklyAnalytics(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime endDate,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
         log.info("Getting weekly analytics for user {} from {} to {}", userId, startDate, endDate);
 
-        com.example.app1.dto.WeeklyAnalyticsDto response = analyticsService.getWeeklyAnalytics(userId, startDate,
+        AnalyticsDto.WeeklyAnalyticsDto response = analyticsService.getWeeklyAnalytics(userId, startDate,
                 endDate);
         return ResponseEntity.ok(response);
     }
@@ -173,13 +181,14 @@ public class AnalyticsController {
      * Returns all data needed for the Daily view in a single response.
      */
     @GetMapping("/daily")
-    public ResponseEntity<com.example.app1.dto.DailyAnalyticsDto> getDailyAnalytics(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+    public ResponseEntity<AnalyticsDto.DailyAnalyticsDto> getDailyAnalytics(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime date,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
-        log.info("Getting daily analytics for user {} on {}", userId, date);
+        log.info("Getting daily analytics for user {} on {}", userId, date); // Note: 'date' param here refers to start
+                                                                             // of the day in user's timezone
 
-        com.example.app1.dto.DailyAnalyticsDto response = analyticsService.getDailyAnalytics(userId, date);
+        AnalyticsDto.DailyAnalyticsDto response = analyticsService.getDailyAnalytics(userId, date);
         return ResponseEntity.ok(response);
     }
 }
