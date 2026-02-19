@@ -103,37 +103,37 @@ public class BffAnalyticsService {
                 return data;
         }
 
-        public io.reflectoring.bff.dto.MonthlyAnalyticsDto getMonthlyAnalytics(String month, String token) {
+        public AnalyticsDto.MonthlyAnalyticsDto getMonthlyAnalytics(String month, String token) {
                 log.info("Fetching monthly analytics for month: {}", month);
-                io.reflectoring.bff.dto.MonthlyAnalyticsDto data = restClient.get()
+                AnalyticsDto.MonthlyAnalyticsDto data = restClient.get()
                                 .uri(resourceUrl + "/analytics/monthly?month={month}", month)
                                 .header("Authorization", "Bearer " + token)
                                 .retrieve()
-                                .body(io.reflectoring.bff.dto.MonthlyAnalyticsDto.class);
+                                .body(AnalyticsDto.MonthlyAnalyticsDto.class);
                 log.info("Monthly analytics: {}", data);
                 return data;
         }
 
-        public io.reflectoring.bff.dto.WeeklyAnalyticsDto getWeeklyAnalytics(String startDate, String endDate,
+        public AnalyticsDto.WeeklyAnalyticsDto getWeeklyAnalytics(String startDate, String endDate,
                         String token) {
                 log.info("Fetching weekly analytics from {} to {}", startDate, endDate);
-                io.reflectoring.bff.dto.WeeklyAnalyticsDto data = restClient.get()
+                AnalyticsDto.WeeklyAnalyticsDto data = restClient.get()
                                 .uri(resourceUrl + "/analytics/weekly?startDate={startDate}&endDate={endDate}",
                                                 startDate, endDate)
                                 .header("Authorization", "Bearer " + token)
                                 .retrieve()
-                                .body(io.reflectoring.bff.dto.WeeklyAnalyticsDto.class);
+                                .body(AnalyticsDto.WeeklyAnalyticsDto.class);
                 log.info("Weekly analytics: {}", data);
                 return data;
         }
 
-        public io.reflectoring.bff.dto.DailyAnalyticsDto getDailyAnalytics(String date, String token) {
+        public AnalyticsDto.DailyAnalyticsDto getDailyAnalytics(String date, String token) {
                 log.info("Fetching daily analytics for date: {}", date);
-                io.reflectoring.bff.dto.DailyAnalyticsDto data = restClient.get()
+                AnalyticsDto.DailyAnalyticsDto data = restClient.get()
                                 .uri(resourceUrl + "/analytics/daily?date={date}", date)
                                 .header("Authorization", "Bearer " + token)
                                 .retrieve()
-                                .body(io.reflectoring.bff.dto.DailyAnalyticsDto.class);
+                                .body(AnalyticsDto.DailyAnalyticsDto.class);
                 log.info("Daily analytics: {}", data);
                 return data;
         }

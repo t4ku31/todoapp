@@ -1,33 +1,38 @@
-import { useMemo } from "react";
 import { Card } from "@/components/ui/card";
-import type { CategoryTime } from "../MonthlyView";
+import type { CategoryFocusTime } from "@/features/analytics/types";
+import { useMemo } from "react";
 
 interface ResourceStackProps {
-	categoryDistribution?: Record<string, CategoryTime[]>;
+	categoryAggregation?: Record<string, CategoryFocusTime[]>;
 	isLoading?: boolean;
 }
 
 export function ResourceStack({
-	categoryDistribution = {},
+	categoryAggregation = {},
 	isLoading,
 }: ResourceStackProps) {
 	// Get unique categories across all weeks for legend
 	const allCategories = useMemo(() => {
 		const categoryMap = new Map<string, { name: string; color: string }>();
-		Object.values(categoryDistribution).forEach((categories) => {
+		Object.values(categoryAggregation).forEach((categories) => {
+			if (!categories) return;
 			categories.forEach((cat) => {
-				if (!categoryMap.has(cat.name)) {
-					categoryMap.set(cat.name, { name: cat.name, color: cat.color });
+				const name = cat.categoryName || "Unknown";
+				if (!categoryMap.has(name)) {
+					categoryMap.set(name, {
+						name: name,
+						color: cat.categoryColor || "#888888",
+					});
 				}
 			});
 		});
 		return Array.from(categoryMap.values());
-	}, [categoryDistribution]);
+	}, [categoryAggregation]);
 
 	// Get week entries sorted
-	const weeks = Object.entries(categoryDistribution).sort(([a], [b]) =>
-		a.localeCompare(b),
-	);
+	const weeks = Object.entries(categoryAggregation)
+		.filter(([, cats]) => Array.isArray(cats))
+		.sort(([a], [b]) => a.localeCompare(b));
 
 	if (isLoading) {
 		return (
@@ -79,13 +84,13 @@ export function ResourceStack({
 										totalMinutes > 0 ? (cat.minutes / totalMinutes) * 100 : 0;
 									return (
 										<div
-											key={`${cat.name}-${idx}`}
+											key={`${cat.categoryName}-${idx}`}
 											className="h-full"
 											style={{
 												width: `${percentage}%`,
-												backgroundColor: cat.color,
+												backgroundColor: cat.categoryColor || "#888888",
 											}}
-											title={`${cat.name}: ${Math.round(cat.minutes / 6) / 10}h (${Math.round(percentage)}%)`}
+											title={`${cat.categoryName || "Unknown"}: ${Math.round(cat.minutes / 6) / 10}h (${Math.round(percentage)}%)`}
 										/>
 									);
 								})}

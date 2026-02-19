@@ -147,22 +147,6 @@ export interface TaskSummary {
 }
 
 /**
- * Daily task summary (flat, no grouping).
- * Used in DailyView for individual task display.
- */
-export interface DailyTaskSummary {
-	taskId: number;
-	taskTitle: string;
-	categoryName: string;
-	categoryColor: string;
-	status: string;
-	completed: boolean;
-	focusMinutes: number;
-	estimatedMinutes?: number | null;
-	progressPercentage: number;
-}
-
-/**
  * Child task instance for grouped summary expansion.
  */
 export interface TaskSummaryChild {
@@ -192,6 +176,22 @@ export interface GroupedTaskSummary {
 	children: TaskSummaryChild[];
 }
 
+/**
+ * Common KPI data structure used across all analytics views.
+ */
+export interface KpiData {
+	totalFocusMinutes: number;
+	tasksCompletedCount: number;
+	tasksTotalCount: number;
+	efficiencyScore: number;
+	rhythmQuality: number;
+	volumeBalance: number;
+	focusComparisonDiffMinutes: number;
+	taskCompletionRateGrowth: number;
+	totalEstimatedMinutes: number;
+	totalActualMinutes: number;
+}
+
 // ============================================
 // Monthly Analytics Types
 // ============================================
@@ -205,25 +205,14 @@ export interface DayActivity {
 }
 
 /**
- * Category time for monthly distribution.
- */
-export interface CategoryTime {
-	name: string;
-	color: string;
-	minutes: number;
-}
-
-/**
  * Monthly analytics data from API.
  */
 export interface MonthlyAnalyticsData {
-	totalFocusMinutes: number;
-	totalTasksCompleted: number;
+	kpi: KpiData;
 	focusDays: number;
-	averageDailyFocusMinutes: number;
-	averageEfficiencyScore: number;
+	dailyAverageFocusMinutes: number;
 	dailyActivity: DayActivity[];
-	categoryDistribution: Record<string, CategoryTime[]>;
+	categoryAggregation: Record<string, CategoryFocusTime[]>;
 }
 
 // ============================================
@@ -234,22 +223,10 @@ export interface MonthlyAnalyticsData {
  * Weekly consolidated analytics data.
  */
 export interface WeeklyAnalyticsData {
-	startDate: string;
-	endDate: string;
+	// KPIs (Nested)
+	kpi: KpiData;
 
-	// KPIs
-	totalFocusMinutes: number;
 	dailyAverageFocusMinutes: number;
-	focusComparisonPercentage: number;
-	efficiencyScore: number;
-	rhythmQuality: number;
-	volumeBalance: number;
-	tasksCompletedCount: number;
-	tasksTotalCount: number;
-	taskComparisonPercentage: number;
-	totalEstimatedMinutes: number;
-	totalActualMinutes: number;
-	estimationDifferenceMinutes: number;
 
 	// Charts
 	dailyFocusData: DailyFocusByCategory[];
@@ -263,25 +240,17 @@ export interface WeeklyAnalyticsData {
  * Daily consolidated analytics data.
  */
 export interface DailyAnalyticsData {
-	date: string;
+	// KPIs (Nested)
+	kpi: KpiData;
 
-	// Efficiency
-	efficiencyScore: number;
-	rhythmQuality: number;
-	volumeBalance: number;
-	focusRatio: number;
-	restRatio: number;
-	paceRatio: number;
-
-	// Estimation
-	totalEstimatedMinutes: number;
-	totalActualMinutes: number;
-	estimationDifferenceMinutes: number;
-	tasksCompletedCount: number;
-	tasksTotalCount: number;
+	// Efficiency/Other stats
+	focusRatio?: number;
+	restRatio?: number;
+	paceRatio?: number;
+	estimationDifferenceMinutes?: number;
 
 	// Tasks (flat list for daily - no grouping needed)
-	taskSummaries: DailyTaskSummary[];
+	taskSummaries: TaskSummary[];
 
 	// Timeline
 	focusSessions: FocusSessionApiResponse[];

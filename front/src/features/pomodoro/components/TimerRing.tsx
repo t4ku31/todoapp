@@ -1,6 +1,7 @@
-import { Minus, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { usePomodoroStore } from "@/features/pomodoro/stores/usePomodoroStore";
+import { PomodoroPhase } from "@/features/pomodoro/types";
+import { Minus, Plus } from "lucide-react";
 
 export function TimerRing() {
 	const {
@@ -29,7 +30,7 @@ export function TimerRing() {
 	const formattedTime = `${sign}${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
 	// Simple phase logic for colors
-	const isFocus = phase === "focus";
+	const isFocus = phase === PomodoroPhase.FOCUS;
 	const strokeColor = isFocus ? "#a855f7" : "#22c55e"; // purple-500 : green-500
 
 	return (
@@ -80,7 +81,7 @@ export function TimerRing() {
 					</button>
 
 					<div className="text-sm font-bold uppercase tracking-widest text-gray-500">
-						{phase === "focus" ? "FOCUS" : "BREAK"}
+						{phase === PomodoroPhase.FOCUS ? "FOCUS" : "BREAK"}
 					</div>
 
 					<button

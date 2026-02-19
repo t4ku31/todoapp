@@ -1,9 +1,9 @@
-import { format } from "date-fns";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { usePomodoroStore } from "@/features/pomodoro/stores/usePomodoroStore";
 import { useWhiteNoise } from "@/features/pomodoro/stores/useWhiteNoise";
+import { PomodoroPhase } from "@/features/pomodoro/types";
 import { useTodoStore } from "@/store/useTodoStore";
+import { format } from "date-fns";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const NOTIFICATION_SOUND_PATH = "/sounds/NotificationSound.mp3";
 
@@ -12,7 +12,6 @@ import { TaskSelector } from "./TaskSelector";
 import { TimerRing } from "./TimerRing";
 
 export default function FocusScreen() {
-	const navigate = useNavigate();
 	const [taskDropdownOpen, setTaskDropdownOpen] = useState(false);
 
 	// White noise audio hook
@@ -23,16 +22,11 @@ export default function FocusScreen() {
 		isActive,
 		isOvertime,
 		phase,
-		startTimer,
-		pauseTimer,
 		resetTimer,
-		completeSession,
 		tick,
-		skipPhase,
 		settings,
 		currentTaskId,
 		setFocusTask,
-		updateSettings,
 		fetchDailySummary,
 		duration, // Add duration
 	} = usePomodoroStore();
@@ -70,7 +64,6 @@ export default function FocusScreen() {
 	};
 
 	// White noise state
-	const isWhiteNoiseOn = settings.whiteNoise !== "none";
 
 	// Fetch daily summary on mount
 	useEffect(() => {
@@ -80,7 +73,7 @@ export default function FocusScreen() {
 	// Save focus time on page leave - Best effort
 	useEffect(() => {
 		const handleBeforeUnload = () => {
-			if (phase === "focus" && totalFocusTime > 0) {
+			if (phase === PomodoroPhase.FOCUS && totalFocusTime > 0) {
 				resetTimer(); // Record as interrupted
 			}
 		};
@@ -140,7 +133,8 @@ export default function FocusScreen() {
 	const prevOvertimeRef = useRef(false);
 	useEffect(() => {
 		if (isOvertime && !prevOvertimeRef.current) {
-			const phaseLabel = phase === "focus" ? "フォーカス" : "リラックス";
+			const phaseLabel =
+				phase === PomodoroPhase.FOCUS ? "フォーカス" : "リラックス";
 			const title = "時間になりました！";
 			const body = `${phaseLabel}セッションが終了しました。`;
 
@@ -153,28 +147,6 @@ export default function FocusScreen() {
 	// Calculate progress
 
 	// Handlers
-	const handleEndSession = async () => {
-		resetTimer();
-		setFocusTask(null);
-		navigate("/home");
-	};
-
-	const handleCompleteSession = async () => {
-		completeSession();
-	};
-
-	const handlePlayPause = () => {
-		// Auto-advance is forced, so no need to check for overtime override unless logic fails
-		if (isOvertime) {
-			completeSession();
-			return;
-		}
-		isActive ? pauseTimer() : startTimer();
-	};
-
-	const toggleWhiteNoise = () => {
-		updateSettings({ whiteNoise: isWhiteNoiseOn ? "none" : "white-noise" });
-	};
 
 	return (
 		<div className="min-h-screen flex flex-col items-center justify-between p-6 relative bg-gradient-to-r from-blue-200 via-purple-200 to-purple-300">
@@ -195,18 +167,7 @@ export default function FocusScreen() {
 			<div className="flex-1 flex flex-col items-center justify-center">
 				<TimerRing />
 
-				<ControlButtons
-					isActive={isActive}
-					phase={phase}
-					isWhiteNoiseOn={isWhiteNoiseOn}
-					isOvertime={isOvertime}
-					onPlayPause={handlePlayPause}
-					onReset={resetTimer}
-					onSkip={skipPhase}
-					onEndSession={handleEndSession}
-					onToggleWhiteNoise={toggleWhiteNoise}
-					onComplete={handleCompleteSession}
-				/>
+				<ControlButtons />
 			</div>
 		</div>
 	);
