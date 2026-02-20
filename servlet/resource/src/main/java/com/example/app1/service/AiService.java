@@ -90,7 +90,6 @@ public class AiService {
             - `id` (Long): 既存タスクの更新・削除時は【最重要】。現在のリストのIDを必ず一字一句違わずに維持してください。新規作成時は `null`。
             - `title` (String): タスクのタイトル（必須）。
             - `description` (String): タスクの詳細。
-            - `startDate` (String): 実行日 ("YYYY-MM-DD")。
             - `scheduledStartAt` (String): 開始日時 ("YYYY-MM-DDTHH:mm:ss")。
             - `scheduledEndAt` (String): 終了日時 ("YYYY-MM-DDTHH:mm:ss")。
             - `isAllDay` (Boolean): 終日タスク。
