@@ -1,6 +1,6 @@
+import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 
 interface KPICardProps {
 	title: string;

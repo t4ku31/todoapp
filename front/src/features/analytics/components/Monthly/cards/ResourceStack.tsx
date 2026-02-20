@@ -1,6 +1,6 @@
+import { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import type { CategoryFocusTime } from "@/features/analytics/types";
-import { useMemo } from "react";
 
 interface ResourceStackProps {
 	categoryAggregation?: Record<string, CategoryFocusTime[]>;

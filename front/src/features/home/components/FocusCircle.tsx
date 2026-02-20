@@ -1,9 +1,9 @@
+import { CheckCircle, Target } from "lucide-react";
+import { useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { usePomodoroStore } from "@/features/pomodoro/stores/usePomodoroStore";
 import { PomodoroPhase } from "@/features/pomodoro/types";
 import { cn } from "@/lib/utils";
-import { CheckCircle, Target } from "lucide-react";
-import { useEffect } from "react";
 
 interface FocusCircleProps {
 	className?: string;

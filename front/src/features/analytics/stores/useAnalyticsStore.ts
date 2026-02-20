@@ -1,5 +1,5 @@
-import { apiClient } from "@/config/env";
 import { create } from "zustand";
+import { apiClient } from "@/config/env";
 import type {
 	DailyAnalyticsData,
 	MonthlyAnalyticsData,
@@ -94,7 +94,10 @@ export const useAnalyticsStore = create<AnalyticsState>((set, get) => ({
 			set({
 				dailyData: {
 					...dailyData,
-					tasksCompletedCount: dailyData.tasksCompletedCount + delta,
+					kpi: {
+						...dailyData.kpi,
+						tasksCompletedCount: dailyData.kpi.tasksCompletedCount + delta,
+					},
 					taskSummaries: updatedTaskSummaries,
 				},
 			});
@@ -129,7 +132,10 @@ export const useAnalyticsStore = create<AnalyticsState>((set, get) => ({
 			set({
 				weeklyData: {
 					...weeklyData,
-					tasksCompletedCount: weeklyData.tasksCompletedCount + delta,
+					kpi: {
+						...weeklyData.kpi,
+						tasksCompletedCount: weeklyData.kpi.tasksCompletedCount + delta,
+					},
 					taskSummaries: updatedTaskSummaries,
 				},
 			});

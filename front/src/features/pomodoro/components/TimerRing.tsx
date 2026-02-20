@@ -1,7 +1,7 @@
+import { Minus, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { usePomodoroStore } from "@/features/pomodoro/stores/usePomodoroStore";
 import { PomodoroPhase } from "@/features/pomodoro/types";
-import { Minus, Plus } from "lucide-react";
 
 export function TimerRing() {
 	const {
