@@ -6,7 +6,6 @@ export interface SyncTask {
 	id?: number; // Database ID (positive) or Null (create)
 	title: string;
 	description?: string;
-	startDate?: string | null;
 	scheduledStartAt?: string;
 	scheduledEndAt?: string;
 	isAllDay?: boolean;

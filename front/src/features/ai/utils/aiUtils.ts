@@ -149,11 +149,9 @@ export const mergeTasks = (
 		// Exclude fields that need explicit handling
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const {
-			id: _,
-			recurrenceRule: serializedRule,
-			startDate,
 			scheduledStartAt,
 			scheduledEndAt,
+			recurrenceRule: serializedRule,
 			...rest
 		} = responseTask;
 
@@ -161,11 +159,7 @@ export const mergeTasks = (
 		const recurrenceRule = deserializeRecurrenceConfig(serializedRule);
 
 		// Parse date strings to Date objects
-		const parseLocalDate = (s?: string | null): Date | null => {
-			if (!s) return null;
-			const [year, month, day] = s.split("-").map(Number);
-			return new Date(year, month - 1, day);
-		};
+
 		const parseDateTime = (s?: string | null): Date | null => {
 			if (!s) return null;
 			return new Date(s);
@@ -174,7 +168,6 @@ export const mergeTasks = (
 		return {
 			...rest,
 			id: finalId,
-			startDate: parseLocalDate(startDate),
 			scheduledStartAt: parseDateTime(scheduledStartAt),
 			scheduledEndAt: parseDateTime(scheduledEndAt),
 			recurrenceRule,
