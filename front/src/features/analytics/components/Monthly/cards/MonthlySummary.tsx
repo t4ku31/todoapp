@@ -13,7 +13,7 @@ export function MonthlySummary({ data, isLoading }: MonthlySummaryProps) {
 		if (!data) return null;
 
 		// Find best week (most focus time)
-		const weeks = Object.entries(data.categoryDistribution || {});
+		const weeks = Object.entries(data.categoryAggregation || {});
 		let bestWeek = { name: "—", hours: 0 };
 		weeks.forEach(([weekName, categories]) => {
 			const totalMinutes = categories.reduce(
@@ -47,16 +47,16 @@ export function MonthlySummary({ data, isLoading }: MonthlySummaryProps) {
 		weeks.forEach(([, categories]) => {
 			categories.forEach((cat) => {
 				categoryTotals.set(
-					cat.name,
-					(categoryTotals.get(cat.name) || 0) + cat.minutes,
+					cat.categoryName,
+					(categoryTotals.get(cat.categoryName) || 0) + cat.minutes,
 				);
 			});
 		});
 		let topCategory = "—";
 		let topCategoryMinutes = 0;
-		categoryTotals.forEach((minutes, name) => {
+		categoryTotals.forEach((minutes, categoryName) => {
 			if (minutes > topCategoryMinutes) {
-				topCategory = name;
+				topCategory = categoryName;
 				topCategoryMinutes = minutes;
 			}
 		});
@@ -65,7 +65,7 @@ export function MonthlySummary({ data, isLoading }: MonthlySummaryProps) {
 			bestWeek: `${bestWeek.name} (${bestWeek.hours}h)`,
 			mostFocusedDay: `${bestDayFormatted} (${bestDayHours}h)`,
 			topCategory,
-			efficiency: `${Math.round(data.averageEfficiencyScore)}%`,
+			efficiency: `${Math.round(data.kpi.efficiencyScore)}%`,
 		};
 	}, [data]);
 

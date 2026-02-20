@@ -2,6 +2,7 @@ import { CheckCircle, Target } from "lucide-react";
 import { useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { usePomodoroStore } from "@/features/pomodoro/stores/usePomodoroStore";
+import { PomodoroPhase } from "@/features/pomodoro/types";
 import { cn } from "@/lib/utils";
 
 interface FocusCircleProps {
@@ -31,7 +32,8 @@ export function FocusCircle({ className, size = "md" }: FocusCircleProps) {
 	const baseMinutes =
 		dailyGoalData?.actualMinutes ?? Math.floor(dailyFocusTime / 60);
 	// Calculate current session focus time (only if in focus phase)
-	const currentSessionSeconds = phase === "focus" ? duration - timeLeft : 0;
+	const currentSessionSeconds =
+		phase === PomodoroPhase.FOCUS ? duration - timeLeft : 0;
 	// Only count if active or paused? Actually duration-timeLeft is elapsed time.
 	// But if we are in break, we don't count it.
 	const currentSessionMinutes = Math.floor(currentSessionSeconds / 60);

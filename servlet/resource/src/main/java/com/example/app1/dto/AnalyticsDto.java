@@ -1,11 +1,86 @@
 package com.example.app1.dto;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 
 /**
  * DTOs for Analytics API.
  */
 public class AnalyticsDto {
+
+    public record KpiData(
+            long totalFocusMinutes,
+            int tasksCompletedCount,
+            int tasksTotalCount,
+            double efficiencyScore,
+            double rhythmQuality,
+            double volumeBalance,
+            double focusComparisonDiffMinutes,
+            double taskCompletionRateGrowth,
+            int totalEstimatedMinutes,
+            int totalActualMinutes) {
+    }
+
+    @lombok.Data
+    @lombok.Builder
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class MonthlyAnalyticsDto {
+        private KpiData kpi;
+        private int focusDays;
+        private double dailyAverageFocusMinutes;
+        private List<DayActivity> dailyActivity;
+        private Map<String, List<CategoryFocusTime>> categoryAggregation;
+
+        @lombok.Data
+        @lombok.NoArgsConstructor
+        @lombok.AllArgsConstructor
+        public static class DayActivity {
+            private String date;
+            private long minutes;
+        }
+    }
+
+    @lombok.Data
+    @lombok.Builder
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class WeeklyAnalyticsDto {
+        private KpiData kpi;
+        private double dailyAverageFocusMinutes;
+        private List<DailyFocusByCategory> dailyFocusData;
+        private List<CategoryFocusTime> categoryAggregation;
+        private List<GroupedTaskSummary> taskSummaries;
+    }
+
+    @lombok.Data
+    @lombok.Builder
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    public static class DailyAnalyticsDto {
+        private KpiData kpi;
+        private List<TaskSummary> taskSummaries;
+        private List<FocusSessionData> focusSessions;
+
+        @lombok.Data
+        @lombok.Builder
+        @lombok.NoArgsConstructor
+        @lombok.AllArgsConstructor
+        public static class FocusSessionData {
+            private Long id;
+            private Long taskId;
+            private String taskTitle;
+            private String categoryName;
+            private String categoryColor;
+            private String sessionType;
+            private String status;
+            private int scheduledDuration;
+            private int actualDuration;
+            private String startedAt;
+            private String endedAt;
+        }
+    }
 
     /**
      * Response DTO for daily goal with actual focus time.
@@ -20,68 +95,12 @@ public class AnalyticsDto {
     /**
      * Response DTO for efficiency stats.
      */
+    @lombok.Builder
     public record EfficiencyStats(
             LocalDate date,
             double efficiencyScore,
             double rhythmQuality,
-            double volumeBalance,
-            double focusRatio,
-            double restRatio,
-            double paceRatio) {
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        public static class Builder {
-            private LocalDate date;
-            private double efficiencyScore;
-            private double rhythmQuality;
-            private double volumeBalance;
-            private double focusRatio;
-            private double restRatio;
-            private double paceRatio;
-
-            public Builder date(LocalDate date) {
-                this.date = date;
-                return this;
-            }
-
-            public Builder efficiencyScore(double efficiencyScore) {
-                this.efficiencyScore = efficiencyScore;
-                return this;
-            }
-
-            public Builder rhythmQuality(double rhythmQuality) {
-                this.rhythmQuality = rhythmQuality;
-                return this;
-            }
-
-            public Builder volumeBalance(double volumeBalance) {
-                this.volumeBalance = volumeBalance;
-                return this;
-            }
-
-            public Builder focusRatio(double focusRatio) {
-                this.focusRatio = focusRatio;
-                return this;
-            }
-
-            public Builder restRatio(double restRatio) {
-                this.restRatio = restRatio;
-                return this;
-            }
-
-            public Builder paceRatio(double paceRatio) {
-                this.paceRatio = paceRatio;
-                return this;
-            }
-
-            public EfficiencyStats build() {
-                return new EfficiencyStats(date, efficiencyScore, rhythmQuality, volumeBalance, focusRatio, restRatio,
-                        paceRatio);
-            }
-        }
+            double volumeBalance) {
     }
 
     /**
@@ -101,7 +120,7 @@ public class AnalyticsDto {
             LocalDate date,
             String dayOfWeek,
             Integer goalMinutes,
-            java.util.List<CategoryFocusTime> categories) {
+            List<CategoryFocusTime> categories) {
     }
 
     /**
@@ -111,7 +130,7 @@ public class AnalyticsDto {
             LocalDate startDate,
             LocalDate endDate,
             Integer totalMinutes,
-            java.util.List<CategoryFocusTime> categories) {
+            List<CategoryFocusTime> categories) {
     }
 
     /**
@@ -123,7 +142,7 @@ public class AnalyticsDto {
             String categoryName,
             String categoryColor,
             String status,
-            boolean isCompleted,
+            boolean completed,
             int focusMinutes, // Actual duration in the specified range
             Integer estimatedMinutes,
             int progressPercentage,
@@ -144,31 +163,6 @@ public class AnalyticsDto {
             int completedCount, // Number of completed child tasks
             int totalCount, // Total number of child tasks in range
             boolean isRecurring, // True if this is a recurring task group
-            java.util.List<TaskSummary> children) { // Individual task instances for expansion
-    }
-
-    /**
-     * Weekly focus task summary.
-     */
-    public record WeeklyTaskFocus(
-            Long taskId,
-            String taskName,
-            String status,
-            double actualHours,
-            double estimatedHours,
-            int progressPercentage,
-            boolean isCompleted) {
-    }
-
-    /**
-     * Daily task summary with completion status and focus time.
-     */
-    public record DailyTaskSummary(
-            Long taskId,
-            String taskTitle,
-            String categoryName,
-            String categoryColor,
-            boolean completed,
-            int focusMinutes) {
+            List<TaskSummary> children) { // Individual task instances for expansion
     }
 }

@@ -31,7 +31,8 @@ export const useAnalyticsStore = create<AnalyticsState>((set, get) => ({
 		set({ isLoading: true, error: null });
 		try {
 			const response = await apiClient.get<DailyAnalyticsData>(
-				`/api/analytics/daily?date=${date}`,
+				"/api/analytics/daily",
+				{ params: { date } },
 			);
 			set({ dailyData: response.data, isLoading: false });
 		} catch (error) {
@@ -44,7 +45,8 @@ export const useAnalyticsStore = create<AnalyticsState>((set, get) => ({
 		set({ isLoading: true, error: null });
 		try {
 			const response = await apiClient.get<WeeklyAnalyticsData>(
-				`/api/analytics/weekly?startDate=${startDate}&endDate=${endDate}`,
+				"/api/analytics/weekly",
+				{ params: { startDate, endDate } },
 			);
 			set({ weeklyData: response.data, isLoading: false });
 		} catch (error) {
@@ -57,9 +59,11 @@ export const useAnalyticsStore = create<AnalyticsState>((set, get) => ({
 		set({ isLoading: true, error: null });
 		try {
 			const response = await apiClient.get<MonthlyAnalyticsData>(
-				`/api/analytics/monthly?month=${month}`,
+				"/api/analytics/monthly",
+				{ params: { month } },
 			);
 			set({ monthlyData: response.data, isLoading: false });
+			console.log("monthlyData", response.data);
 		} catch (error) {
 			console.error("Failed to fetch monthly analytics:", error);
 			set({ error: "Failed to fetch monthly analytics", isLoading: false });
@@ -90,7 +94,10 @@ export const useAnalyticsStore = create<AnalyticsState>((set, get) => ({
 			set({
 				dailyData: {
 					...dailyData,
-					tasksCompletedCount: dailyData.tasksCompletedCount + delta,
+					kpi: {
+						...dailyData.kpi,
+						tasksCompletedCount: dailyData.kpi.tasksCompletedCount + delta,
+					},
 					taskSummaries: updatedTaskSummaries,
 				},
 			});
@@ -125,7 +132,10 @@ export const useAnalyticsStore = create<AnalyticsState>((set, get) => ({
 			set({
 				weeklyData: {
 					...weeklyData,
-					tasksCompletedCount: weeklyData.tasksCompletedCount + delta,
+					kpi: {
+						...weeklyData.kpi,
+						tasksCompletedCount: weeklyData.kpi.tasksCompletedCount + delta,
+					},
 					taskSummaries: updatedTaskSummaries,
 				},
 			});

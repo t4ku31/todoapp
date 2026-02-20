@@ -1,8 +1,3 @@
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import type { Subtask } from "@/features/todo/types";
-import { cn } from "@/lib/utils";
 import {
 	closestCenter,
 	DndContext,
@@ -21,6 +16,11 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import type { Subtask } from "@/features/todo/types";
+import { cn } from "@/lib/utils";
 
 interface SortableSubtaskListProps {
 	subtasks: Subtask[];

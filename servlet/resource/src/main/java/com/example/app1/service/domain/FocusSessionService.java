@@ -75,8 +75,9 @@ public class FocusSessionService {
          * Get total focus time for a user on a specific date
          */
         public FocusSessionDto.DailySummary getDailySummary(String userId, LocalDate date) {
-                Integer totalSeconds = focusSessionRepository.getTotalFocusDurationByUserIdAndDateRange(
+                Integer totalMinutes = focusSessionRepository.getTotalFocusMinutesByUserIdAndDateRange(
                                 userId, date.atStartOfDay(), date.atTime(23, 59, 59));
+                Integer totalSeconds = totalMinutes != null ? totalMinutes * 60 : 0;
                 log.info("Daily summary for user {} on {}: {} seconds", userId, date, totalSeconds);
 
                 return FocusSessionDto.DailySummary.builder()

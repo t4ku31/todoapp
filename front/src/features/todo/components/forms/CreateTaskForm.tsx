@@ -1,8 +1,3 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import type { Subtask, Task } from "@/features/todo/types";
-import { cn } from "@/lib/utils";
-import type { CreateTaskParams } from "@/store/useTodoStore";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus } from "lucide-react";
 import { forwardRef, useEffect, useState } from "react";
@@ -12,6 +7,11 @@ import {
 	useFieldArray,
 	useForm,
 } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import type { Subtask, Task } from "@/features/todo/types";
+import { cn } from "@/lib/utils";
+import type { CreateTaskParams } from "@/store/useTodoStore";
 import { AddSubtaskButton } from "../ui/AddSubtaskButton";
 import { CategorySelect } from "../ui/CategorySelect";
 import { DateScheduler } from "../ui/DateScheduler";

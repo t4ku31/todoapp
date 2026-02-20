@@ -147,12 +147,12 @@ public class BffAnalyticsController {
     }
 
     @GetMapping("/monthly")
-    public ResponseEntity<io.reflectoring.bff.dto.MonthlyAnalyticsDto> getMonthlyAnalytics(
+    public ResponseEntity<AnalyticsDto.MonthlyAnalyticsDto> getMonthlyAnalytics(
             @RequestParam String month,
             @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
         log.info("[GET /api/analytics/monthly?month={}] Request by user: {}", month, client.getPrincipalName());
         try {
-            io.reflectoring.bff.dto.MonthlyAnalyticsDto data = analyticsService.getMonthlyAnalytics(
+            AnalyticsDto.MonthlyAnalyticsDto data = analyticsService.getMonthlyAnalytics(
                     month, client.getAccessToken().getTokenValue());
             return ResponseEntity.ok(data);
         } catch (RestClientResponseException e) {
@@ -165,14 +165,14 @@ public class BffAnalyticsController {
     }
 
     @GetMapping("/weekly")
-    public ResponseEntity<io.reflectoring.bff.dto.WeeklyAnalyticsDto> getWeeklyAnalytics(
+    public ResponseEntity<AnalyticsDto.WeeklyAnalyticsDto> getWeeklyAnalytics(
             @RequestParam String startDate,
             @RequestParam String endDate,
             @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
         log.info("[GET /api/analytics/weekly?startDate={}&endDate={}] Request by user: {}",
                 startDate, endDate, client.getPrincipalName());
         try {
-            io.reflectoring.bff.dto.WeeklyAnalyticsDto data = analyticsService.getWeeklyAnalytics(
+            AnalyticsDto.WeeklyAnalyticsDto data = analyticsService.getWeeklyAnalytics(
                     startDate, endDate, client.getAccessToken().getTokenValue());
             return ResponseEntity.ok(data);
         } catch (RestClientResponseException e) {
@@ -185,12 +185,12 @@ public class BffAnalyticsController {
     }
 
     @GetMapping("/daily")
-    public ResponseEntity<io.reflectoring.bff.dto.DailyAnalyticsDto> getDailyAnalytics(
+    public ResponseEntity<AnalyticsDto.DailyAnalyticsDto> getDailyAnalytics(
             @RequestParam String date,
             @RegisteredOAuth2AuthorizedClient("bff-client") OAuth2AuthorizedClient client) {
         log.info("[GET /api/analytics/daily?date={}] Request by user: {}", date, client.getPrincipalName());
         try {
-            io.reflectoring.bff.dto.DailyAnalyticsDto data = analyticsService.getDailyAnalytics(
+            AnalyticsDto.DailyAnalyticsDto data = analyticsService.getDailyAnalytics(
                     date, client.getAccessToken().getTokenValue());
             return ResponseEntity.ok(data);
         } catch (RestClientResponseException e) {

@@ -1,4 +1,4 @@
-# Environment Configuration Guide
+l# Environment Configuration Guide
 
 このプロジェクトでは、環境変数とaxiosを使用してBFFサーバーとの通信を管理しています。
 

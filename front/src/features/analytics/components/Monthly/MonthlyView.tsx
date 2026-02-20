@@ -1,57 +1,66 @@
-import { useEffect } from "react";
+import { endOfMonth, format, startOfMonth, startOfToday } from "date-fns";
+import { useEffect, useMemo } from "react";
+import { useAnalyticsStore } from "@/features/analytics/stores/useAnalyticsStore";
 import type {
-	CategoryTime,
+	CategoryFocusTime,
 	DayActivity,
 	MonthlyAnalyticsData,
 } from "@/features/analytics/types";
 // Shared Cards
-import { AnalyticsEfficiencyCard } from "../shared/cards/AnalyticsEfficiencyCard";
-import { AnalyticsFocusCard } from "../shared/cards/AnalyticsFocusCard";
-import { AnalyticsTasksCard } from "../shared/cards/AnalyticsTasksCard";
+import { AnalyticsKpiGrid } from "../shared/AnalyticsKpiGrid";
 import { HeatmapChart } from "./cards/HeatmapChart";
 import { MonthlySummary } from "./cards/MonthlySummary";
 import { ResourceStack } from "./cards/ResourceStack";
 
 // Re-export types for child components
-export type { CategoryTime, DayActivity, MonthlyAnalyticsData };
+export type { CategoryFocusTime, DayActivity, MonthlyAnalyticsData };
 
 // --- Main MonthlyView Component ---
-import { useAnalyticsStore } from "@/features/analytics/stores/useAnalyticsStore";
 
 export default function MonthlyView() {
+	const today = startOfToday();
+	const monthStart = format(startOfMonth(today), "yyyy-MM-01");
+	const monthEnd = format(endOfMonth(today), "yyyy-MM-dd");
+	// For API we need yyyy-MM
+	const apiMonthParam = format(today, "yyyy-MM");
+
 	const { monthlyData, isLoading, fetchMonthlyAnalytics } = useAnalyticsStore();
-	const data = monthlyData;
 
 	useEffect(() => {
-		const now = new Date();
-		const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-		fetchMonthlyAnalytics(month);
-	}, [fetchMonthlyAnalytics]);
+		fetchMonthlyAnalytics(apiMonthParam);
+	}, [fetchMonthlyAnalytics, apiMonthParam]);
+
+	const data = monthlyData;
+
+	// Prepare data for EstimationAccuracyCard
+	const estimationData = useMemo(
+		() => ({
+			startDate: monthStart,
+			endDate: monthEnd,
+			completedCount: data?.kpi.tasksCompletedCount ?? 0,
+			totalCount: data?.kpi.tasksTotalCount ?? 0,
+			totalEstimatedMinutes: data?.kpi.totalEstimatedMinutes ?? 0,
+			totalActualMinutes: data?.kpi.totalActualMinutes ?? 0,
+		}),
+		[data, monthStart, monthEnd],
+	);
 
 	return (
 		<div className="h-full flex flex-col gap-3 overflow-hidden">
 			{/* Top Row: KPI Cards */}
-			<div className="shrink-0 grid grid-cols-4 gap-3 h-[120px]">
-				<AnalyticsFocusCard
-					title="Total Focus Time"
-					minutes={data?.totalFocusMinutes ?? 0}
-					isLoading={isLoading}
-				/>
-				<AnalyticsEfficiencyCard
-					efficiency={data?.averageEfficiencyScore ?? 0}
-					isLoading={isLoading}
-				/>
-				<AnalyticsTasksCard
-					completed={data?.totalTasksCompleted ?? 0}
-					isLoading={isLoading}
-				/>
-				{/* Use AnalyticsFocusCard for Avg Daily Focus */}
-				<AnalyticsFocusCard
-					title="Avg Daily Focus"
-					minutes={data?.averageDailyFocusMinutes ?? 0}
-					isLoading={isLoading}
-				/>
-			</div>
+			<AnalyticsKpiGrid
+				isLoading={isLoading}
+				focusMinutes={data?.kpi.totalActualMinutes ?? 0}
+				focusComparisonDiffMinutes={data?.kpi.focusComparisonDiffMinutes}
+				efficiencyScore={data?.kpi.efficiencyScore ?? 0}
+				rhythmQuality={data?.kpi.rhythmQuality}
+				volumeBalance={data?.kpi.volumeBalance}
+				tasksCompletedCount={data?.kpi.tasksCompletedCount ?? 0}
+				tasksTotalCount={data?.kpi.tasksTotalCount ?? 0}
+				taskCompletionRateGrowth={data?.kpi.taskCompletionRateGrowth}
+				estimationData={estimationData}
+				comparisonLabel="vs last month"
+			/>
 
 			{/* Main Content Area: Left (Heatmap) + Right (Resource & Summary) */}
 			<div className="flex-1 flex gap-3 min-h-0">
@@ -65,11 +74,11 @@ export default function MonthlyView() {
 				</div>
 
 				{/* Right: Resource & Summary */}
-				<div className="flex-[2] flex flex-col gap-3 min-w-0">
+				<div className="flex-[2] flex flex-col gap-3 min-h-0">
 					{/* Resource Allocation */}
 					<div className="flex-[1] min-h-0">
 						<ResourceStack
-							categoryDistribution={data?.categoryDistribution ?? {}}
+							categoryAggregation={data?.categoryAggregation ?? {}}
 							isLoading={isLoading}
 						/>
 					</div>

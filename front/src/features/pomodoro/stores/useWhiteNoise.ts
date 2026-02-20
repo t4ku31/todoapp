@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { usePomodoroStore } from "@/features/pomodoro/stores/usePomodoroStore";
+import { PomodoroPhase } from "@/features/pomodoro/types";
 
 // Sound file mapping - keys must match usePomodoroStore.settings.whiteNoise values
 const SOUND_FILES: Record<string, string> = {
@@ -39,7 +40,7 @@ export function useWhiteNoise() {
 		}
 
 		// Play/pause based on timer state
-		if (isActive && phase === "focus") {
+		if (isActive && phase === PomodoroPhase.FOCUS) {
 			audioRef.current.play().catch(() => {
 				// Autoplay blocked, need user interaction
 				console.log("Autoplay blocked");
