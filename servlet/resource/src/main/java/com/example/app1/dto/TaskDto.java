@@ -7,6 +7,7 @@ import java.util.List;
 import com.example.app1.model.TaskStatus;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -207,18 +208,18 @@ public class TaskDto {
                         @JsonPropertyDescription("削除フラグ") Boolean isDeleted,
                         @JsonPropertyDescription("サブタスク（オブジェクト）のリスト") List<SubtaskDto.Summary> subtasks,
                         @JsonPropertyDescription("ステータス（PENDING, COMPLETED）") String status,
-                        @com.fasterxml.jackson.annotation.JsonProperty("suggestedTaskList") @JsonPropertyDescription("提案されたタスクリスト名") String suggestedTaskListTitle) {
+                        @JsonProperty("suggestedTaskList") @JsonPropertyDescription("提案されたタスクリスト名") String suggestedTaskListTitle) {
         }
 
         /**
          * AIが生成したSyncTaskDtoのリスト
          */
         @Schema(name = "SyncTaskList", description = "AIが生成したSyncTaskDtoのリスト")
-        @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+        @JsonIgnoreProperties(ignoreUnknown = true)
         public record SyncTaskList(
-                        @com.fasterxml.jackson.annotation.JsonProperty("tasks") List<SyncTaskDto> tasks,
-                        @com.fasterxml.jackson.annotation.JsonProperty("advice") String advice,
-                        @com.fasterxml.jackson.annotation.JsonProperty("projectTitle") String projectTitle) {
+                        @JsonProperty("tasks") List<SyncTaskDto> tasks,
+                        @JsonProperty("advice") String advice,
+                        @JsonProperty("projectTitle") String projectTitle) {
         }
 
         /**
