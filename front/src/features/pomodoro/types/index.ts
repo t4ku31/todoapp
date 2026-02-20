@@ -1,4 +1,10 @@
-export type PomodoroPhase = "focus" | "shortBreak" | "longBreak";
+export const PomodoroPhase = {
+	FOCUS: "FOCUS",
+	SHORT_BREAK: "SHORT_BREAK",
+	LONG_BREAK: "LONG_BREAK",
+} as const;
+
+export type PomodoroPhase = (typeof PomodoroPhase)[keyof typeof PomodoroPhase];
 
 export interface PomodoroSettings {
 	focusDuration: number; // minutes

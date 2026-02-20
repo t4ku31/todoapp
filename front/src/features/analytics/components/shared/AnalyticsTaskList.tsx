@@ -12,26 +12,28 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useAnalyticsStore } from "@/features/analytics/stores/useAnalyticsStore";
 import type { GroupedTaskSummary } from "@/features/analytics/types";
 import { useTodoStore } from "@/store/useTodoStore";
 
-interface TaskSummaryCardProps {
+interface AnalyticsTaskListProps {
 	data?: GroupedTaskSummary[] | null;
 	isLoading?: boolean;
+	onStatusChange: (taskId: number, completed: boolean) => void;
+	title?: string;
 }
 
-export function TaskSummaryCard({
+export function AnalyticsTaskList({
 	data,
 	isLoading = false,
-}: TaskSummaryCardProps) {
+	onStatusChange,
+	title = "Task Summary",
+}: AnalyticsTaskListProps) {
 	const [showCompleted, setShowCompleted] = useState(true);
 	const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 	const [localGroups, setLocalGroups] = useState<GroupedTaskSummary[]>(
 		data || [],
 	);
 	const { updateTask } = useTodoStore();
-	const { updateWeeklyTaskStatus } = useAnalyticsStore();
 
 	useEffect(() => {
 		setLocalGroups(data || []);
@@ -72,21 +74,23 @@ export function TaskSummaryCard({
 					...group,
 					children: updatedChildren,
 					completedCount,
+					// Update progress percentage if needed, though mostly visual
 				};
 			}),
 		);
 
-		// Also update the analytics store (for KPI cards)
-		updateWeeklyTaskStatus(taskId, checked);
+		// Notify parent store
+		onStatusChange(taskId, checked);
 
 		// API Call with error handling
 		try {
 			await updateTask(taskId, { status: checked ? "COMPLETED" : "PENDING" });
-		} catch {
+		} catch (error) {
+			console.error("Failed to update task status:", error);
 			// Rollback on error
 			setLocalGroups(prevGroups);
-			// Rollback analytics store
-			updateWeeklyTaskStatus(taskId, !checked);
+			// Rollback parent store
+			onStatusChange(taskId, !checked);
 		}
 	};
 
@@ -113,10 +117,10 @@ export function TaskSummaryCard({
 
 	return (
 		<Card className="flex flex-col h-full bg-white shadow-sm border-gray-100 p-4">
-			<div className="flex justify-between items-center mb-4">
+			<div className="flex justify-between items-center mb-4 shrink-0">
 				<h3 className="text-sm font-semibold text-gray-600 flex items-center gap-2">
 					<ListTodo size={16} className="text-purple-500" />
-					Task Summary
+					{title}
 				</h3>
 
 				<div className="flex items-center gap-2">
@@ -154,7 +158,7 @@ export function TaskSummaryCard({
 						const isExpanded = expandedIds.has(group.parentTaskId);
 						const isFullyCompleted =
 							group.completedCount === group.totalCount && group.totalCount > 0;
-						// Show grouping UI for recurring tasks (expand/collapse, badge, etc.)
+						// Show grouping UI for recurring tasks
 						const showGroupingUI = group.recurring;
 
 						return (
@@ -178,11 +182,15 @@ export function TaskSummaryCard({
 											}
 										: {})}
 								>
-									{/* Expand/Collapse Icon (only for grouped/recurring in weekly view) */}
+									{/* Expand/Collapse Icon or Checkbox */}
 									{showGroupingUI ? (
 										<button
 											type="button"
 											className="text-gray-400 hover:text-gray-600"
+											onClick={(e) => {
+												e.stopPropagation();
+												toggleExpand(group.parentTaskId);
+											}}
 										>
 											{isExpanded ? (
 												<ChevronDown size={16} />
@@ -191,7 +199,7 @@ export function TaskSummaryCard({
 											)}
 										</button>
 									) : (
-										// Non-recurring: Show checkbox
+										// Non-recurring: Show checkbox directly
 										<Checkbox
 											checked={isFullyCompleted}
 											onCheckedChange={(checked) => {
@@ -259,7 +267,7 @@ export function TaskSummaryCard({
 									</div>
 								</div>
 
-								{/* Expanded Children (for grouped recurring tasks in weekly view) */}
+								{/* Expanded Children */}
 								{showGroupingUI && isExpanded && (
 									<div className="ml-6 pl-2 border-l-2 border-gray-200 space-y-1 mt-1">
 										{group.children.map((child) => (

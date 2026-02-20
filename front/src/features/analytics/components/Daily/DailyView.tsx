@@ -1,22 +1,23 @@
-import { format } from "date-fns";
+import { formatISO, startOfDay } from "date-fns";
 import { useEffect, useMemo } from "react";
 import { useAnalyticsStore } from "@/features/analytics/stores/useAnalyticsStore";
-import type { TimelineSession } from "@/features/analytics/types";
+import type {
+	GroupedTaskSummary,
+	TimelineSession,
+} from "@/features/analytics/types";
 // Shared Cards (Unified UX)
-import { AnalyticsEfficiencyCard } from "../shared/cards/AnalyticsEfficiencyCard";
-import { AnalyticsFocusCard } from "../shared/cards/AnalyticsFocusCard";
-import { AnalyticsTasksCard } from "../shared/cards/AnalyticsTasksCard";
-import { EstimationAccuracyCard } from "../shared/EstimationAccuracyCard";
+import { AnalyticsKpiGrid } from "../shared/AnalyticsKpiGrid";
+import { AnalyticsTaskList } from "../shared/AnalyticsTaskList";
 import { DailyTimeline } from "./cards/DailyTimeline";
 import { HourlyActivityChart } from "./cards/HourlyActivityChart";
-import { DailyTaskList } from "./DailyTaskList";
 
 // --- Main DailyView Component ---
 export default function DailyView() {
 	const today = new Date();
-	const dateStr = format(today, "yyyy-MM-dd");
+	const dateStr = formatISO(startOfDay(today));
 
-	const { dailyData, isLoading, fetchDailyAnalytics } = useAnalyticsStore();
+	const { dailyData, isLoading, fetchDailyAnalytics, updateDailyTaskStatus } =
+		useAnalyticsStore();
 
 	useEffect(() => {
 		fetchDailyAnalytics(dateStr);
@@ -40,42 +41,59 @@ export default function DailyView() {
 		}));
 	}, [data?.focusSessions]);
 
+	// Transform DailyTaskSummary[] to GroupedTaskSummary[] for AnalyticsTaskList
+	const taskListGroups: GroupedTaskSummary[] = useMemo(() => {
+		if (!data?.taskSummaries) return [];
+		return data.taskSummaries.map((task) => ({
+			parentTaskId: task.taskId,
+			title: task.taskTitle,
+			categoryName: task.categoryName,
+			categoryColor: task.categoryColor,
+			totalFocusMinutes: task.focusMinutes,
+			completedCount: task.completed ? 1 : 0,
+			totalCount: 1,
+			recurring: false,
+			children: [
+				{
+					taskId: task.taskId,
+					taskTitle: task.taskTitle,
+					status: task.status,
+					completed: task.completed,
+					focusMinutes: task.focusMinutes,
+					estimatedMinutes: task.estimatedMinutes,
+					progressPercentage: task.progressPercentage,
+					startDate: new Date(dateStr), // Add current date for daily view
+				},
+			],
+		}));
+	}, [data?.taskSummaries, dateStr]);
+
 	// Estimation Data Prep
 	const estimationData = {
 		startDate: dateStr,
 		endDate: dateStr,
-		completedCount: data?.tasksCompletedCount ?? 0,
-		totalCount: data?.tasksTotalCount ?? 0,
-		totalEstimatedMinutes: data?.totalEstimatedMinutes ?? 0,
-		totalActualMinutes: data?.totalActualMinutes ?? 0,
+		completedCount: data?.kpi.tasksCompletedCount ?? 0,
+		totalCount: data?.kpi.tasksTotalCount ?? 0,
+		totalEstimatedMinutes: data?.kpi.totalEstimatedMinutes ?? 0,
+		totalActualMinutes: data?.kpi.totalActualMinutes ?? 0,
 	};
 
 	return (
 		<div className="h-full flex flex-col gap-3 overflow-hidden">
 			{/* Top Row: KPI Cards (Consistent across all views) */}
-			<div className="shrink-0 grid grid-cols-4 gap-3 h-[120px]">
-				<AnalyticsFocusCard
-					minutes={data?.totalActualMinutes ?? 0}
-					isLoading={isLoading}
-				/>
-				<AnalyticsEfficiencyCard
-					efficiency={data?.efficiencyScore ?? 0}
-					rhythm={data?.rhythmQuality}
-					volume={data?.volumeBalance}
-					isLoading={isLoading}
-				/>
-				<AnalyticsTasksCard
-					completed={data?.tasksCompletedCount ?? 0}
-					total={data?.tasksTotalCount ?? 0}
-					isLoading={isLoading}
-				/>
-				<EstimationAccuracyCard
-					variant="compact"
-					className="h-full"
-					data={estimationData}
-					isLoading={isLoading}
-				/>
-			</div>
+			<AnalyticsKpiGrid
+				isLoading={isLoading}
+				focusMinutes={data?.kpi.totalActualMinutes ?? 0}
+				focusComparisonDiffMinutes={data?.kpi.focusComparisonDiffMinutes}
+				efficiencyScore={data?.kpi.efficiencyScore ?? 0}
+				rhythmQuality={data?.kpi.rhythmQuality}
+				volumeBalance={data?.kpi.volumeBalance}
+				tasksCompletedCount={data?.kpi.tasksCompletedCount ?? 0}
+				tasksTotalCount={data?.kpi.tasksTotalCount ?? 0}
+				taskCompletionRateGrowth={data?.kpi.taskCompletionRateGrowth}
+				estimationData={estimationData}
+				comparisonLabel="vs yesterday"
+			/>
 
 			{/* Main Content Area */}
 			<div className="flex-1 flex gap-3 min-h-0">
@@ -93,7 +111,12 @@ export default function DailyView() {
 
 				{/* Right Column: List (Tasks) */}
 				<div className="flex-[1] min-w-0 h-full">
-					<DailyTaskList data={data?.taskSummaries} isLoading={isLoading} />
+					<AnalyticsTaskList
+						data={taskListGroups}
+						isLoading={isLoading}
+						onStatusChange={updateDailyTaskStatus}
+						title="Daily Tasks"
+					/>
 				</div>
 			</div>
 		</div>

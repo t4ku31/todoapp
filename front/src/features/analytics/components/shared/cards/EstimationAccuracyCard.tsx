@@ -2,7 +2,7 @@ import { Target } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import type { TaskStats } from "@/features/analytics/types";
 import { cn } from "@/lib/utils";
-import { KPICard } from "./KPICard";
+import { KPICard } from "../KPICard";
 
 interface EstimationAccuracyCardProps {
 	startDate?: Date;

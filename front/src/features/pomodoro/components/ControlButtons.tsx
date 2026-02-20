@@ -8,34 +8,61 @@ import {
 	Volume2,
 	VolumeX,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-import type { PomodoroPhase } from "@/features/pomodoro/types/index";
+import { usePomodoroStore } from "@/features/pomodoro/stores/usePomodoroStore";
+import { PomodoroPhase } from "@/features/pomodoro/types";
 
-interface ControlButtonsProps {
-	isActive: boolean;
-	phase: PomodoroPhase;
-	isWhiteNoiseOn: boolean;
-	isOvertime?: boolean;
-	onPlayPause: () => void;
-	onReset: () => void;
-	onSkip: () => void;
-	onEndSession: () => void;
-	onToggleWhiteNoise: () => void;
-	onComplete?: () => void;
-}
+export function ControlButtons() {
+	const navigate = useNavigate();
+	const {
+		isActive,
+		phase,
+		isOvertime,
+		settings,
+		startTimer,
+		pauseTimer,
+		resetTimer,
+		skipPhase,
+		completeSession,
+		setFocusTask,
+		updateSettings,
+	} = usePomodoroStore();
 
-export function ControlButtons({
-	isActive,
-	phase,
-	isWhiteNoiseOn,
-	isOvertime = false,
-	onPlayPause,
-	onReset,
-	onSkip,
-	onEndSession,
-	onToggleWhiteNoise,
-	onComplete,
-}: ControlButtonsProps) {
+	const isWhiteNoiseOn = settings.whiteNoise !== "none";
+
+	const handlePlayPause = () => {
+		if (isOvertime) {
+			completeSession();
+			return;
+		}
+		isActive ? pauseTimer() : startTimer();
+	};
+
+	const handleEndSession = () => {
+		resetTimer();
+		setFocusTask(null);
+		navigate("/home");
+	};
+
+	const toggleWhiteNoise = () => {
+		updateSettings({ whiteNoise: isWhiteNoiseOn ? "none" : "white-noise" });
+	};
+
+	const getMainButtonClass = () => {
+		if (isOvertime) {
+			return "bg-gradient-to-r from-orange-500 to-red-500 animate-pulse";
+		}
+		if (isActive) {
+			return phase === PomodoroPhase.FOCUS
+				? "bg-gradient-to-r from-purple-500 to-pink-500"
+				: "bg-gradient-to-r from-emerald-500 to-green-400";
+		}
+		return phase === PomodoroPhase.FOCUS
+			? "bg-purple-300 hover:bg-purple-400"
+			: "bg-emerald-300 hover:bg-emerald-400";
+	};
+
 	return (
 		<>
 			{/* Horizontal Control Buttons */}
@@ -43,7 +70,7 @@ export function ControlButtons({
 				{/* White Noise Button */}
 				<button
 					type="button"
-					onClick={onToggleWhiteNoise}
+					onClick={toggleWhiteNoise}
 					className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110
             ${
 							isWhiteNoiseOn
@@ -62,7 +89,7 @@ export function ControlButtons({
 				{/* Reset Button */}
 				<button
 					type="button"
-					onClick={onReset}
+					onClick={resetTimer}
 					className="w-12 h-12 rounded-full bg-white hover:bg-gray-50 flex items-center justify-center shadow-lg transition-all hover:scale-110 border border-gray-200"
 					title="リセット"
 				>
@@ -72,19 +99,8 @@ export function ControlButtons({
 				{/* Play/Pause/Complete Button */}
 				<button
 					type="button"
-					onClick={isOvertime ? onComplete : onPlayPause}
-					className={`w-16 h-16 rounded-full flex items-center justify-center shadow-xl transition-all hover:scale-110
-            ${
-							isOvertime
-								? "bg-gradient-to-r from-orange-500 to-red-500 animate-pulse"
-								: isActive
-									? phase === "focus"
-										? "bg-gradient-to-r from-purple-500 to-pink-500"
-										: "bg-gradient-to-r from-emerald-500 to-green-400"
-									: phase === "focus"
-										? "bg-purple-300 hover:bg-purple-400"
-										: "bg-emerald-300 hover:bg-emerald-400"
-						}`}
+					onClick={isOvertime ? completeSession : handlePlayPause}
+					className={`w-16 h-16 rounded-full flex items-center justify-center shadow-xl transition-all hover:scale-110 ${getMainButtonClass()}`}
 				>
 					{isOvertime ? (
 						<Check className="w-8 h-8 text-white stroke-[3]" />
@@ -98,7 +114,7 @@ export function ControlButtons({
 				{/* Skip Forward Button */}
 				<button
 					type="button"
-					onClick={onSkip}
+					onClick={skipPhase}
 					className="w-12 h-12 rounded-full bg-white hover:bg-gray-50 flex items-center justify-center shadow-lg transition-all hover:scale-110 border border-gray-200"
 					title="スキップ"
 				>
@@ -108,7 +124,7 @@ export function ControlButtons({
 				{/* End Session Button */}
 				<button
 					type="button"
-					onClick={onEndSession}
+					onClick={handleEndSession}
 					className="w-12 h-12 rounded-full bg-white hover:bg-red-50 flex items-center justify-center shadow-lg transition-all hover:scale-110 border border-gray-200"
 					title="セッション終了"
 				>

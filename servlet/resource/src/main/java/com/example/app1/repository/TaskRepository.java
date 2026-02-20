@@ -1,5 +1,7 @@
 package com.example.app1.repository;
 
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -10,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.example.app1.model.Task;
+import com.example.app1.model.TaskStatus;
 
 /**
  * Repository for Task entity.
@@ -102,22 +105,22 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
          * Count completed tasks for a user within a date range.
          */
         @Query("SELECT COUNT(t) FROM Task t WHERE t.userId = :userId " +
-                        "AND t.status = com.example.app1.model.TaskStatus.COMPLETED " +
-                        "AND DATE(t.scheduledStartAt) BETWEEN :startDate AND :endDate")
-        Long countCompletedByUserIdAndScheduledStartAtDateBetween(
+                        "AND t.status = TaskStatus.COMPLETED " +
+                        "AND t.scheduledStartAt >= :start AND t.scheduledStartAt < :end")
+        int countCompletedByUserIdAndScheduledStartAtBetween(
                         @Param("userId") String userId,
-                        @Param("startDate") java.time.LocalDate startDate,
-                        @Param("endDate") java.time.LocalDate endDate);
+                        @Param("start") OffsetDateTime start,
+                        @Param("end") OffsetDateTime end);
 
         /**
          * Count total tasks for a user within a date range.
          */
         @Query("SELECT COUNT(t) FROM Task t WHERE t.userId = :userId " +
-                        "AND DATE(t.scheduledStartAt) BETWEEN :startDate AND :endDate")
-        Long countByUserIdAndScheduledStartAtDateBetween(
+                        "AND t.scheduledStartAt >= :start AND t.scheduledStartAt < :end")
+        int countByUserIdAndScheduledStartAtBetween(
                         @Param("userId") String userId,
-                        @Param("startDate") java.time.LocalDate startDate,
-                        @Param("endDate") java.time.LocalDate endDate);
+                        @Param("start") OffsetDateTime start,
+                        @Param("end") OffsetDateTime end);
 
         /**
          * Find all tasks for a user within a date range.
@@ -126,19 +129,75 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                         "AND DATE(t.scheduledStartAt) BETWEEN :startDate AND :endDate")
         List<Task> findByUserIdAndScheduledStartAtDateBetween(
                         @Param("userId") String userId,
-                        @Param("startDate") java.time.LocalDate startDate,
-                        @Param("endDate") java.time.LocalDate endDate);
+                        @Param("startDate") LocalDate startDate,
+                        @Param("endDate") LocalDate endDate);
+
+        /**
+         * Count completed tasks for a user within a LocalDate range.
+         */
+        @Query("SELECT COUNT(t) FROM Task t WHERE t.userId = :userId " +
+                        "AND t.status = com.example.app1.model.TaskStatus.COMPLETED " +
+                        "AND DATE(t.scheduledStartAt) BETWEEN :start AND :end")
+        Long countCompletedByUserIdAndScheduledStartAtDateBetween(
+                        @Param("userId") String userId,
+                        @Param("start") LocalDate start,
+                        @Param("end") LocalDate end);
+
+        /**
+         * Count total tasks for a user within a LocalDate range.
+         */
+        @Query("SELECT COUNT(t) FROM Task t WHERE t.userId = :userId " +
+                        "AND DATE(t.scheduledStartAt) BETWEEN :start AND :end")
+        Long countByUserIdAndScheduledStartAtDateBetween(
+                        @Param("userId") String userId,
+                        @Param("start") LocalDate start,
+                        @Param("end") LocalDate end);
+
+        /**
+         * Find completed tasks for a user within a LocalDate range.
+         */
+        @Query("SELECT t FROM Task t WHERE t.userId = :userId " +
+                        "AND t.status = TaskStatus.COMPLETED " +
+                        "AND DATE(t.scheduledStartAt) BETWEEN :start AND :end")
+        List<Task> findCompletedByUserIdAndScheduledStartAtDateBetween(
+                        @Param("userId") String userId,
+                        @Param("start") LocalDate start,
+                        @Param("end") LocalDate end);
 
         /**
          * Find completed tasks for a user within a date range.
          */
         @Query("SELECT t FROM Task t WHERE t.userId = :userId " +
-                        "AND t.status = com.example.app1.model.TaskStatus.COMPLETED " +
-                        "AND DATE(t.scheduledStartAt) BETWEEN :startDate AND :endDate")
-        List<Task> findCompletedByUserIdAndScheduledStartAtDateBetween(
+                        "AND t.status = TaskStatus.COMPLETED " +
+                        "AND t.scheduledStartAt >= :start AND t.scheduledStartAt < :end")
+        List<Task> findCompletedByUserIdAndScheduledStartAtBetween(
                         @Param("userId") String userId,
-                        @Param("startDate") java.time.LocalDate startDate,
-                        @Param("endDate") java.time.LocalDate endDate);
+                        @Param("start") OffsetDateTime start,
+                        @Param("end") OffsetDateTime end);
+
+        /**
+         * Sum total estimated pomodoros for completed tasks in a range.
+         */
+        @Query("SELECT COALESCE(SUM(t.estimatedPomodoros), 0) FROM Task t WHERE t.userId = :userId " +
+                        "AND t.status = TaskStatus.COMPLETED " +
+                        "AND t.estimatedPomodoros IS NOT NULL " +
+                        "AND t.scheduledStartAt >= :start AND t.scheduledStartAt < :end")
+        Integer sumEstimatedPomodorosByUserIdAndScheduledStartAtBetween(
+                        @Param("userId") String userId,
+                        @Param("start") OffsetDateTime start,
+                        @Param("end") OffsetDateTime end);
+
+        /**
+         * Find all tasks for a user within a timestamp range (inclusive start,
+         * exclusive end).
+         * Uses OffsetDateTime for precise timezone handling.
+         */
+        @Query("SELECT t FROM Task t LEFT JOIN FETCH t.category WHERE t.userId = :userId " +
+                        "AND t.scheduledStartAt >= :start AND t.scheduledStartAt < :end")
+        List<Task> findByUserIdAndScheduledStartAtBetween(
+                        @Param("userId") String userId,
+                        @Param("start") OffsetDateTime start,
+                        @Param("end") OffsetDateTime end);
 
         /**
          * Find all tasks for a user on a specific date with category eagerly loaded.
@@ -147,33 +206,22 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                         "AND DATE(t.scheduledStartAt) = :date")
         List<Task> findByUserIdAndScheduledStartAtDate(
                         @Param("userId") String userId,
-                        @Param("date") java.time.LocalDate date);
+                        @Param("date") LocalDate date);
 
         /**
          * Count total tasks for a user on a specific date.
          */
         @Query("SELECT COUNT(t) FROM Task t WHERE t.userId = :userId AND DATE(t.scheduledStartAt) = :date")
         Long countByUserIdAndScheduledStartAtDate(@Param("userId") String userId,
-                        @Param("date") java.time.LocalDate date);
+                        @Param("date") LocalDate date);
 
         /**
          * Count tasks by status for a user on a specific date.
          */
         @Query("SELECT COUNT(t) FROM Task t WHERE t.userId = :userId AND DATE(t.scheduledStartAt) = :date AND t.status = :status")
         Long countByUserIdAndScheduledStartAtDateAndStatus(@Param("userId") String userId,
-                        @Param("date") java.time.LocalDate date,
-                        @Param("status") com.example.app1.model.TaskStatus status);
-
-        /**
-         * Count tasks by status and updatedAt range - for monthly analytics.
-         */
-        @Query("SELECT COUNT(t) FROM Task t WHERE t.userId = :userId AND t.status = :status " +
-                        "AND t.updatedAt BETWEEN :start AND :end")
-        int countByUserIdAndStatusAndUpdatedAtBetween(
-                        @Param("userId") String userId,
-                        @Param("status") com.example.app1.model.TaskStatus status,
-                        @Param("start") java.time.LocalDateTime start,
-                        @Param("end") java.time.LocalDateTime end);
+                        @Param("date") LocalDate date,
+                        @Param("status") TaskStatus status);
 
         /**
          * Find all child tasks (recurring instances) by parent task ID.
@@ -199,5 +247,5 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
          * @return List of pending child tasks
          */
         List<Task> findByRecurrenceParentIdAndStatusNot(Long recurrenceParentId,
-                        com.example.app1.model.TaskStatus status);
+                        TaskStatus status);
 }

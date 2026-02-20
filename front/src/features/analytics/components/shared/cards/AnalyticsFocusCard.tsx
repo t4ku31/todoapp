@@ -3,7 +3,7 @@ import { KPICard } from "../KPICard";
 
 interface AnalyticsFocusCardProps {
 	minutes: number;
-	comparisonPercent?: number;
+	comparisonDiffMinutes?: number;
 	title?: string;
 	className?: string;
 	isLoading?: boolean;
@@ -11,7 +11,7 @@ interface AnalyticsFocusCardProps {
 
 export function AnalyticsFocusCard({
 	minutes,
-	comparisonPercent,
+	comparisonDiffMinutes,
 	title = "Total Focus Time",
 	className,
 	isLoading = false,
@@ -28,15 +28,16 @@ export function AnalyticsFocusCard({
 	let sub = "";
 	let trend: "up" | "down" | undefined;
 
-	if (comparisonPercent !== undefined && !isLoading) {
-		const isPositive = comparisonPercent >= 0;
-		const formattedComp = `${Math.abs(Math.round(comparisonPercent))}%`;
+	if (comparisonDiffMinutes !== undefined && !isLoading) {
+		const isPositive = comparisonDiffMinutes >= 0;
+		const absMinutes = Math.abs(Math.round(comparisonDiffMinutes));
+		const formattedComp = `${absMinutes}m`;
 
 		if (isPositive) {
-			sub = `↗ ${formattedComp} vs last week`;
+			sub = `↗ +${formattedComp} vs last week`;
 			trend = "up";
 		} else {
-			sub = `↘ ${formattedComp} vs last week`;
+			sub = `↘ -${formattedComp} vs last week`;
 			trend = "down";
 		}
 	} else if (!isLoading) {

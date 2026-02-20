@@ -2,6 +2,7 @@ package com.example.app1.service.domain;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,9 +60,7 @@ public class DailyGoalService {
                     return new DailyGoalDto.Response(
                             null,
                             date,
-                            userDefaultGoal,
-                            null,
-                            null);
+                            userDefaultGoal);
                 });
     }
 
@@ -69,9 +68,7 @@ public class DailyGoalService {
         return new DailyGoalDto.Response(
                 goal.getId(),
                 goal.getDate(),
-                goal.getGoalMinutes(),
-                goal.getCreatedAt(),
-                goal.getUpdatedAt());
+                goal.getGoalMinutes());
     }
 
     /**
@@ -97,12 +94,55 @@ public class DailyGoalService {
 
     /**
      * Get goals for a date range.
+     * Optimized to use batch fetch.
      */
     public List<DailyGoalDto.Response> getGoalsInRange(String userId, LocalDate startDate, LocalDate endDate) {
         log.info("Getting goals for user {} from {} to {}", userId, startDate, endDate);
 
+        // Batch fetch existing goals
+        List<DailyGoal> existingGoals = dailyGoalRepository.findByUserIdAndDateBetweenOrderByDateAsc(userId, startDate,
+                endDate);
+
+        // Map to date for O(1) lookup
+        var goalMap = existingGoals.stream()
+                .collect(Collectors.toMap(DailyGoal::getDate, goal -> goal));
+
+        // Fetch user default settings once
+        Integer userDefaultGoal = pomodoroSettingService.getSettings(userId).getDailyGoal();
+        int defaultGoal = (userDefaultGoal != null) ? userDefaultGoal : DEFAULT_GOAL_MINUTES;
+
         return startDate.datesUntil(endDate.plusDays(1))
-                .map(date -> getGoal(userId, date))
+                .map(date -> {
+                    if (goalMap.containsKey(date)) {
+                        return mapToResponse(goalMap.get(date));
+                    }
+
+                    // If no goal exists for the date, use the default
+                    int targetGoal = defaultGoal;
+
+                    // If requesting for today and no goal exists, create and save snapshot
+                    if (date.equals(LocalDate.now())) {
+                        DailyGoal newGoal = DailyGoal.builder()
+                                .userId(userId)
+                                .date(date)
+                                .goalMinutes(targetGoal)
+                                .build();
+                        DailyGoal savedGoal = dailyGoalRepository.save(newGoal);
+                        log.info("Created new daily goal snapshot for user {} on date {}: {} mins", userId, date,
+                                targetGoal);
+                        // Return response without timestamps
+                        return new DailyGoalDto.Response(
+                                savedGoal.getId(),
+                                savedGoal.getDate(),
+                                savedGoal.getGoalMinutes());
+                    }
+
+                    // For other dates (future/past), return transient default response
+                    return new DailyGoalDto.Response(
+                            null,
+                            date,
+                            targetGoal);
+                })
                 .toList();
     }
 }

@@ -7,12 +7,12 @@ import type {
 	DailySummary,
 	EfficiencyStats,
 	FocusSessionResponse,
-	PomodoroPhase,
 	PomodoroSettings,
 	PomodoroState,
 	RecordRequest,
 	TotalSummary,
 } from "../types";
+import { PomodoroPhase } from "../types";
 
 // Helper: Format date as local time string for Java LocalDateTime
 const toLocalDateTime = (date: Date): string => {
@@ -40,8 +40,9 @@ const getDuration = (
 	phase: PomodoroPhase,
 ): number => {
 	let duration = settings.focusDuration;
-	if (phase === "shortBreak") duration = settings.shortBreakDuration;
-	if (phase === "longBreak") duration = settings.longBreakDuration;
+	if (phase === PomodoroPhase.SHORT_BREAK)
+		duration = settings.shortBreakDuration;
+	if (phase === PomodoroPhase.LONG_BREAK) duration = settings.longBreakDuration;
 	return duration * 60;
 };
 
@@ -50,7 +51,7 @@ export const usePomodoroStore = create<PomodoroState>()(
 		(set, get) => ({
 			isActive: false,
 			isOvertime: false,
-			phase: "focus",
+			phase: PomodoroPhase.FOCUS,
 			currentTaskId: null,
 			focusSessionCount: 0,
 			startedAt: null,
@@ -124,12 +125,7 @@ export const usePomodoroStore = create<PomodoroState>()(
 					await get().recordSession({
 						id: activeSessionId ?? undefined,
 						taskId: currentTaskId,
-						sessionType:
-							phase === "focus"
-								? "FOCUS"
-								: phase === "shortBreak"
-									? "SHORT_BREAK"
-									: "LONG_BREAK",
+						sessionType: phase,
 						status: "INTERRUPTED",
 						scheduledDuration: duration,
 						actualDuration: actualDuration,
@@ -166,12 +162,7 @@ export const usePomodoroStore = create<PomodoroState>()(
 					await get().recordSession({
 						id: activeSessionId ?? undefined,
 						taskId: currentTaskId,
-						sessionType:
-							phase === "focus"
-								? "FOCUS"
-								: phase === "shortBreak"
-									? "SHORT_BREAK"
-									: "LONG_BREAK",
+						sessionType: phase,
 						status: "INTERRUPTED",
 						scheduledDuration: duration,
 						actualDuration: actualDuration,
@@ -210,45 +201,48 @@ export const usePomodoroStore = create<PomodoroState>()(
 				// Record Completed
 				if (startedAt) {
 					console.log("[DEBUG] Recording session");
-					get().recordSession({
+
+					const recordSessionData: RecordRequest = {
 						id: activeSessionId ?? undefined,
 						taskId: currentTaskId,
-						sessionType:
-							phase === "focus"
-								? "FOCUS"
-								: phase === "shortBreak"
-									? "SHORT_BREAK"
-									: "LONG_BREAK",
+						sessionType: phase,
 						status: "COMPLETED",
 						scheduledDuration: duration,
 						actualDuration: duration, // Completed full duration
 						startedAt: startedAt,
 						endedAt: toLocalDateTime(new Date()),
-					});
+					};
+					console.log("[DEBUG] Record session data:", recordSessionData);
+					await get().recordSession(recordSessionData);
 				}
 
 				set({ activeSessionId: null });
 
-				if (phase === "focus") {
-					const newCount = focusSessionCount + 1;
-					console.log("[DEBUG] Incrementing session count to:", newCount);
-					set({ focusSessionCount: newCount });
+				switch (phase) {
+					case PomodoroPhase.FOCUS: {
+						const newCount = focusSessionCount + 1;
+						console.log("[DEBUG] Incrementing session count to:", newCount);
+						set({ focusSessionCount: newCount });
 
-					// Auto Switch Phase
-					let nextPhase: PomodoroPhase = "shortBreak";
-					if (
-						settings.isLongBreakEnabled &&
-						newCount % settings.longBreakInterval === 0
-					) {
-						nextPhase = "longBreak";
+						// Auto Switch Phase
+						let nextPhase: PomodoroPhase = PomodoroPhase.SHORT_BREAK;
+						if (
+							settings.isLongBreakEnabled &&
+							newCount % settings.longBreakInterval === 0
+						) {
+							nextPhase = PomodoroPhase.LONG_BREAK;
+						}
+
+						get().setPhase(nextPhase);
+						get().startTimer();
+						break;
 					}
-
-					get().setPhase(nextPhase);
-					get().startTimer();
-				} else {
-					// Break -> Focus
-					get().setPhase("focus");
-					get().startTimer();
+					case PomodoroPhase.SHORT_BREAK:
+					case PomodoroPhase.LONG_BREAK:
+						// Break -> Focus
+						get().setPhase(PomodoroPhase.FOCUS);
+						get().startTimer();
+						break;
 				}
 			},
 
@@ -276,22 +270,22 @@ export const usePomodoroStore = create<PomodoroState>()(
 
 			skipPhase: async () => {
 				const { phase } = get();
-				if (phase === "focus") {
+				if (phase === PomodoroPhase.FOCUS) {
 					await get().resetTimer(); // Record interruption
 				}
 
 				const { settings, focusSessionCount } = get();
-				if (phase === "focus") {
-					let nextPhase: PomodoroPhase = "shortBreak";
+				if (phase === PomodoroPhase.FOCUS) {
+					let nextPhase: PomodoroPhase = PomodoroPhase.SHORT_BREAK;
 					if (
 						settings.isLongBreakEnabled &&
 						(focusSessionCount + 1) % settings.longBreakInterval === 0
 					) {
-						nextPhase = "longBreak";
+						nextPhase = PomodoroPhase.LONG_BREAK;
 					}
 					get().setPhase(nextPhase);
 				} else {
-					get().setPhase("focus");
+					get().setPhase(PomodoroPhase.FOCUS);
 				}
 			},
 
@@ -359,6 +353,8 @@ export const usePomodoroStore = create<PomodoroState>()(
 						"/api/focus-sessions/record",
 						request,
 					);
+					console.log("[DEBUG] Server response for session:", response.data);
+
 					if (request.status === "INTERRUPTED") {
 						set({ activeSessionId: response.data.id });
 					}
