@@ -1,6 +1,6 @@
-import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import path from "node:path";
 import { defineConfig } from "vite";
 
 // 簡単な proxy 設定例
@@ -38,26 +38,50 @@ export default defineConfig({
 			output: {
 				manualChunks(id) {
 					if (id.includes("node_modules")) {
-						if (id.includes("react-dom")) return "vendor-react-dom";
-						if (id.includes("react-router") || id.includes("react-router-dom"))
+						// Group core React and related closely-coupled modules
+						if (
+							id.includes("/react/") ||
+							id.includes("/react-dom/") ||
+							id.includes("/scheduler/")
+						) {
+							return "vendor-react";
+						}
+						// Router
+						if (id.includes("react-router")) {
 							return "vendor-router";
-						if (id.includes("react-big-calendar")) return "vendor-calendar";
-						if (id.includes("react-day-picker")) return "vendor-daypicker";
-						if (id.includes("react-hook-form") || id.includes("@hookform"))
+						}
+						// State management and data fetching
+						if (id.includes("@tanstack") || id.includes("zustand")) {
+							return "vendor-state";
+						}
+						// UI components and Radix
+						if (
+							id.includes("@radix-ui") ||
+							id.includes("lucide-react") ||
+							id.includes("framer-motion") ||
+							id.includes("cmdk") ||
+							id.includes("sonner")
+						) {
+							return "vendor-ui";
+						}
+						// Form handling
+						if (id.includes("react-hook-form") || id.includes("@hookform")) {
 							return "vendor-form";
-						if (id.includes("react")) return "vendor-react";
-						if (id.includes("@radix-ui")) return "vendor-ui";
-						if (id.includes("@dnd-kit")) return "vendor-dnd";
-						if (id.includes("recharts")) return "vendor-charts";
-						if (id.includes("date-fns")) return "vendor-date-fns";
-						if (id.includes("lucide-react")) return "vendor-lucide";
-						if (id.includes("framer-motion")) return "vendor-framer";
-						if (id.includes("apexcharts") || id.includes("react-apexcharts"))
-							return "vendor-apex";
-						if (id.includes("zustand")) return "vendor-zustand";
-						if (id.includes("cmdk")) return "vendor-cmdk";
-						if (id.includes("sonner")) return "vendor-sonner";
-						return "vendor";
+						}
+						// Complex utilities and libs
+						if (
+							id.includes("@dnd-kit") ||
+							id.includes("recharts") ||
+							id.includes("apexcharts") ||
+							id.includes("react-big-calendar") ||
+							id.includes("react-day-picker")
+						) {
+							return "vendor-complex-libs";
+						}
+						if (id.includes("date-fns")) {
+							return "vendor-date-fns";
+						}
+						// Allow Rollup to automatically chunk the rest to prevent circular dependency execution errors
 					}
 				},
 			},
