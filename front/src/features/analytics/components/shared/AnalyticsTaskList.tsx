@@ -13,27 +13,27 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { GroupedTaskSummary } from "@/features/analytics/types";
-import { useTodoStore } from "@/store/useTodoStore";
+import { useUpdateTaskMutation } from "@/features/task/queries/task/useTaskMutations";
 
 interface AnalyticsTaskListProps {
 	data?: GroupedTaskSummary[] | null;
 	isLoading?: boolean;
-	onStatusChange: (taskId: number, completed: boolean) => void;
 	title?: string;
+	onStatusChange?: (taskId: number, checked: boolean) => void;
 }
 
 export function AnalyticsTaskList({
 	data,
 	isLoading = false,
-	onStatusChange,
 	title = "Task Summary",
+	onStatusChange,
 }: AnalyticsTaskListProps) {
 	const [showCompleted, setShowCompleted] = useState(true);
 	const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 	const [localGroups, setLocalGroups] = useState<GroupedTaskSummary[]>(
 		data || [],
 	);
-	const { updateTask } = useTodoStore();
+	const { mutateAsync: updateTask } = useUpdateTaskMutation();
 
 	useEffect(() => {
 		setLocalGroups(data || []);
@@ -79,18 +79,18 @@ export function AnalyticsTaskList({
 			}),
 		);
 
-		// Notify parent store
-		onStatusChange(taskId, checked);
-
 		// API Call with error handling
 		try {
-			await updateTask(taskId, { status: checked ? "COMPLETED" : "PENDING" });
+			await updateTask({
+				taskId,
+				updates: { status: checked ? "COMPLETED" : "PENDING" },
+			});
 		} catch (error) {
 			console.error("Failed to update task status:", error);
 			// Rollback on error
 			setLocalGroups(prevGroups);
 			// Rollback parent store
-			onStatusChange(taskId, !checked);
+			onStatusChange?.(taskId, !checked);
 		}
 	};
 

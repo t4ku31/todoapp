@@ -3,7 +3,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePomodoroStore } from "@/features/pomodoro/stores/usePomodoroStore";
 import { useWhiteNoise } from "@/features/pomodoro/stores/useWhiteNoise";
 import { PomodoroPhase } from "@/features/pomodoro/types";
-import { useTodoStore } from "@/store/useTodoStore";
+import type { UpdateTaskParams } from "@/features/task/api/taskApi";
+import { useUpdateTaskMutation } from "@/features/task/queries/task/useTaskMutations";
+import { useTaskListsQuery } from "@/features/task/queries/task/useTaskQueries";
 
 const NOTIFICATION_SOUND_PATH = "/sounds/NotificationSound.mp3";
 
@@ -34,8 +36,16 @@ export default function FocusScreen() {
 	// Derived state for UI
 	const totalFocusTime = duration - timeLeft;
 
-	const allTasks = useTodoStore((state) => state.allTasks);
-	const updateTask = useTodoStore((state) => state.updateTask);
+	const { data: taskLists = [] } = useTaskListsQuery();
+	const allTasks = taskLists.flatMap((list) => list.tasks || []);
+	const { mutateAsync: updateTaskMutation } = useUpdateTaskMutation();
+
+	const updateTask = useCallback(
+		async (id: number, updates: UpdateTaskParams) => {
+			return updateTaskMutation({ taskId: id, updates });
+		},
+		[updateTaskMutation],
+	);
 
 	// Get today's date
 	const today = format(new Date(), "yyyy-MM-dd");

@@ -1,7 +1,7 @@
 import { CornerDownRight } from "lucide-react";
 import { AiOriginalTaskItem } from "@/features/ai";
 import type { ParsedTask } from "@/features/ai/types";
-import type { Task } from "@/features/todo/types";
+import type { Task } from "@/features/task/types";
 import { AiPreviewTaskItem } from "./AiPreviewTaskItem";
 
 interface AiDiffTaskItemProps {

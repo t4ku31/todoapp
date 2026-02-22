@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Task } from "@/features/todo/types";
+import type { Task } from "@/features/task/types";
 
 interface AiChatContextState {
 	contextTasks: Task[];

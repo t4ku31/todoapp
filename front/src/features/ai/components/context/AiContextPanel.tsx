@@ -8,7 +8,7 @@ import {
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useAiChatContextStore } from "@/features/ai/stores/useAiChatContextStore";
-import type { Task } from "@/features/todo/types";
+import type { Task } from "@/features/task/types";
 import { cn } from "@/lib/utils";
 
 interface AiContextPanelProps {

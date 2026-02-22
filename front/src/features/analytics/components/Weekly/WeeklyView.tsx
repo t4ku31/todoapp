@@ -1,6 +1,5 @@
 import { addWeeks, formatISO, startOfWeek } from "date-fns";
-import { useEffect } from "react";
-import { useAnalyticsStore } from "@/features/analytics/stores/useAnalyticsStore";
+import { useWeeklyAnalyticsQuery } from "@/features/analytics/queries/useAnalyticsQueries";
 // Shared Cards (Unified UX)
 import { AnalyticsKpiGrid } from "../shared/AnalyticsKpiGrid";
 import { AnalyticsTaskList } from "../shared/AnalyticsTaskList";
@@ -16,17 +15,10 @@ export default function WeeklyView() {
 	const startStr = formatISO(weekStart);
 	const endStr = formatISO(weekNextStart);
 
-	const {
-		weeklyData,
-		isLoading,
-		fetchWeeklyAnalytics,
-		updateWeeklyTaskStatus,
-	} = useAnalyticsStore();
-
-	useEffect(() => {
-		fetchWeeklyAnalytics(startStr, endStr);
-	}, [startStr, endStr, fetchWeeklyAnalytics]);
-
+	const { data: weeklyData, isLoading } = useWeeklyAnalyticsQuery(
+		startStr,
+		endStr,
+	);
 	const data = weeklyData;
 
 	// Estimation Data Prep
@@ -85,7 +77,6 @@ export default function WeeklyView() {
 					<AnalyticsTaskList
 						data={data?.taskSummaries}
 						isLoading={isLoading}
-						onStatusChange={updateWeeklyTaskStatus}
 						title="Weekly Tasks"
 					/>
 				</div>
