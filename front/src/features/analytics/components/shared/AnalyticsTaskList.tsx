@@ -19,12 +19,14 @@ interface AnalyticsTaskListProps {
 	data?: GroupedTaskSummary[] | null;
 	isLoading?: boolean;
 	title?: string;
+	onStatusChange?: (taskId: number, checked: boolean) => void;
 }
 
 export function AnalyticsTaskList({
 	data,
 	isLoading = false,
 	title = "Task Summary",
+	onStatusChange,
 }: AnalyticsTaskListProps) {
 	const [showCompleted, setShowCompleted] = useState(true);
 	const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
@@ -88,7 +90,7 @@ export function AnalyticsTaskList({
 			// Rollback on error
 			setLocalGroups(prevGroups);
 			// Rollback parent store
-			onStatusChange(taskId, !checked);
+			onStatusChange?.(taskId, !checked);
 		}
 	};
 

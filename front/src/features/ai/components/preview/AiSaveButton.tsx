@@ -6,7 +6,7 @@ import { useAiPreviewStore } from "@/features/ai/stores/useAiPreviewStore";
 import { isExistingTask, toSyncTask } from "@/features/ai/utils/aiUtils";
 import { taskKeys } from "@/features/task/queries/queryKeys";
 import { useSyncTasksMutation } from "@/features/task/queries/task/useMiscMutations";
-import { useTaskListsQuery } from "@/features/todo/queries/useTaskQueries";
+import { useTaskListsQuery } from "@/features/task/queries/task/useTaskQueries";
 
 export function AiSaveButton() {
 	const { aiPreviewTasks, setAiPreviewTasks } = useAiPreviewStore();

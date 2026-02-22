@@ -41,8 +41,8 @@ import {
 	useCreateTaskListMutation,
 	useDeleteTaskListMutation,
 	useUpdateTaskListTitleMutation,
-} from "@/features/todo/queries/useTaskListMutations";
-import { useTaskListsQuery } from "@/features/todo/queries/useTaskQueries";
+} from "@/features/task/queries/task/useTaskListMutations";
+import { useTaskListsQuery } from "@/features/task/queries/task/useTaskQueries";
 import { cn } from "@/lib/utils";
 import { CreateCategoryDialog } from "../forms/CreateCategoryDialog";
 import { CreateListDialog } from "../forms/CreateListDialog";

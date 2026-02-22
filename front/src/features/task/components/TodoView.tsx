@@ -14,7 +14,7 @@ import {
 	useDeleteTaskMutation,
 	useUpdateTaskMutation,
 } from "@/features/task/queries/task/useTaskMutations";
-import { useTaskListsQuery } from "@/features/todo/queries/useTaskQueries";
+import { useTaskListsQuery } from "@/features/task/queries/task/useTaskQueries";
 import { cn } from "@/lib/utils";
 import { TaskDetailPanel } from "./detail-panel/TaskDetailPanel";
 import { FilteredTaskView } from "./list-view/FilteredTaskView";

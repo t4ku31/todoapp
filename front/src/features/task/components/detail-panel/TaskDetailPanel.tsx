@@ -20,7 +20,7 @@ import {
 	useDeleteTaskMutation,
 	useUpdateTaskMutation,
 } from "@/features/task/queries/task/useTaskMutations";
-import { useTaskListsQuery } from "@/features/todo/queries/useTaskQueries";
+import { useTaskListsQuery } from "@/features/task/queries/task/useTaskQueries";
 // import { Textarea } from "@/components/ui/textarea"; // Removed
 import { cn } from "@/lib/utils";
 import { CategorySelect } from "../ui/CategorySelect";

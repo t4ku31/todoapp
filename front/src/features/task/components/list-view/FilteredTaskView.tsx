@@ -13,8 +13,8 @@ import {
 	useDeleteTaskPermanentlyMutation,
 	useRestoreTaskMutation,
 } from "@/features/task/queries/task/useMiscMutations";
+import { useTaskListsQuery } from "@/features/task/queries/task/useTaskQueries";
 import type { Task } from "@/features/task/types";
-import { useTaskListsQuery } from "@/features/todo/queries/useTaskQueries";
 import { CreateTaskForm } from "../forms/CreateTaskForm";
 import { FilterHeader } from "./parts/FilterHeader";
 import { CompletedTaskView } from "./views/CompletedTaskView";

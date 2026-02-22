@@ -3,4 +3,4 @@ export interface auth {
 	password: string;
 }
 
-// Moved to src/features/todo/types/index.ts
+// Moved to src/features/task/types/index.ts
