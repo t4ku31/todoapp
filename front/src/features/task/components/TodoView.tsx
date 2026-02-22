@@ -1,6 +1,6 @@
 import { DndContext, DragOverlay } from "@dnd-kit/core";
 import { Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { AiChatPanel } from "@/features/ai/components/AiChatPanel";
@@ -26,25 +26,31 @@ export default function TodoView() {
 	const { data: taskLists = [], isLoading: isTaskListsLoading } =
 		useTaskListsQuery();
 
-	const createTaskMutation = useCreateTaskMutation();
-	const updateTaskMutation = useUpdateTaskMutation();
-	const deleteTaskMutation = useDeleteTaskMutation();
+	const { mutateAsync: createTaskAsync } = useCreateTaskMutation();
+	const { mutateAsync: updateTaskAsync } = useUpdateTaskMutation();
+	const { mutateAsync: deleteTaskAsync } = useDeleteTaskMutation();
 
 	// Create wrapper functions to match the props expected by FilteredTaskView
-	const handleCreateTask = async (params: CreateTaskParams) => {
-		return createTaskMutation.mutateAsync(params);
-	};
+	const handleCreateTask = useCallback(
+		async (params: CreateTaskParams) => {
+			return createTaskAsync(params);
+		},
+		[createTaskAsync],
+	);
 
-	const handleUpdateTask = async (
-		taskId: number,
-		updates: UpdateTaskParams,
-	) => {
-		return updateTaskMutation.mutateAsync({ taskId, updates });
-	};
+	const handleUpdateTask = useCallback(
+		async (taskId: number, updates: UpdateTaskParams) => {
+			return updateTaskAsync({ taskId, updates });
+		},
+		[updateTaskAsync],
+	);
 
-	const handleDeleteTask = async (taskId: number) => {
-		return deleteTaskMutation.mutateAsync(taskId);
-	};
+	const handleDeleteTask = useCallback(
+		async (taskId: number) => {
+			return deleteTaskAsync(taskId);
+		},
+		[deleteTaskAsync],
+	);
 
 	const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
 	const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -68,11 +74,10 @@ export default function TodoView() {
 		setIsAiChatOpen,
 	});
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally reacting to route changes
 	useEffect(() => {
 		// Close detail panel when route changes
 		setSelectedTaskId(null);
-	}, [location.pathname]);
+	}, []);
 
 	// Responsive Layout Handling
 	useEffect(() => {
@@ -95,13 +100,13 @@ export default function TodoView() {
 		return () => mediaQuery.removeEventListener("change", handleResize);
 	}, []);
 
-	const handleTaskSelect = (taskId: number | null) => {
+	const handleTaskSelect = useCallback((taskId: number | null) => {
 		setSelectedTaskId(taskId);
-	};
+	}, []);
 
-	const handleCloseDetail = () => {
+	const handleCloseDetail = useCallback(() => {
 		setSelectedTaskId(null);
-	};
+	}, []);
 
 	return (
 		<DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>

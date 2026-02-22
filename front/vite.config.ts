@@ -33,4 +33,34 @@ export default defineConfig({
 			//   }
 		},
 	},
+	build: {
+		rollupOptions: {
+			output: {
+				manualChunks(id) {
+					if (id.includes("node_modules")) {
+						if (id.includes("react-dom")) return "vendor-react-dom";
+						if (id.includes("react-router") || id.includes("react-router-dom"))
+							return "vendor-router";
+						if (id.includes("react-big-calendar")) return "vendor-calendar";
+						if (id.includes("react-day-picker")) return "vendor-daypicker";
+						if (id.includes("react-hook-form") || id.includes("@hookform"))
+							return "vendor-form";
+						if (id.includes("react")) return "vendor-react";
+						if (id.includes("@radix-ui")) return "vendor-ui";
+						if (id.includes("@dnd-kit")) return "vendor-dnd";
+						if (id.includes("recharts")) return "vendor-charts";
+						if (id.includes("date-fns")) return "vendor-date-fns";
+						if (id.includes("lucide-react")) return "vendor-lucide";
+						if (id.includes("framer-motion")) return "vendor-framer";
+						if (id.includes("apexcharts") || id.includes("react-apexcharts"))
+							return "vendor-apex";
+						if (id.includes("zustand")) return "vendor-zustand";
+						if (id.includes("cmdk")) return "vendor-cmdk";
+						if (id.includes("sonner")) return "vendor-sonner";
+						return "vendor";
+					}
+				},
+			},
+		},
+	},
 });

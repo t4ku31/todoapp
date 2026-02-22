@@ -1,13 +1,4 @@
-/**
- * Memoized item component for Virtuoso to prevent unnecessary re-renders.
- * StandardTaskView passes inline functions for onUpdateTask, which are not stable if not wrapped in useCallback in parent.
- * But here we assume onUpdateTask from StandardTaskView props is stable (if parent fixes it).
- *
- * However, Virtuoso rerenders items when context changes.
- */
-
 import * as React from "react";
-import { Virtuoso } from "react-virtuoso";
 import { AiDiffTaskItem } from "@/features/ai/components/preview/AiDiffTaskItem";
 import { AiPreviewTaskItem } from "@/features/ai/components/preview/AiPreviewTaskItem";
 import type { ParsedTask } from "@/features/ai/types";
@@ -29,7 +20,7 @@ interface StandardTaskViewProps {
 	completedTasks: Task[];
 }
 
-export function StandardTaskView({
+export const StandardTaskView = React.memo(function StandardTaskView({
 	aiNewTaskPreviews,
 	filteredTasks,
 	aiEditPreviewMap,
@@ -42,11 +33,10 @@ export function StandardTaskView({
 	showCompletedSection,
 	completedTasks,
 }: StandardTaskViewProps) {
-	// Header component for Virtuoso: Renders AI previews and padding
-	const Header = React.useCallback(() => {
-		return (
+	return (
+		<div className="h-full overflow-y-auto">
+			{/* Header: AI Preview Tasks */}
 			<div className="pt-8 pb-5">
-				{/* AI Preview: New Tasks */}
 				{aiNewTaskPreviews.length > 0 && (
 					<div className="space-y-5 mb-8 pr-8">
 						{aiNewTaskPreviews.map((preview, index) => (
@@ -61,12 +51,48 @@ export function StandardTaskView({
 					</div>
 				)}
 			</div>
-		);
-	}, [aiNewTaskPreviews, updateAiPreviewTask, toggleAiPreviewSelection]);
 
-	// Footer component for Virtuoso: Renders completed tasks and empty state
-	const Footer = React.useCallback(() => {
-		return (
+			{/* Task Items */}
+			{filteredTasks.map((task) => {
+				const aiEditPreview = aiEditPreviewMap.get(task.id);
+				if (aiEditPreview) {
+					if (aiEditPreview.isDeleted) {
+						return (
+							<div key={task.id} className="mb-5 pr-4">
+								<AiPreviewTaskItem
+									task={aiEditPreview}
+									index={0}
+									onUpdateTask={updateAiPreviewTask}
+									onToggleSelection={toggleAiPreviewSelection}
+								/>
+							</div>
+						);
+					}
+					return (
+						<div key={task.id} className="mb-5 pr-4">
+							<AiDiffTaskItem
+								originalTask={task}
+								previewTask={aiEditPreview}
+								onUpdateTask={updateAiPreviewTask}
+								onToggleSelection={toggleAiPreviewSelection}
+							/>
+						</div>
+					);
+				}
+				return (
+					<div key={task.id} className="mb-5 pr-4">
+						<TaskItem
+							task={task}
+							onUpdateTask={onUpdateTask}
+							onDeleteTask={onDeleteTask}
+							onSelect={(id) => onTaskSelect?.(id)}
+							isSelected={selectedTaskId === task.id}
+						/>
+					</div>
+				);
+			})}
+
+			{/* Footer: Completed Tasks & Empty State */}
 			<div className="pb-10">
 				{showCompletedSection && completedTasks.length > 0 && (
 					<div className="pt-8 border-t border-gray-100 mt-5">
@@ -94,84 +120,6 @@ export function StandardTaskView({
 						</div>
 					)}
 			</div>
-		);
-	}, [
-		showCompletedSection,
-		completedTasks,
-		filteredTasks.length,
-		aiNewTaskPreviews.length,
-		onUpdateTask,
-		onDeleteTask,
-		onTaskSelect,
-		selectedTaskId,
-	]);
-
-	// Item renderer for Virtuoso
-	const itemContent = React.useCallback(
-		(_index: number, task: Task) => {
-			const aiEditPreview = aiEditPreviewMap.get(task.id);
-			if (aiEditPreview) {
-				// 削除タスクの場合はPreview表示（Diff表示しない）
-				if (aiEditPreview.isDeleted) {
-					return (
-						<div className="mb-5 pr-4">
-							<AiPreviewTaskItem
-								key={`preview-del-${task.id}`}
-								task={aiEditPreview}
-								index={0}
-								onUpdateTask={updateAiPreviewTask}
-								onToggleSelection={toggleAiPreviewSelection}
-							/>
-						</div>
-					);
-				}
-
-				return (
-					<div className="mb-5 pr-4">
-						<AiDiffTaskItem
-							key={`diff-${task.id}`}
-							originalTask={task}
-							previewTask={aiEditPreview}
-							onUpdateTask={updateAiPreviewTask}
-							onToggleSelection={toggleAiPreviewSelection}
-						/>
-					</div>
-				);
-			}
-			return (
-				<div className="mb-5 pr-4">
-					<TaskItem
-						key={task.id}
-						task={task}
-						onUpdateTask={onUpdateTask}
-						onDeleteTask={onDeleteTask}
-						onSelect={(id) => onTaskSelect?.(id)}
-						isSelected={selectedTaskId === task.id}
-					/>
-				</div>
-			);
-		},
-		[
-			aiEditPreviewMap,
-			updateAiPreviewTask,
-			toggleAiPreviewSelection,
-			onUpdateTask,
-			onDeleteTask,
-			onTaskSelect,
-			selectedTaskId,
-		],
+		</div>
 	);
-
-	// Virtuoso directly handles scrolling, so we give it height 100% to fill the parent container
-	return (
-		<Virtuoso
-			style={{ height: "100%" }}
-			data={filteredTasks}
-			itemContent={itemContent}
-			components={{
-				Header,
-				Footer,
-			}}
-		/>
-	);
-}
+});

@@ -1,6 +1,6 @@
 import { addDays, format, parse, subDays } from "date-fns";
 import { Play } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -36,30 +36,30 @@ export default function HomeView() {
 	const allTasks = taskLists.flatMap((list) => list.tasks || []);
 
 	// Mutations
-	const { mutateAsync: updateTaskMutation } = useUpdateTaskMutation();
-	const { mutateAsync: deleteTaskMutation } = useDeleteTaskMutation();
-	const { mutateAsync: createTaskMutation } = useCreateTaskMutation();
+	const { mutateAsync: updateTaskAsync } = useUpdateTaskMutation();
+	const { mutateAsync: deleteTaskAsync } = useDeleteTaskMutation();
+	const { mutateAsync: createTaskAsync } = useCreateTaskMutation();
 
 	// Wrappers for mutations to match props expected by DailyTaskList
 	const updateTask = useCallback(
 		async (id: number, updates: UpdateTaskParams) => {
-			return updateTaskMutation({ taskId: id, updates });
+			return updateTaskAsync({ taskId: id, updates });
 		},
-		[updateTaskMutation],
+		[updateTaskAsync],
 	);
 
 	const deleteTask = useCallback(
 		async (id: number) => {
-			return deleteTaskMutation(id);
+			return deleteTaskAsync(id);
 		},
-		[deleteTaskMutation],
+		[deleteTaskAsync],
 	);
 
 	const createTask = useCallback(
 		async (params: CreateTaskParams) => {
-			return createTaskMutation(params);
+			return createTaskAsync(params);
 		},
-		[createTaskMutation],
+		[createTaskAsync],
 	);
 
 	// Get current selected task
@@ -76,18 +76,24 @@ export default function HomeView() {
 	);
 
 	// Auto-select first task if none selected
-	const todaysTasks = allTasks.filter(
-		(t) =>
-			t.scheduledStartAt &&
-			format(t.scheduledStartAt, "yyyy-MM-dd") === selectedDate &&
-			t.status !== "COMPLETED",
+	const todaysTasks = useMemo(
+		() =>
+			allTasks.filter(
+				(t) =>
+					t.scheduledStartAt &&
+					format(t.scheduledStartAt, "yyyy-MM-dd") === selectedDate &&
+					t.status !== "COMPLETED",
+			),
+		[allTasks, selectedDate],
 	);
 
+	const firstTodayTaskId = todaysTasks[0]?.id;
+
 	useEffect(() => {
-		if (!currentTaskId && todaysTasks.length > 0) {
-			setFocusTask(todaysTasks[0].id);
+		if (!currentTaskId && firstTodayTaskId) {
+			setFocusTask(firstTodayTaskId);
 		}
-	}, [currentTaskId, todaysTasks, setFocusTask]);
+	}, [currentTaskId, firstTodayTaskId, setFocusTask]);
 
 	const inboxList = taskLists.find((list) => list.title === "Inbox");
 
