@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { AiSaveButton } from "@/features/ai/components/preview/AiSaveButton";
 import { useAiPreviewStore } from "@/features/ai/stores/useAiPreviewStore";
@@ -51,17 +51,24 @@ export function FilteredTaskView({
 	);
 
 	const { isLoading } = useTaskListsQuery();
-	const restoreTaskMutation = useRestoreTaskMutation();
-	const deleteTaskPermanentlyMutation = useDeleteTaskPermanentlyMutation();
+	const { mutateAsync: restoreTaskAsync } = useRestoreTaskMutation();
+	const { mutateAsync: deleteTaskPermanentlyAsync } =
+		useDeleteTaskPermanentlyMutation();
 
 	// Create wrapper functions
-	const handleRestoreTask = async (id: number) => {
-		return restoreTaskMutation.mutateAsync(id);
-	};
+	const handleRestoreTask = useCallback(
+		async (id: number) => {
+			return restoreTaskAsync(id);
+		},
+		[restoreTaskAsync],
+	);
 
-	const handleDeleteTaskPermanently = async (id: number) => {
-		return deleteTaskPermanentlyMutation.mutateAsync(id);
-	};
+	const handleDeleteTaskPermanently = useCallback(
+		async (id: number) => {
+			return deleteTaskPermanentlyAsync(id);
+		},
+		[deleteTaskPermanentlyAsync],
+	);
 
 	const handleBackgroundClick = (e: React.MouseEvent) => {
 		if (e.target === e.currentTarget) {

@@ -8,16 +8,19 @@ import {
 import type { Task } from "@/features/task/types";
 import type { ViewType } from "./useTaskViewParams";
 
+const EMPTY_ARRAY: never[] = [];
+
 export function useTaskFilter(
 	viewType: ViewType,
 	pathId: number | null,
 	searchQuery: string,
 ) {
-	const { data: taskLists = [] } = useTaskListsQuery();
-	// We no longer rely on useTodoStore's trashTasks. We use useTrashTasksQuery directly.
-	const { data: trashTasks = [] } = useTrashTasksQuery();
+	const { data: taskLists = EMPTY_ARRAY } = useTaskListsQuery();
+	const { data: trashTasks = EMPTY_ARRAY } = useTrashTasksQuery();
 
-	const { setContextTasks } = useAiChatContextStore();
+	const setContextTasks = useAiChatContextStore(
+		(state) => state.setContextTasks,
+	);
 
 	// Filter tasks based on view type
 	const filteredTasks = useMemo((): Task[] => {
