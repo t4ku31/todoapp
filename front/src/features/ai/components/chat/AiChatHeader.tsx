@@ -17,7 +17,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DeleteButton } from "@/features/todo/components/ui/DeleteButton";
+import { DeleteButton } from "@/features/task/components/ui/DeleteButton";
 import { cn } from "@/lib/utils";
 
 // 会話メタデータ型 (useAiChat.ts と重複しているため、types/index.ts などに移動すべきだが、一旦ここで定義)

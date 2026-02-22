@@ -1,14 +1,14 @@
+import type { CreateTaskParams } from "@/features/task/api/taskApi";
 import type {
 	Category,
 	Subtask,
 	Task,
 	TaskStatus,
-} from "@/features/todo/types";
+} from "@/features/task/types";
 import {
 	deserializeRecurrenceConfig,
 	serializeRecurrenceConfig,
-} from "@/features/todo/utils/recurrenceUtils";
-import type { CreateTaskParams } from "@/store/useTodoStore";
+} from "@/features/task/utils/recurrenceUtils";
 import type { AiChatResponse, ParsedTask, SyncTask } from "../types";
 
 export const createEmptySubtask = (orderIndex: number): Subtask => ({

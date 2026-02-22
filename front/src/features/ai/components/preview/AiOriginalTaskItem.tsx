@@ -1,6 +1,6 @@
 import { Calendar, Clock, GripVertical, Tag } from "lucide-react";
 import { memo } from "react";
-import type { Task } from "@/features/todo/types";
+import type { Task } from "@/features/task/types";
 import { AiStatusBadge } from "./AiStatusBadge";
 
 interface AiOriginalTaskItemProps {

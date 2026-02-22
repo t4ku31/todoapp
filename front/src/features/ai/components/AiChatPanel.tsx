@@ -1,4 +1,4 @@
-import type { TaskList } from "@/features/todo/types";
+import type { TaskList } from "@/features/task/types";
 import { cn } from "@/lib/utils";
 import { useAiChat } from "../hooks/useAiChat";
 import { AiChatHeader } from "./chat/AiChatHeader";
