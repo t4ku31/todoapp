@@ -1,5 +1,5 @@
 import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -11,7 +11,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { useCategoryStore } from "@/store/useCategoryStore";
+import {
+	useCreateCategoryMutation,
+	useDeleteCategoryMutation,
+	useUpdateCategoryMutation,
+} from "@/features/task/queries/category/useCategoryMutations";
+import { useCategoriesQuery } from "@/features/task/queries/category/useCategoryQueries";
 
 // 12色のプリセットカラーパレット (Vivid / Tailwind 500s)
 const COLOR_PALETTE = [
@@ -57,28 +62,23 @@ const ColorPicker = ({
 );
 
 export const CategorySettings = () => {
-	const {
-		categories,
-		fetchCategories,
-		createCategory,
-		updateCategory,
-		deleteCategory,
-		loading,
-	} = useCategoryStore();
+	const { data: categories = [], isLoading: loading } = useCategoriesQuery();
+	const createCategory = useCreateCategoryMutation();
+	const updateCategory = useUpdateCategoryMutation();
+	const deleteCategory = useDeleteCategoryMutation();
 	const [newCategoryName, setNewCategoryName] = useState("");
 	const [newCategoryColor, setNewCategoryColor] = useState("#6366f1"); // Indigo-500 default
 	const [editingId, setEditingId] = useState<number | null>(null);
 	const [editName, setEditName] = useState("");
 	const [editColor, setEditColor] = useState("");
 
-	useEffect(() => {
-		fetchCategories();
-	}, [fetchCategories]);
-
 	const handleCreate = async () => {
 		if (!newCategoryName.trim()) return;
 		await console.log("create new category", newCategoryName, newCategoryColor);
-		await createCategory(newCategoryName, newCategoryColor);
+		await createCategory.mutateAsync({
+			name: newCategoryName,
+			color: newCategoryColor,
+		});
 		setNewCategoryName("");
 		setNewCategoryColor("#6366f1");
 	};
@@ -95,14 +95,17 @@ export const CategorySettings = () => {
 
 	const handleUpdate = async () => {
 		if (editingId && editName.trim()) {
-			await updateCategory(editingId, { name: editName, color: editColor });
+			await updateCategory.mutateAsync({
+				id: editingId,
+				updates: { name: editName, color: editColor },
+			});
 			setEditingId(null);
 		}
 	};
 
 	const handleDelete = async (id: number) => {
 		if (confirm("Are you sure you want to delete this category?")) {
-			await deleteCategory(id);
+			await deleteCategory.mutateAsync(id);
 		}
 	};
 

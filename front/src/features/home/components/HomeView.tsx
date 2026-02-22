@@ -7,20 +7,22 @@ import { Card } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { usePomodoroStore } from "@/features/pomodoro/stores/usePomodoroStore";
 import { PomodoroPhase } from "@/features/pomodoro/types";
-import { DailyTaskList } from "@/features/todo/components/DailyTaskList";
-import { useTodoStore } from "@/store/useTodoStore";
+import type {
+	CreateTaskParams,
+	UpdateTaskParams,
+} from "@/features/task/api/taskApi";
+import { DailyTaskList } from "@/features/task/components/DailyTaskList";
+import {
+	useCreateTaskMutation,
+	useDeleteTaskMutation,
+	useUpdateTaskMutation,
+} from "@/features/task/queries/task/useTaskMutations";
+import { useTaskListsQuery } from "@/features/task/queries/task/useTaskQueries";
 import { FocusCircle } from "./FocusCircle";
 
 export default function HomeView() {
 	const navigate = useNavigate();
 
-	const taskLists = useTodoStore((state) => state.taskLists);
-	const allTasks = useTodoStore((state) => state.allTasks);
-	const fetchTaskLists = useTodoStore((state) => state.fetchTaskLists);
-	const createTask = useTodoStore((state) => state.createTask);
-	const updateTask = useTodoStore((state) => state.updateTask);
-	const deleteTask = useTodoStore((state) => state.deleteTask);
-	const loading = useTodoStore((state) => state.loading);
 	const startTimer = usePomodoroStore((state) => state.startTimer);
 	const currentTaskId = usePomodoroStore((state) => state.currentTaskId);
 	const setFocusTask = usePomodoroStore((state) => state.setFocusTask);
@@ -28,15 +30,46 @@ export default function HomeView() {
 	const fetchSettings = usePomodoroStore((state) => state.fetchSettings);
 	const settings = usePomodoroStore((state) => state.settings);
 
+	// Fetch task lists using TanStack Query
+	const { data: taskLists = [], isLoading: isTasksLoading } =
+		useTaskListsQuery();
+	const allTasks = taskLists.flatMap((list) => list.tasks || []);
+
+	// Mutations
+	const { mutateAsync: updateTaskMutation } = useUpdateTaskMutation();
+	const { mutateAsync: deleteTaskMutation } = useDeleteTaskMutation();
+	const { mutateAsync: createTaskMutation } = useCreateTaskMutation();
+
+	// Wrappers for mutations to match props expected by DailyTaskList
+	const updateTask = useCallback(
+		async (id: number, updates: UpdateTaskParams) => {
+			return updateTaskMutation({ taskId: id, updates });
+		},
+		[updateTaskMutation],
+	);
+
+	const deleteTask = useCallback(
+		async (id: number) => {
+			return deleteTaskMutation(id);
+		},
+		[deleteTaskMutation],
+	);
+
+	const createTask = useCallback(
+		async (params: CreateTaskParams) => {
+			return createTaskMutation(params);
+		},
+		[createTaskMutation],
+	);
+
 	// Get current selected task
 	const currentTask = currentTaskId
 		? allTasks.find((t) => t.id === currentTaskId)
 		: null;
 
 	useEffect(() => {
-		fetchTaskLists();
 		fetchSettings();
-	}, [fetchTaskLists, fetchSettings]);
+	}, [fetchSettings]);
 
 	const [selectedDate, setSelectedDate] = useState(
 		format(new Date(), "yyyy-MM-dd"),
@@ -76,7 +109,7 @@ export default function HomeView() {
 
 	return (
 		<div className="h-full flex p-6 gap-6">
-			{loading ? (
+			{isTasksLoading ? (
 				<LoadingSpinner size="lg" />
 			) : (
 				<>

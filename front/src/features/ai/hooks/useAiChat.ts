@@ -1,8 +1,10 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { apiClient } from "@/config/env";
-import type { TaskList } from "@/features/todo/types";
-import { useTodoStore } from "@/store/useTodoStore";
+import { taskKeys } from "@/features/task/queries/queryKeys";
+import { useSyncTasksMutation } from "@/features/task/queries/task/useMiscMutations";
+import type { TaskList } from "@/features/task/types";
 import { useAiChatContextStore } from "../stores/useAiChatContextStore";
 import { useAiPreviewStore } from "../stores/useAiPreviewStore";
 import type {
@@ -92,8 +94,6 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 	const [isMinimized, setIsMinimized] = useState(false);
 	const [isTaskListExpanded, setIsTaskListExpanded] = useState(false);
 
-	// Store から取得
-	const fetchTaskLists = useTodoStore((state) => state.fetchTaskLists);
 	const {
 		aiPreviewTasks,
 		setAiPreviewTasks,
@@ -325,6 +325,9 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 	);
 
 	// 選択したタスクを保存
+	const { mutateAsync: syncTasks } = useSyncTasksMutation();
+	const queryClient = useQueryClient();
+
 	const saveSelectedTasks = useCallback(async () => {
 		const { aiPreviewTasks } = useAiPreviewStore.getState();
 		const selectedTasks = aiPreviewTasks.filter((t) => t.selected);
@@ -334,19 +337,12 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 		setIsLoading(true);
 		console.log("selectedTasks", selectedTasks);
 		try {
-			// Use helper to prepare payload
-			// Note: prepareTasksForSave generates CreateTaskParams. syncTasks expects SyncTaskDto-like structure.
-			// However, useTodoStore.syncTasks handles the payload.
-			// Let's manually construct payload to be safe and consistent with useAiPreviewStore logic for now,
-			// or use `prepareTasksForSave` if we were using separate create/update endpoints.
-			// Since we use `syncTasks`, we need a uniform list.
-
 			const syncPayload = selectedTasks.map(toSyncTask);
-
 			console.log("syncPayload", syncPayload);
-			const result = await useTodoStore.getState().syncTasks(syncPayload);
 
+			const result = await syncTasks(syncPayload);
 			console.log("result", result);
+
 			if (result.success) {
 				setMessages((prev) => [
 					...prev,
@@ -362,8 +358,8 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 				clearAiPreviewTasks();
 				setIsTaskListExpanded(false);
 
-				// 念の為リストを再取得（完全同期）
-				await fetchTaskLists();
+				// キャッシュの無効化（リストビューの更新）
+				queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
 			} else {
 				setMessages((prev) => [
 					...prev,
@@ -387,7 +383,7 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 		} finally {
 			setIsLoading(false);
 		}
-	}, [fetchTaskLists, clearAiPreviewTasks, setAiPreviewTasks]);
+	}, [clearAiPreviewTasks, setAiPreviewTasks, syncTasks, queryClient]);
 
 	// AIにプロンプトを送信
 	const sendMessage = useCallback(async () => {

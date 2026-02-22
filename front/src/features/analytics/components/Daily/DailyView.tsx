@@ -1,6 +1,6 @@
 import { formatISO, startOfDay } from "date-fns";
-import { useEffect, useMemo } from "react";
-import { useAnalyticsStore } from "@/features/analytics/stores/useAnalyticsStore";
+import { useMemo } from "react";
+import { useDailyAnalyticsQuery } from "@/features/analytics/queries/useAnalyticsQueries";
 import type {
 	GroupedTaskSummary,
 	TimelineSession,
@@ -16,13 +16,7 @@ export default function DailyView() {
 	const today = new Date();
 	const dateStr = formatISO(startOfDay(today));
 
-	const { dailyData, isLoading, fetchDailyAnalytics, updateDailyTaskStatus } =
-		useAnalyticsStore();
-
-	useEffect(() => {
-		fetchDailyAnalytics(dateStr);
-	}, [dateStr, fetchDailyAnalytics]);
-
+	const { data: dailyData, isLoading } = useDailyAnalyticsQuery(dateStr);
 	const data = dailyData;
 
 	// Map API response to TimelineSession
@@ -114,7 +108,6 @@ export default function DailyView() {
 					<AnalyticsTaskList
 						data={taskListGroups}
 						isLoading={isLoading}
-						onStatusChange={updateDailyTaskStatus}
 						title="Daily Tasks"
 					/>
 				</div>

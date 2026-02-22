@@ -13,13 +13,21 @@ import withDragAndDrop, {
 import { Calendar as MiniCalendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import type { Task } from "@/features/todo/types";
-import { useTodoStore } from "@/store/useTodoStore";
+import type {
+	CreateTaskParams,
+	UpdateTaskParams,
+} from "@/features/task/api/taskApi";
+import {
+	useCreateTaskMutation,
+	useUpdateTaskMutation,
+} from "@/features/task/queries/task/useTaskMutations";
+import { useTaskListsQuery } from "@/features/task/queries/task/useTaskQueries";
+import type { Task } from "@/features/task/types";
 import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "./calendar.css";
 
-import { TaskDetailPanel } from "@/features/todo/components/detail-panel/TaskDetailPanel";
+import { TaskDetailPanel } from "@/features/task/components/detail-panel/TaskDetailPanel";
 import ScheduleView from "./ScheduleView";
 
 // Configure date-fns localizer for react-big-calendar
@@ -71,12 +79,32 @@ export default function CalendarView() {
 	);
 	const newEventInputRef = useRef<HTMLInputElement>(null);
 
-	const allTasks = useTodoStore((state) => state.allTasks);
-	const taskLists = useTodoStore((state) => state.taskLists);
-	const fetchTaskLists = useTodoStore((state) => state.fetchTaskLists);
-	const updateTask = useTodoStore((state) => state.updateTask);
-	const createTask = useTodoStore((state) => state.createTask);
-	const loading = useTodoStore((state) => state.loading);
+	// Fetch task lists using TanStack Query
+	const { data: taskLists = [], isLoading: isTasksLoading } =
+		useTaskListsQuery();
+	const allTasks = useMemo(
+		() => taskLists.flatMap((list) => list.tasks || []),
+		[taskLists],
+	);
+
+	// Mutations
+	const { mutateAsync: updateTaskMutation } = useUpdateTaskMutation();
+	const { mutateAsync: createTaskMutation } = useCreateTaskMutation();
+
+	// Wrappers for mutations
+	const updateTask = useCallback(
+		async (id: number, updates: UpdateTaskParams) => {
+			return updateTaskMutation({ taskId: id, updates });
+		},
+		[updateTaskMutation],
+	);
+
+	const createTask = useCallback(
+		async (params: CreateTaskParams) => {
+			return createTaskMutation(params);
+		},
+		[createTaskMutation],
+	);
 
 	// Get Inbox list for new tasks
 	const inboxList = useMemo(
@@ -94,13 +122,6 @@ export default function CalendarView() {
 		}),
 		[],
 	);
-
-	// Fetch tasks on mount
-	useEffect(() => {
-		if (allTasks.length === 0) {
-			fetchTaskLists();
-		}
-	}, [fetchTaskLists, allTasks.length]);
 
 	// Focus input when new event is created
 	useEffect(() => {
@@ -417,7 +438,7 @@ export default function CalendarView() {
 
 			{/* Main Calendar Area */}
 			<div className="flex-1 p-4 overflow-auto">
-				{loading ? (
+				{isTasksLoading ? (
 					<LoadingSpinner size="lg" />
 				) : (
 					<DragAndDropCalendar

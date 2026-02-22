@@ -1,6 +1,6 @@
 import { endOfMonth, format, startOfMonth, startOfToday } from "date-fns";
-import { useEffect, useMemo } from "react";
-import { useAnalyticsStore } from "@/features/analytics/stores/useAnalyticsStore";
+import { useMemo } from "react";
+import { useMonthlyAnalyticsQuery } from "@/features/analytics/queries/useAnalyticsQueries";
 import type {
 	CategoryFocusTime,
 	DayActivity,
@@ -24,12 +24,8 @@ export default function MonthlyView() {
 	// For API we need yyyy-MM
 	const apiMonthParam = format(today, "yyyy-MM");
 
-	const { monthlyData, isLoading, fetchMonthlyAnalytics } = useAnalyticsStore();
-
-	useEffect(() => {
-		fetchMonthlyAnalytics(apiMonthParam);
-	}, [fetchMonthlyAnalytics, apiMonthParam]);
-
+	const { data: monthlyData, isLoading } =
+		useMonthlyAnalyticsQuery(apiMonthParam);
 	const data = monthlyData;
 
 	// Prepare data for EstimationAccuracyCard

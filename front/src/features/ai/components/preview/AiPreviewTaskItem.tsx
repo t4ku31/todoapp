@@ -1,18 +1,18 @@
 import { memo } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { ParsedTask } from "@/features/ai/types";
-import { AddSubtaskButton } from "@/features/todo/components/ui/AddSubtaskButton";
-import { CategorySelect } from "@/features/todo/components/ui/CategorySelect";
-import { EditableDate } from "@/features/todo/components/ui/EditableDate";
-import { EditableDescription } from "@/features/todo/components/ui/EditableDescription";
-import { EditableTitle } from "@/features/todo/components/ui/EditableTitle";
-import { PomodoroInput } from "@/features/todo/components/ui/PomodoroInput";
-import { TaskItemSubtaskList } from "@/features/todo/components/ui/TaskItemSubtaskList";
-import { TaskListSelector } from "@/features/todo/components/ui/TaskListSelector";
-import type { Subtask } from "@/features/todo/types";
+import { AddSubtaskButton } from "@/features/task/components/ui/AddSubtaskButton";
+import { CategorySelect } from "@/features/task/components/ui/CategorySelect";
+import { EditableDate } from "@/features/task/components/ui/EditableDate";
+import { EditableDescription } from "@/features/task/components/ui/EditableDescription";
+import { EditableTitle } from "@/features/task/components/ui/EditableTitle";
+import { PomodoroInput } from "@/features/task/components/ui/PomodoroInput";
+import { TaskItemSubtaskList } from "@/features/task/components/ui/TaskItemSubtaskList";
+import { TaskListSelector } from "@/features/task/components/ui/TaskListSelector";
+import { useCategoriesQuery } from "@/features/task/queries/category/useCategoryQueries";
+import type { Subtask } from "@/features/task/types";
+import { useTaskListsQuery } from "@/features/todo/queries/useTaskQueries";
 import { cn } from "@/lib/utils";
-import { useCategoryStore } from "@/store/useCategoryStore";
-import { useTodoStore } from "@/store/useTodoStore";
 import { isExistingTask } from "../../utils/aiUtils";
 import { AiStatusBadge } from "./AiStatusBadge";
 
@@ -34,8 +34,8 @@ export const AiPreviewTaskItem = memo(function AiPreviewTaskItem({
 	onToggleSelection,
 }: AiPreviewTaskItemProps) {
 	const isExisting = isExistingTask(task);
-	const { categories } = useCategoryStore();
-	const { taskLists } = useTodoStore();
+	const { data: categories = [] } = useCategoriesQuery();
+	const { data: taskLists = [] } = useTaskListsQuery();
 
 	// Subtasks are now always Subtask[] (normalized at entry point)
 

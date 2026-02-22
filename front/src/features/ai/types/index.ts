@@ -1,5 +1,5 @@
-import type { Subtask, Task } from "@/features/todo/types";
-import type { SerializedRecurrenceConfig } from "@/features/todo/utils/recurrenceUtils";
+import type { Subtask, Task } from "@/features/task/types";
+import type { SerializedRecurrenceConfig } from "@/features/task/utils/recurrenceUtils";
 
 // SyncTask is for Gemini API communication - uses string dates
 export interface SyncTask {

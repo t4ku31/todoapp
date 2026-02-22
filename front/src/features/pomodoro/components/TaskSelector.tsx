@@ -1,6 +1,6 @@
 import { Check, ChevronDown } from "lucide-react";
-import { CompletedSection } from "@/features/todo/components/ui/CompletedSection";
-import type { Task } from "@/features/todo/types";
+import { CompletedSection } from "@/features/task/components/ui/CompletedSection";
+import type { Task } from "@/features/task/types";
 
 interface TaskSelectorProps {
 	isOpen: boolean;
