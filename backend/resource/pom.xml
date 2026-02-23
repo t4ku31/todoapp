@@ -149,7 +149,7 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
-					<mainClass>com.todoapp.resource.App1Application</mainClass>
+					<mainClass>com.todoapp.resource.TodoAppApplication</mainClass>
 				</configuration>
 			</plugin>
 		</plugins>
