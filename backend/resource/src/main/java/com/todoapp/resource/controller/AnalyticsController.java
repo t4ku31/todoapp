@@ -67,13 +67,15 @@ public class AnalyticsController {
      */
     @GetMapping("/efficiency/range")
     public ResponseEntity<AnalyticsDto.EfficiencyStats> getEfficiencyStats(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime endDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
-        log.info("Getting efficiency stats for user {} from {} to {}", userId, startDate, endDate);
+        OffsetDateTime startDateTime = startDate.atStartOfDay().atOffset(java.time.ZoneOffset.UTC);
+        OffsetDateTime endDateTime = endDate.plusDays(1).atStartOfDay().atOffset(java.time.ZoneOffset.UTC);
+        log.info("Getting efficiency stats for user {} from {} to {}", userId, startDateTime, endDateTime);
 
-        AnalyticsDto.EfficiencyStats stats = analyticsService.getEfficiencyStats(userId, startDate, endDate);
+        AnalyticsDto.EfficiencyStats stats = analyticsService.getEfficiencyStats(userId, startDateTime, endDateTime);
         return ResponseEntity.ok(stats);
     }
 
