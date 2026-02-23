@@ -3,7 +3,6 @@ import {
 	CheckSquare,
 	Home,
 	LogOut,
-	Presentation,
 	Settings,
 	TrendingUp,
 } from "lucide-react";
@@ -30,7 +29,6 @@ export function AppSidebar({ className, ...props }: AppSidebarProps) {
 		{ icon: CheckSquare, path: "/tasks", label: "My Tasks" },
 		{ icon: Calendar, path: "/calendar", label: "Calendar" },
 		{ icon: TrendingUp, path: "/analytics", label: "Analytics" }, // Adding placeholder for graph
-		{ icon: Presentation, path: "/presentation", label: "Presentation" },
 		{ icon: Settings, path: "/settings", label: "Settings" }, // Adding placeholder for settings
 	];
 

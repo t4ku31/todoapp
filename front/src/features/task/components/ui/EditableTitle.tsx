@@ -88,6 +88,9 @@ export function EditableTitle({
 		);
 	}
 
+	const displayTitle =
+		title.length > 50 ? `${title.substring(0, 50)}...` : title;
+
 	return (
 		<button
 			type="button"
@@ -95,7 +98,7 @@ export function EditableTitle({
 			onClick={() => setIsEditing(true)}
 			onPointerDown={(e) => e.stopPropagation()}
 		>
-			<p className={`font-medium ${className || ""}`}>{title}</p>
+			<p className={`font-medium ${className || ""}`}>{displayTitle}</p>
 			<Pencil className="w-4 h-4 text-gray-400 transition-opacity opacity-0 group-hover:opacity-100" />
 		</button>
 	);

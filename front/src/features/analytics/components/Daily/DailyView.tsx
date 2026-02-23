@@ -18,7 +18,6 @@ export default function DailyView() {
 
 	const { data: dailyData, isLoading } = useDailyAnalyticsQuery(dateStr);
 	const data = dailyData;
-
 	// Map API response to TimelineSession
 	const sessions: TimelineSession[] = useMemo(() => {
 		if (!data?.focusSessions) return [];
@@ -38,28 +37,32 @@ export default function DailyView() {
 	// Transform DailyTaskSummary[] to GroupedTaskSummary[] for AnalyticsTaskList
 	const taskListGroups: GroupedTaskSummary[] = useMemo(() => {
 		if (!data?.taskSummaries) return [];
-		return data.taskSummaries.map((task) => ({
-			parentTaskId: task.taskId,
-			title: task.taskTitle,
-			categoryName: task.categoryName,
-			categoryColor: task.categoryColor,
-			totalFocusMinutes: task.focusMinutes,
-			completedCount: task.completed ? 1 : 0,
-			totalCount: 1,
-			recurring: false,
-			children: [
-				{
-					taskId: task.taskId,
-					taskTitle: task.taskTitle,
-					status: task.status,
-					completed: task.completed,
-					focusMinutes: task.focusMinutes,
-					estimatedMinutes: task.estimatedMinutes,
-					progressPercentage: task.progressPercentage,
-					startDate: new Date(dateStr), // Add current date for daily view
-				},
-			],
-		}));
+		return data.taskSummaries.map((task) => {
+			// Use status as primary source of truth for completion
+			const isCompleted = task.completed || task.status === "COMPLETED";
+			return {
+				parentTaskId: task.taskId,
+				title: task.taskTitle,
+				categoryName: task.categoryName,
+				categoryColor: task.categoryColor,
+				totalFocusMinutes: task.focusMinutes,
+				completedCount: isCompleted ? 1 : 0,
+				totalCount: 1,
+				recurring: false,
+				children: [
+					{
+						taskId: task.taskId,
+						taskTitle: task.taskTitle,
+						status: task.status,
+						completed: isCompleted,
+						focusMinutes: task.focusMinutes,
+						estimatedMinutes: task.estimatedMinutes,
+						progressPercentage: task.progressPercentage,
+						startDate: new Date(dateStr), // Add current date for daily view
+					},
+				],
+			};
+		});
 	}, [data?.taskSummaries, dateStr]);
 
 	// Estimation Data Prep
