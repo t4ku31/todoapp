@@ -1,12 +1,3 @@
-import {
-	Calendar,
-	CheckSquare,
-	Home,
-	LogOut,
-	Settings,
-	TrendingUp,
-} from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
 import Logo from "@/components/Logo";
 import {
 	Sidebar,
@@ -17,6 +8,16 @@ import {
 } from "@/components/ui/sidebar";
 import { env } from "@/config/env";
 import { cn } from "@/lib/utils";
+import {
+	Calendar,
+	CheckSquare,
+	Home,
+	LogOut,
+	Presentation,
+	Settings,
+	TrendingUp,
+} from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 
 type AppSidebarProps = React.HTMLAttributes<HTMLDivElement>;
 
@@ -28,8 +29,8 @@ export function AppSidebar({ className, ...props }: AppSidebarProps) {
 		{ icon: Home, path: "/home", label: "Home" },
 		{ icon: CheckSquare, path: "/tasks", label: "My Tasks" },
 		{ icon: Calendar, path: "/calendar", label: "Calendar" },
-		{ icon: TrendingUp, path: "/analytics", label: "Analytics" }, // Adding placeholder for graph
-		{ icon: Settings, path: "/settings", label: "Settings" }, // Adding placeholder for settings
+		{ icon: TrendingUp, path: "/analytics", label: "Analytics" },
+		{ icon: Settings, path: "/settings", label: "Settings" },
 	];
 
 	return (
@@ -73,6 +74,34 @@ export function AppSidebar({ className, ...props }: AppSidebarProps) {
 				</SidebarMenu>
 
 				<div className="mt-auto pb-4 flex flex-col items-center gap-4 w-full">
+					{/* Divider */}
+					<div className="w-12 h-px bg-slate-200/60 mb-2" />
+
+					{/* Presentation Button - Differentiated */}
+					<SidebarMenuButton
+						asChild
+						className={cn(
+							"h-14 w-14 rounded-2xl flex items-center justify-center transition-all duration-300",
+							isActive("/presentation")
+								? "bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-orange-500/20 scale-110"
+								: "bg-amber-50/50 text-amber-600 border border-amber-100/50 hover:bg-amber-100 hover:scale-105",
+						)}
+					>
+						<Link
+							to="/presentation"
+							className="flex items-center justify-center"
+							title="Presentation"
+						>
+							<Presentation
+								className={cn(
+									"h-6 w-6",
+									isActive("/presentation") ? "text-white" : "text-amber-500",
+								)}
+								strokeWidth={2}
+							/>
+						</Link>
+					</SidebarMenuButton>
+
 					{/* Logout Button */}
 					<SidebarMenuButton
 						asChild
