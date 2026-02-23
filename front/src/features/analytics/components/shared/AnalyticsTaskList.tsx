@@ -54,7 +54,6 @@ export function AnalyticsTaskList({
 	const handleStatusChange = async (taskId: number, checked: boolean) => {
 		// Store previous state for rollback
 		const prevGroups = localGroups;
-
 		// Optimistic update - local component state
 		setLocalGroups((prev) =>
 			prev.map((group) => {
@@ -74,7 +73,6 @@ export function AnalyticsTaskList({
 					...group,
 					children: updatedChildren,
 					completedCount,
-					// Update progress percentage if needed, though mostly visual
 				};
 			}),
 		);
@@ -158,17 +156,17 @@ export function AnalyticsTaskList({
 						const isExpanded = expandedIds.has(group.parentTaskId);
 						const isFullyCompleted =
 							group.completedCount === group.totalCount && group.totalCount > 0;
-						// Show grouping UI for recurring tasks
-						const showGroupingUI = group.recurring;
+						// Show expand/collapse UI when there are multiple children
+						const hasMultipleChildren = group.children.length > 1;
 
 						return (
 							<div key={group.parentTaskId} className="mb-1">
 								{/* Group Header Row */}
 								<div
 									className={`flex items-center gap-2 py-2 px-2 rounded-lg transition-colors ${
-										showGroupingUI ? "cursor-pointer hover:bg-gray-50" : ""
+										hasMultipleChildren ? "cursor-pointer hover:bg-gray-50" : ""
 									}`}
-									{...(showGroupingUI
+									{...(hasMultipleChildren
 										? {
 												role: "button",
 												tabIndex: 0,
@@ -183,7 +181,7 @@ export function AnalyticsTaskList({
 										: {})}
 								>
 									{/* Expand/Collapse Icon or Checkbox */}
-									{showGroupingUI ? (
+									{hasMultipleChildren ? (
 										<button
 											type="button"
 											className="text-gray-400 hover:text-gray-600"
@@ -199,16 +197,14 @@ export function AnalyticsTaskList({
 											)}
 										</button>
 									) : (
-										// Non-recurring: Show checkbox directly
+										// Single child: Show checkbox directly
 										<Checkbox
 											checked={isFullyCompleted}
 											onCheckedChange={(checked) => {
-												if (group.children.length === 1) {
-													handleStatusChange(
-														group.children[0].taskId,
-														checked as boolean,
-													);
-												}
+												handleStatusChange(
+													group.children[0].taskId,
+													checked as boolean,
+												);
 											}}
 											style={{
 												backgroundColor: isFullyCompleted
@@ -226,7 +222,7 @@ export function AnalyticsTaskList({
 									<div className="flex-1 min-w-0">
 										<div className="flex items-center justify-between gap-2">
 											<div className="flex items-center gap-2 min-w-0">
-												{showGroupingUI && (
+												{group.recurring && (
 													<Repeat
 														size={12}
 														className="text-blue-500 shrink-0"
@@ -241,7 +237,7 @@ export function AnalyticsTaskList({
 												>
 													{group.title}
 												</span>
-												{showGroupingUI && (
+												{hasMultipleChildren && (
 													<Badge
 														variant="secondary"
 														className="text-[10px] px-1.5 py-0 shrink-0"
@@ -268,7 +264,7 @@ export function AnalyticsTaskList({
 								</div>
 
 								{/* Expanded Children */}
-								{showGroupingUI && isExpanded && (
+								{hasMultipleChildren && isExpanded && (
 									<div className="ml-6 pl-2 border-l-2 border-gray-200 space-y-1 mt-1">
 										{group.children.map((child) => (
 											<div
