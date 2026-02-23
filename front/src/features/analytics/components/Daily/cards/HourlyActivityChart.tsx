@@ -1,3 +1,6 @@
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import type { TimelineSession } from "@/features/analytics/types";
 import {
 	Bar,
 	BarChart,
@@ -7,9 +10,6 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import type { TimelineSession } from "@/features/analytics/types";
 
 interface HourlyActivityChartProps {
 	sessions: TimelineSession[];
@@ -50,7 +50,7 @@ export function HourlyActivityChart({ sessions }: HourlyActivityChartProps) {
 		<Card className="flex flex-col h-full bg-white shadow-sm border-gray-100 p-4">
 			<div className="flex justify-between items-center mb-4">
 				<h3 className="text-sm font-semibold text-gray-600">
-					Hourly Focus Distribution
+					Focus Distribution
 				</h3>
 				<Badge variant="outline" className="text-xs">
 					Minutes / Hour
