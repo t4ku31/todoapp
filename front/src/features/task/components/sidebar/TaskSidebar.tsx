@@ -5,6 +5,7 @@ import {
 	Inbox,
 	MoreHorizontal,
 	Pencil,
+	Presentation,
 	Search,
 	Tag,
 	Trash2,
@@ -341,6 +342,11 @@ export function TaskSidebar({ className }: TaskSidebarProps) {
 					path="/tasks/completed"
 				/>
 				<SidebarNavItem icon={Trash2} label="ゴミ箱" path="/tasks/trash" />
+				<SidebarNavItem
+					icon={Presentation}
+					label="プレゼン資料"
+					path="/presentation"
+				/>
 			</div>
 
 			{/* Dialogs */}
