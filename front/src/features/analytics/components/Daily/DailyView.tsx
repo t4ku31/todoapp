@@ -1,10 +1,10 @@
-import { formatISO, startOfDay } from "date-fns";
-import { useMemo } from "react";
 import { useDailyAnalyticsQuery } from "@/features/analytics/queries/useAnalyticsQueries";
 import type {
 	GroupedTaskSummary,
 	TimelineSession,
 } from "@/features/analytics/types";
+import { formatISO, startOfDay } from "date-fns";
+import { useMemo } from "react";
 // Shared Cards (Unified UX)
 import { AnalyticsKpiGrid } from "../shared/AnalyticsKpiGrid";
 import { AnalyticsTaskList } from "../shared/AnalyticsTaskList";
@@ -80,7 +80,7 @@ export default function DailyView() {
 			{/* Top Row: KPI Cards (Consistent across all views) */}
 			<AnalyticsKpiGrid
 				isLoading={isLoading}
-				focusMinutes={data?.kpi.totalActualMinutes ?? 0}
+				focusMinutes={data?.kpi.totalFocusMinutes ?? 0}
 				focusComparisonDiffMinutes={data?.kpi.focusComparisonDiffMinutes}
 				efficiencyScore={data?.kpi.efficiencyScore ?? 0}
 				rhythmQuality={data?.kpi.rhythmQuality}
