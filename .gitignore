@@ -18,8 +18,14 @@ Thumbs.db
 
 # Logs
 *.log
-bff.log
-resource.log
+
+# Temp files
+nohup.out
+cookies.txt
+bash
+
+# Node
+node_modules/
 
 # Agent reports
 .agent/reports/

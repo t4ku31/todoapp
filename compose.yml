@@ -45,7 +45,7 @@ services:
   resource-server:
     container_name: resource-server
     build:
-      context: ./servlet/resource
+      context: ./backend/resource
       dockerfile: Dockerfile
     depends_on:
       db:
@@ -69,7 +69,7 @@ services:
   bff-server:
     container_name: bff-server
     build:
-      context: ./servlet/bff
+      context: ./backend/bff
       dockerfile: Dockerfile
     depends_on:
       resource-server:
