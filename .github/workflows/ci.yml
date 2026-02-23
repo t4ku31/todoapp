@@ -21,13 +21,31 @@ jobs:
         distribution: 'temurin'
         cache: maven
     
-    - name: Build with Maven
+    - name: Run verify
       working-directory: ./backend/resource
-      run: mvn clean compile
+      run: mvn verify
     
-    - name: Run tests
-      working-directory: ./backend/resource
-      run: mvn test
+  
+
+  backend-bff-server:
+    name: Build BFF Server
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+    
+    - name: Run verify
+      working-directory: ./backend/bff
+      run: mvn verify
+    
+  
 
   frontend:
     name: Build Frontend
@@ -46,6 +64,14 @@ jobs:
     - name: Install dependencies
       working-directory: ./front
       run: npm ci
+    
+    - name: Type check
+      working-directory: ./front
+      run: npx tsc --noEmit
+      
+    - name: Lint and Format
+      working-directory: ./front
+      run: npx biome check --write .
     
     - name: Build
       working-directory: ./front
