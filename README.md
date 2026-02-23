@@ -40,7 +40,7 @@ A full-stack todo application with AI-powered task management.
 ```
 todo-app/
 ├── front/                 # React frontend (Vite + TypeScript)
-├── servlet/
+├── backend/
 │   ├── bff/              # Backend for Frontend (Spring Boot)
 │   └── resource/         # Resource Server (Spring Boot + Spring AI)
 ├── docker/               # Docker configuration
@@ -51,11 +51,12 @@ todo-app/
 ## 🛠️ Tech Stack
 
 ### Frontend
-- React 18 + TypeScript
-- Vite
-- TailwindCSS
-- React Router
-- Zustand (State Management)
+- React 19 + TypeScript
+- Vite 7
+- TailwindCSS 4
+- React Router 7
+- TanStack React Query (Server State)
+- Zustand (Client State)
 
 ### Backend
 - Spring Boot 3.5.5
@@ -96,7 +97,7 @@ npm run dev
 
 **Backend only:**
 ```bash
-cd servlet/resource
+cd backend/resource
 ./mvnw spring-boot:run
 ```
 
@@ -104,7 +105,7 @@ cd servlet/resource
 
 Migrations are automatically applied on startup using Flyway.
 
-Migration files: `servlet/resource/src/main/resources/db/migration/`
+Migration files: `backend/resource/src/main/resources/db/migration/`
 
 ## 🚢 Deployment
 

@@ -1,5 +1,5 @@
+import { Eye, EyeOff } from "lucide-react";
 import * as React from "react";
-import { VscEye, VscEyeClosed } from "react-icons/vsc";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 export function PasswordInput({
@@ -21,7 +21,7 @@ export function PasswordInput({
 				onClick={() => setVisible((v) => !v)}
 				className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground"
 			>
-				{visible ? <VscEye /> : <VscEyeClosed />}
+				{visible ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
 			</button>
 		</div>
 	);
