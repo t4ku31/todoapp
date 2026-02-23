@@ -1,7 +1,3 @@
-import AppLayout from "@/components/layout/AppLayout";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Toaster } from "@/components/ui/sonner";
-import { env } from "@/config/env";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { lazy, StrictMode, Suspense, useEffect } from "react";
 import { createRoot } from "react-dom/client";
@@ -11,6 +7,10 @@ import {
 	BrowserRouter as Router,
 	Routes,
 } from "react-router-dom";
+import AppLayout from "@/components/layout/AppLayout";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Toaster } from "@/components/ui/sonner";
+import { env } from "@/config/env";
 import "./index.css";
 
 const Analytics = lazy(() => import("./pages/analytics/index"));
@@ -19,6 +19,7 @@ const FocusPage = lazy(() => import("./pages/focus/index"));
 const HomePage = lazy(() => import("./pages/home/index"));
 const Settings = lazy(() => import("./pages/settings/index"));
 const Todo = lazy(() => import("./pages/todo/index"));
+const Presentation = lazy(() => import("./pages/presentation/index"));
 
 const AuthRedirect = () => {
 	useEffect(() => {
@@ -38,6 +39,7 @@ function App() {
 				<Routes>
 					<Route path="/auth" element={<AuthRedirect />} />
 					<Route path="/focus" element={<FocusPage />} />
+					<Route path="/presentation" element={<Presentation />} />
 
 					<Route element={<AppLayout />}>
 						<Route path="/home" element={<HomePage />} />
