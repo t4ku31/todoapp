@@ -1,5 +1,9 @@
+import AppLayout from "@/components/layout/AppLayout";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Toaster } from "@/components/ui/sonner";
+import { env } from "@/config/env";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { StrictMode } from "react";
+import { lazy, StrictMode, Suspense, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import {
 	Navigate,
@@ -7,37 +11,47 @@ import {
 	BrowserRouter as Router,
 	Routes,
 } from "react-router-dom";
-import AppLayout from "@/components/layout/AppLayout";
-import { Toaster } from "@/components/ui/sonner";
 import "./index.css";
 
-import Analytics from "./pages/analytics/index";
-import CalendarPage from "./pages/calendar/index";
-import FocusPage from "./pages/focus/index";
-import HomePage from "./pages/home/index";
-import Login from "./pages/login/index";
-import Settings from "./pages/settings/index";
-import Todo from "./pages/todo/index";
+const Analytics = lazy(() => import("./pages/analytics/index"));
+const CalendarPage = lazy(() => import("./pages/calendar/index"));
+const FocusPage = lazy(() => import("./pages/focus/index"));
+const HomePage = lazy(() => import("./pages/home/index"));
+const Settings = lazy(() => import("./pages/settings/index"));
+const Todo = lazy(() => import("./pages/todo/index"));
+
+const AuthRedirect = () => {
+	useEffect(() => {
+		window.location.href = `${env.bffApiBaseUrl}/oauth2/authorization/bff-client`;
+	}, []);
+	return (
+		<div className="flex items-center justify-center min-h-screen">
+			<LoadingSpinner size="lg" />
+		</div>
+	);
+};
 
 function App() {
 	return (
 		<Router>
-			<Routes>
-				<Route path="/auth" element={<Login />} />
-				<Route path="/focus" element={<FocusPage />} />
+			<Suspense fallback={<LoadingSpinner size="lg" />}>
+				<Routes>
+					<Route path="/auth" element={<AuthRedirect />} />
+					<Route path="/focus" element={<FocusPage />} />
 
-				<Route element={<AppLayout />}>
-					<Route path="/home" element={<HomePage />} />
-					<Route path="/tasks/*" element={<Todo />} />
-					<Route path="/calendar" element={<CalendarPage />} />
-					<Route path="/analytics" element={<Analytics />} />
-					<Route path="/settings" element={<Settings />} />
-					{/* Keep /todo as alias or redirect for backward compatibility if needed, or just redirect */}
-					<Route path="/todo" element={<Navigate to="/tasks" replace />} />
-				</Route>
+					<Route element={<AppLayout />}>
+						<Route path="/home" element={<HomePage />} />
+						<Route path="/tasks/*" element={<Todo />} />
+						<Route path="/calendar" element={<CalendarPage />} />
+						<Route path="/analytics" element={<Analytics />} />
+						<Route path="/settings" element={<Settings />} />
+						{/* Keep /todo as alias or redirect for backward compatibility if needed, or just redirect */}
+						<Route path="/todo" element={<Navigate to="/tasks" replace />} />
+					</Route>
 
-				<Route path="/" element={<Navigate to="/auth" replace />} />
-			</Routes>
+					<Route path="/" element={<Navigate to="/auth" replace />} />
+				</Routes>
+			</Suspense>
 		</Router>
 	);
 }
