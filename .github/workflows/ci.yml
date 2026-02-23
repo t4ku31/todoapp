@@ -21,15 +21,13 @@ jobs:
         distribution: 'temurin'
         cache: maven
     
-    - name: Build with Maven
-      working-directory: ./servlet/resource
-      run: mvn clean compile
+    - name: Run verify
+      working-directory: ./backend/resource
+      run: mvn verify
     
-    - name: Run tests
-      working-directory: ./servlet/resource
-      run: mvn test
+  
 
-  backend-bff:
+  backend-bff-server:
     name: Build BFF Server
     runs-on: ubuntu-latest
     
@@ -44,12 +42,14 @@ jobs:
         cache: maven
     
     - name: Build with Maven
-      working-directory: ./servlet/bff
+      working-directory: ./backend/bff
       run: mvn clean compile
     
-    - name: Run tests
-      working-directory: ./servlet/bff
-      run: mvn test
+    - name: Run verify
+      working-directory: ./backend/bff
+      run: mvn verify
+    
+  
 
   frontend:
     name: Build Frontend
@@ -68,6 +68,14 @@ jobs:
     - name: Install dependencies
       working-directory: ./front
       run: npm ci
+    
+    - name: Type check
+      working-directory: ./front
+      run: npx tsc --noEmit
+      
+    - name: Lint and Format
+      working-directory: ./front
+      run: npx biome check --write .
     
     - name: Build
       working-directory: ./front
