@@ -25,13 +25,10 @@ This guide explains how to set up environment variables for local development an
 | File | Purpose | Committed to Git? |
 |------|---------|-------------------|
 | `.env.example` | Template for team members | ✅ Yes |
-| `.env` | Local development secrets | ⚠️ **Currently tracked - needs fixing!** |
+| `.env` | Local development secrets | ❌ No (in .gitignore) |
 | `front/.env.example` | Frontend template | ✅ Yes |
 | `front/.env.development` | Frontend dev config | ❌ No (in .gitignore) |
 | `front/.env.production` | Frontend prod config | ❌ No (in .gitignore) |
-
-> [!WARNING]
-> **Security Issue Detected**: The `.env` file is currently tracked by Git. See the "Fixing Git Tracking" section below to resolve this.
 
 ## 🔐 Security Best Practices
 
@@ -45,31 +42,6 @@ This guide explains how to set up environment variables for local development an
 - Commit `.env` files with real API keys
 - Share API keys in chat/email
 - Hard-code secrets in source code
-
-## 🔧 Fixing Git Tracking (If .env was committed)
-
-If `.env` is currently tracked by Git (check with `git ls-files .env`):
-
-1. **Regenerate your API key** (the old one may be exposed):
-   - Visit: https://aistudio.google.com/app/apikey
-   - Delete the old key
-   - Create a new key
-   - Update your local `.env` file
-
-2. **Remove .env from Git tracking**:
-   ```bash
-   git rm --cached .env
-   git commit -m "Remove .env from Git tracking"
-   ```
-
-3. **Verify .env is now ignored**:
-   ```bash
-   git status --ignored | grep .env
-   # Should show: .env (as ignored)
-   ```
-
-> [!CAUTION]
-> The API key in your Git history is still exposed. For production projects, consider using `git filter-branch` or BFG Repo-Cleaner to remove it from history.
 
 ## 🚀 Deployment (Railway)
 
