@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import type { TaskList } from "@/features/task/types";
 import { cn } from "@/lib/utils";
 import { useAiChat } from "../hooks/useAiChat";
@@ -35,6 +36,16 @@ export function AiChatPanel(props: AiChatPanelProps) {
 		handleClose,
 		sendMessage,
 	} = useAiChat(props);
+	const [isContextExpanded, setIsContextExpanded] = useState(true);
+	const prevRowsRef = useRef(1);
+
+	const handleRowsChange = (rows: number) => {
+		// 行数が 5行以上に「増えた」瞬間にのみ自動で閉じる
+		if (rows >= 5 && prevRowsRef.current < 5 && isContextExpanded) {
+			setIsContextExpanded(false);
+		}
+		prevRowsRef.current = rows;
+	};
 
 	if (!isOpen) return null;
 
@@ -81,7 +92,10 @@ export function AiChatPanel(props: AiChatPanelProps) {
 					<div className="px-4 pb-4">
 						<div className="flex flex-col bg-white border border-gray-200 rounded-xl shadow-sm focus-within:ring-[2px] focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all duration-200 overflow-hidden">
 							<div className="pt-2">
-								<AiContextPanel />
+								<AiContextPanel
+									isExpanded={isContextExpanded}
+									setIsExpanded={setIsContextExpanded}
+								/>
 							</div>
 							<div className="border-t border-gray-200 mx-2" />
 							<AiChatInput
@@ -89,6 +103,7 @@ export function AiChatPanel(props: AiChatPanelProps) {
 								onInputChange={setInput}
 								onSend={sendMessage}
 								isLoading={isLoading}
+								onRowsChange={handleRowsChange}
 							/>
 						</div>
 					</div>

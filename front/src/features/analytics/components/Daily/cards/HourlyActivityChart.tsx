@@ -1,6 +1,3 @@
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import type { TimelineSession } from "@/features/analytics/types";
 import {
 	Bar,
 	BarChart,
@@ -10,6 +7,9 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import type { TimelineSession } from "@/features/analytics/types";
 
 interface HourlyActivityChartProps {
 	sessions: TimelineSession[];
