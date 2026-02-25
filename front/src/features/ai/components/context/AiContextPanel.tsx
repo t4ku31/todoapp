@@ -1,6 +1,5 @@
 import { useDroppable } from "@dnd-kit/core";
 import { ChevronDown, Paperclip, Plus, X } from "lucide-react";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Collapsible,
@@ -13,12 +12,17 @@ import { cn } from "@/lib/utils";
 
 interface AiContextPanelProps {
 	onAddClick?: () => void;
+	isExpanded: boolean;
+	setIsExpanded: (expanded: boolean) => void;
 }
 
-export function AiContextPanel({ onAddClick }: AiContextPanelProps) {
+export function AiContextPanel({
+	onAddClick,
+	isExpanded,
+	setIsExpanded,
+}: AiContextPanelProps) {
 	const { contextTasks, removeTask, clearContextTasks } =
 		useAiChatContextStore();
-	const [isExpanded, setIsExpanded] = useState(true);
 
 	// ドロップゾーンの設定
 	const { isOver, setNodeRef } = useDroppable({

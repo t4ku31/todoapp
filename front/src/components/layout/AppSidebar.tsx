@@ -1,13 +1,3 @@
-import Logo from "@/components/Logo";
-import {
-	Sidebar,
-	SidebarContent,
-	SidebarMenu,
-	SidebarMenuButton,
-	SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import { env } from "@/config/env";
-import { cn } from "@/lib/utils";
 import {
 	Calendar,
 	CheckSquare,
@@ -18,6 +8,16 @@ import {
 	TrendingUp,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import Logo from "@/components/Logo";
+import {
+	Sidebar,
+	SidebarContent,
+	SidebarMenu,
+	SidebarMenuButton,
+	SidebarMenuItem,
+} from "@/components/ui/sidebar";
+import { env } from "@/config/env";
+import { cn } from "@/lib/utils";
 
 type AppSidebarProps = React.HTMLAttributes<HTMLDivElement>;
 
