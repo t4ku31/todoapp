@@ -19,8 +19,9 @@ import com.todoapp.resource.model.TaskList;
 import com.todoapp.resource.model.TaskStatus;
 import com.todoapp.resource.repository.CategoryRepository;
 import com.todoapp.resource.repository.TaskListRepository;
+import com.todoapp.resource.service.domain.TaskService;
+import org.springframework.context.annotation.Lazy;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -29,11 +30,18 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class TaskListService {
 
     private final TaskListRepository taskListRepository;
     private final CategoryRepository categoryRepository;
+    private final TaskService taskService;
+
+    @Lazy
+    public TaskListService(TaskListRepository taskListRepository, CategoryRepository categoryRepository, @Lazy TaskService taskService) {
+        this.taskListRepository = taskListRepository;
+        this.categoryRepository = categoryRepository;
+        this.taskService = taskService;
+    }
 
     /**
      * Get all task lists for a specific user.
@@ -94,11 +102,93 @@ public class TaskListService {
         try {
             TaskList saved = taskListRepository.save(inbox);
             log.info("Created Inbox task list {} for user: {}", saved.getId(), userId);
+            
+            // Create tutorial tasks on first login
+            createTutorialTasks(userId);
+            
             return saved;
         } catch (DataAccessException e) {
             log.error("Failed to create Inbox for user: {}", userId, e);
             throw e;
         }
+    }
+
+    private void createTutorialTasks(String userId) {
+        log.info("Creating tutorial tasks for user: {}", userId);
+        
+        // 1. Create the Tutorial Task List
+        TaskList tutorialList = TaskList.builder()
+                .title("使い方ガイド")
+                .userId(userId)
+                .build();
+        TaskList savedTutorialList = taskListRepository.save(tutorialList);
+        Long tutorialListId = savedTutorialList.getId();
+
+        // 2. Define Subtasks for each task
+        List<com.todoapp.resource.dto.SubtaskDto.Create> todoSubtasks = List.of(
+            new com.todoapp.resource.dto.SubtaskDto.Create(null, "「＋タスクを追加」から新しいタスクを作成してみる", null, false, 0),
+            new com.todoapp.resource.dto.SubtaskDto.Create(null, "タスク名の右端にある🪄アイコンを押し、AIにタスクを生成、編集させる", null, false, 1),
+            new com.todoapp.resource.dto.SubtaskDto.Create(null, "タスクの▶️ボタンを押し、ポモドーロタイマー（25分集中）を開始する", null, false, 2),
+            new com.todoapp.resource.dto.SubtaskDto.Create(null, "タスクをクリックして詳細を開き、カテゴリや「繰り返し（定期タスク）」を設定する", null, false, 3)
+        );
+
+        List<com.todoapp.resource.dto.SubtaskDto.Create> calendarSubtasks = List.of(
+            new com.todoapp.resource.dto.SubtaskDto.Create(null, "カレンダー上でタスクをドラッグ＆ドロップして予定日を変更する", null, false, 0),
+            new com.todoapp.resource.dto.SubtaskDto.Create(null, "タスクの端をドラッグして、カレンダー上の予定時間を延ばす/縮める", null, false, 1)
+        );
+
+        List<com.todoapp.resource.dto.SubtaskDto.Create> analyticsSubtasks = List.of(
+            new com.todoapp.resource.dto.SubtaskDto.Create(null, "日別・週ごとのタスク完了数や集中時間を確認する", null, false, 0),
+            new com.todoapp.resource.dto.SubtaskDto.Create(null, "カテゴリ別の作業割合（円グラフ）を見て、時間の使い方を振り返る", null, false, 1)
+        );
+
+        List<com.todoapp.resource.dto.SubtaskDto.Create> aiChatSubtasks = List.of(
+            new com.todoapp.resource.dto.SubtaskDto.Create(null, "画面右下のチャットアイコンからAIアシスタントを開く", null, false, 0),
+            new com.todoapp.resource.dto.SubtaskDto.Create(null, "「明日の〇〇の準備タスクを追加して」と自然言語でメッセージを送り、自動でタスクを作成する", null, false, 1)
+        );
+
+        List<com.todoapp.resource.dto.SubtaskDto.Create> settingsSubtasks = List.of(
+            new com.todoapp.resource.dto.SubtaskDto.Create(null, "ポモドーロタイマーの集中時間や休憩時間をカスタマイズする", null, false, 0),
+            new com.todoapp.resource.dto.SubtaskDto.Create(null, "カテゴリの色や名前を追加・編集する", null, false, 1)
+        );
+
+        // 3. Create Tasks
+        List<TaskDto.Create> tutorialTasks = List.of(
+            TaskDto.Create.builder()
+                .title("📌 タスク管理（Todo）ページの使い方")
+                .taskListId(tutorialListId)
+                .status(TaskStatus.PENDING)
+                .subtasks(todoSubtasks)
+                .build(),
+            TaskDto.Create.builder()
+                .title("📅 カレンダーページの使い方")
+                .taskListId(tutorialListId)
+                .status(TaskStatus.PENDING)
+                .subtasks(calendarSubtasks)
+                .build(),
+            TaskDto.Create.builder()
+                .title("📊 アナリティクスページの使い方")
+                .taskListId(tutorialListId)
+                .status(TaskStatus.PENDING)
+                .subtasks(analyticsSubtasks)
+                .build(),
+            TaskDto.Create.builder()
+                .title("🤖 AIチャットの使い方")
+                .taskListId(tutorialListId)
+                .status(TaskStatus.PENDING)
+                .subtasks(aiChatSubtasks)
+                .build(),
+            TaskDto.Create.builder()
+                .title("⚙️ 設定ページの使い方")
+                .taskListId(tutorialListId)
+                .status(TaskStatus.PENDING)
+                .subtasks(settingsSubtasks)
+                .build()
+        );
+
+        // 4. Save Tasks via TaskService
+        taskService.bulkCreateTasks(tutorialTasks, userId);
+        log.info("Successfully created tutorial tasks for user: {}", userId);
     }
 
     /**

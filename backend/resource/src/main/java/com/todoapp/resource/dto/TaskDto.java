@@ -19,6 +19,7 @@ import lombok.NoArgsConstructor;
 
 public class TaskDto {
 
+        @Builder
         @Schema(name = "TaskCreate", description = "タスク作成リクエスト")
         public record Create(
                         @Schema(description = "タスクのタイトル（必須）") String title,
