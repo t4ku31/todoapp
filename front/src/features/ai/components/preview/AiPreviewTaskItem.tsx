@@ -236,8 +236,14 @@ export const AiPreviewTaskItem = memo(function AiPreviewTaskItem({
 											scheduledStartAt: date ?? undefined,
 										})
 									}
-									isRecurring={false} // Preview doesn't support manual recurrence edit yet
-									onRecurrenceChange={async () => {}}
+									isRecurring={task.isRecurring || false}
+									recurrenceRule={task.recurrenceRule}
+									onRecurrenceChange={async (_, data) => {
+										onUpdateTask(task.id, {
+											isRecurring: data.isRecurring,
+											recurrenceRule: data.recurrenceRule,
+										});
+									}}
 								/>
 							</div>
 							{/* Pomodoro */}

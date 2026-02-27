@@ -15,7 +15,6 @@ import com.todoapp.resource.dto.SubtaskDto;
 import com.todoapp.resource.dto.TaskDto;
 import com.todoapp.resource.dto.TaskDto.SyncResult;
 import com.todoapp.resource.dto.TaskDto.SyncTaskDto;
-import com.todoapp.resource.model.Category;
 import com.todoapp.resource.model.Subtask;
 import com.todoapp.resource.model.Task;
 import com.todoapp.resource.model.TaskList;
@@ -163,7 +162,7 @@ public class TaskService {
         Boolean isRecurring = taskCreateRequest.isRecurring();
         RecurrenceRuleDto recurrenceRule = taskCreateRequest.recurrenceRule();
 
-        if (Boolean.TRUE.equals(isRecurring) && recurrenceRule != null) {
+        if ((Boolean.TRUE.equals(isRecurring) || recurrenceRule != null) && recurrenceRule != null) {
             String rruleString = recurrenceRule.toRRuleString();
             return createRecurringTasks(taskCreateRequest, userId, rruleString, finalTaskListId);
         }
@@ -294,7 +293,7 @@ public class TaskService {
                 .description(taskCreateRequest.description());
 
         // Set recurring fields
-        if (isRecurring) {
+        if (isRecurring || recurrenceRule != null) {
             taskBuilder.isRecurring(true);
             if (recurrenceRule != null) {
                 taskBuilder.recurrenceRule(recurrenceRule);
@@ -326,7 +325,7 @@ public class TaskService {
         return saved;
     }
 
-    private Category resolveCategory(TaskDto.Create request, String userId) {
+    private com.todoapp.resource.model.Category resolveCategory(TaskDto.Create request, String userId) {
         if (request.categoryId() != null) {
             return categoryRepository.findById(request.categoryId())
                     .orElseThrow(() -> new IllegalArgumentException("Category not found"));
@@ -378,9 +377,11 @@ public class TaskService {
             }
         }
 
+        log.info("[TaskService] deleteTask before save: isDeleted={}", task.getIsDeleted());
         task.setIsDeleted(true);
-        taskRepository.save(task);
-        log.info("Soft deleted task {} for user: {}", id, userId);
+        Task savedTask = taskRepository.save(task);
+        log.info("[TaskService] Soft deleted task {} for user: {} (savedTask.isDeleted={})", id, userId,
+                savedTask.getIsDeleted());
     }
 
     /**
@@ -497,11 +498,12 @@ public class TaskService {
 
         // startDate is removed, scheduledStartAt is handled below }
         if (request.categoryId() != null) {
-            Category category = categoryRepository.findById(request.categoryId())
+            com.todoapp.resource.model.Category category = categoryRepository.findById(request.categoryId())
                     .orElseThrow(() -> new IllegalArgumentException("Category not found"));
             existing.setCategory(category);
         } else if (request.categoryName() != null && !request.categoryName().isBlank()) {
-            Category category = categoryRepository.findByUserIdAndName(userId, request.categoryName())
+            com.todoapp.resource.model.Category category = categoryRepository
+                    .findByUserIdAndName(userId, request.categoryName())
                     .orElseGet(() -> categoryService.getOrCreateCategory(userId, "その他", "#94a3b8"));
             existing.setCategory(category);
         }
@@ -553,6 +555,12 @@ public class TaskService {
         // Determine effective new state
         boolean effectiveIsRecurring = isNowRecurring != null ? isNowRecurring
                 : (wasRecurring != null ? wasRecurring : false);
+
+        // If they provided a new rule, they clearly intend it to be recurring
+        if (newRecurrenceRule != null) {
+            effectiveIsRecurring = true;
+        }
+
         String effectiveRule = newRecurrenceRule != null ? newRecurrenceRule : existing.getRecurrenceRule();
 
         // Check if recurrence settings changed implies cleanup/regeneration
@@ -985,7 +993,7 @@ public class TaskService {
             List<Task> tasksToUpdate = new java.util.ArrayList<>();
 
             // Resolve category if provided
-            Category category = null;
+            com.todoapp.resource.model.Category category = null;
             if (request.categoryId() != null) {
                 var categoryOpt = categoryRepository.findByIdAndUserId(request.categoryId(), userId);
                 if (categoryOpt.isEmpty()) {
@@ -1171,10 +1179,12 @@ public class TaskService {
     @Transactional
     public SyncResult syncTasks(List<SyncTaskDto> tasks,
             String userId) {
-        log.info("Syncing {} tasks for user: {}", tasks != null ? tasks.size() : 0, userId);
+        log.info("[TaskService] Syncing {} tasks for user: {}", tasks != null ? tasks.size() : 0, userId);
         if (tasks != null) {
-            tasks.forEach(t -> log.info("Task to sync: id={}, title={}, startAt={}, endAt={}", t.id(), t.title(),
-                    t.scheduledStartAt(), t.scheduledEndAt()));
+            tasks.forEach(
+                    t -> log.info("[TaskService] Task to sync: id={}, title={}, startAt={}, endAt={}, isDeleted={}",
+                            t.id(), t.title(),
+                            t.scheduledStartAt(), t.scheduledEndAt(), t.isDeleted()));
         }
 
         if (tasks == null || tasks.isEmpty()) {
@@ -1191,15 +1201,18 @@ public class TaskService {
 
                 if (Boolean.TRUE.equals(req.isDeleted()) && taskId != null && taskId > 0) {
                     // Delete
+                    log.info("Sync action: DELETE task {}", taskId);
                     deleteTask(taskId, userId);
                     deletedCount++;
                 } else if (taskId == null || taskId <= 0) {
                     // Create
+                    log.info("Sync action: CREATE task {}", req.title());
                     TaskDto.Create create = convertToCreate(req);
                     createTask(create, userId);
                     createdCount++;
                 } else {
                     // Update
+                    log.info("Sync action: UPDATE task {}", taskId);
                     TaskDto.Update update = convertToUpdate(req);
                     updateTask(taskId, update, userId);
                     updatedCount++;

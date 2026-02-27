@@ -89,6 +89,7 @@ public class TaskList {
      */
     @OneToMany(mappedBy = "taskList", cascade = CascadeType.ALL, orphanRemoval = true)
     @org.hibernate.annotations.BatchSize(size = 20)
+    @org.hibernate.annotations.Where(clause = "is_deleted = false")
     @Builder.Default
     private List<Task> tasks = new ArrayList<>();
 }

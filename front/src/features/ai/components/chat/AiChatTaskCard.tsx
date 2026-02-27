@@ -147,15 +147,29 @@ export const AiChatTaskCard: React.FC<AiChatTaskCardProps> = ({
 							<div className="flex items-center gap-1">
 								<Calendar className="w-3 h-3" />
 								{isModified ? (
-									<DiffField
-										original={task.originalTask?.scheduledStartAt?.toISOString()}
-										current={task.scheduledStartAt?.toISOString()}
-										formatValue={formatDate}
+									<DiffField<string | number>
+										original={
+											task.originalTask?.scheduledStartAt
+												? task.originalTask.scheduledStartAt instanceof Date
+													? task.originalTask.scheduledStartAt.toISOString()
+													: String(task.originalTask.scheduledStartAt)
+												: undefined
+										}
+										current={
+											task.scheduledStartAt instanceof Date
+												? task.scheduledStartAt.toISOString()
+												: (task.scheduledStartAt ?? undefined)
+										}
+										formatValue={(v) => formatDate(String(v))}
 									/>
 								) : (
 									<span>
 										{task.scheduledStartAt
-											? formatDate(task.scheduledStartAt.toISOString())
+											? formatDate(
+													task.scheduledStartAt instanceof Date
+														? task.scheduledStartAt.toISOString()
+														: task.scheduledStartAt,
+												)
 											: ""}
 									</span>
 								)}

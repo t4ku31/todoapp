@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.todoapp.resource.dto.TaskDto;
 import com.todoapp.resource.dto.TaskListDto;
-import com.todoapp.resource.model.Category;
 import com.todoapp.resource.model.Task;
 import com.todoapp.resource.model.TaskList;
 import com.todoapp.resource.model.TaskStatus;
@@ -168,27 +167,32 @@ public class TaskListService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        Map<Long, Category> categoryMap;
+        Map<Long, com.todoapp.resource.model.Category> categoryMap;
         if (categoryIds.isEmpty()) {
             categoryMap = Collections.emptyMap();
         } else {
             categoryMap = categoryRepository.findAllById(categoryIds).stream()
-                    .collect(Collectors.toMap(Category::getId, Function.identity()));
+                    .collect(Collectors.toMap(com.todoapp.resource.model.Category::getId, Function.identity()));
         }
 
         List<Task> tasks = request.tasks().stream()
-                .map(req -> Task.builder()
-                        .title(req.title())
-                        .status(TaskStatus.PENDING)
-                        .scheduledStartAt(req.scheduledStartAt() != null
-                                ? req.scheduledStartAt()
-                                : java.time.LocalDate.now().atStartOfDay().atOffset(java.time.ZoneOffset.UTC))
-                        .isAllDay(req.isAllDay() != null ? req.isAllDay() : true)
-                        .category(req.categoryId() != null ? categoryMap.get(req.categoryId()) : null)
-                        .userId(userId)
-                        .taskList(taskList)
-                        .build())
-                .toList();
+                .map(req -> {
+                    com.todoapp.resource.model.Category cat = req.categoryId() != null
+                            ? categoryMap.get(req.categoryId())
+                            : null;
+                    return Task.builder()
+                            .title(req.title())
+                            .status(TaskStatus.PENDING)
+                            .scheduledStartAt(req.scheduledStartAt() != null
+                                    ? req.scheduledStartAt()
+                                    : java.time.LocalDate.now().atStartOfDay().atOffset(java.time.ZoneOffset.UTC))
+                            .isAllDay(req.isAllDay() != null ? req.isAllDay() : true)
+                            .category(cat)
+                            .userId(userId)
+                            .taskList(taskList)
+                            .build();
+                })
+                .collect(Collectors.toList());
 
         taskList.setTasks(tasks);
 
