@@ -70,6 +70,7 @@ public class AiController {
                         // AiService.chat() 内で初回メッセージ判定 + タイトル自動生成を行う
                         AiService.ChatResult chatResult = aiService.chat(
                                         conversationId,
+                                        userId,
                                         request.prompt(),
                                         request.currentTasks(),
                                         request.projectTitle());

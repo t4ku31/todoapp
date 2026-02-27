@@ -8,10 +8,11 @@ import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.todoapp.resource.dto.TaskDto;
+import com.todoapp.resource.repository.CategoryRepository;
 import com.todoapp.resource.repository.ChatMemoryRepository;
 import com.todoapp.resource.repository.ConversationRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,6 +31,7 @@ public class AiService {
     private final ConversationRepository conversationRepository;
 
     private final ChatMemoryRepository chatMemoryRepository;
+    private final CategoryRepository categoryRepository;
 
     // ==============================================================================================
     // System Prompts
@@ -68,6 +70,33 @@ public class AiService {
                - 例: 「日付を変更して」と言われた場合、タイトルや詳細を変更してはいけません。
                - 例: 「カテゴリをAにして」と言われた場合、それ以外の属性（日付など）は元の値を維持してください。
 
+            ## デフォルト日付ルール
+            ユーザーが実行日・期日を明示しない場合、`scheduledStartAt` に今日の日付を
+            "YYYY-MM-DDT09:00:00" 形式で設定し、`isAllDay` を `true` にしてください。
+            ユーザーが具体的な時刻を指定した場合は `isAllDay` を `false` にしてください。
+
+            ## カテゴリ自動付与ルール
+            以下はユーザーが登録済みのカテゴリ一覧です。
+            タスクの内容にふさわしいカテゴリがあれば `categoryName` に設定してください。
+            どれにも該当しない場合は `categoryName` を省略してください。
+            新しいカテゴリを勝手に作成しないでください。
+            %s
+
+            ## タスク分解のガイドライン
+            ユーザーが複数のアイテムを列挙した場合、以下の基準で判断してください：
+
+            **1タスク＋サブタスクとして作成すべきケース（親子構造を優先）:**
+            - コロン（：）、ダッシュ（ー）、改行、矢印（→）などを用いて、ある項目の下に要素が並んでいる場合。
+            - 最初の項目が「まとめ」や「プロジェクト名」のような役割を果たしている場合（例：「旅行の準備：A、B、C」）。
+            - 項目間に構成要素・手順としての関係がある場合（例：「資料作成：分析、執筆」）。
+            - 「〜のサブタスクは〜」と明示されている場合。
+
+            **個別タスクとして作成すべきケース:**
+            - 各項目が完全に独立しており、共通の親テーマがない場合（例：「牛乳を買う。あとメール送る」）。
+            - 単純に並列なアイテムを列挙している場合。
+
+            迷った場合は**親タスク＋サブタスク**の構造を優先的に検討してください。
+
             ## 思考プロセス例
             ユーザー: 「実行日を明日にして」
             コンテキスト: [A(id:1, date:今日), B(id:2, date:今日)]
@@ -84,6 +113,14 @@ public class AiService {
             思考: Aは削除。Bは変更なし。
             出力: [A(id:1, isDeleted:true)]
 
+            ユーザー: 「旅行の準備：パッキング、チケット予約、保険加入」
+            思考: 「旅行の準備」という親テーマに対し、具体的な項目がコロンで続いているため、1タスク＋3サブタスクにする。
+            出力: [{title:"旅行の準備", subtasks:[{title:"パッキング"}, {title:"チケット予約"}, {title:"保険加入"}]}]
+
+            ユーザー: 「買い物：牛乳、卵、パン」
+            思考: 「買い物」という親タスクの下に、各アイテムをサブタスクとして配置する。
+            出力: [{title:"買い物", subtasks:[{title:"牛乳"}, {title:"卵"}, {title:"パン"}]}]
+
             ## タスクプロパティの定義
             各タスクオブジェクトは以下のプロパティを持ちます。適切に設定してください。
 
@@ -99,12 +136,11 @@ public class AiService {
             - `isRecurring` (Boolean): 繰り返しフラグ。期間指定や回数指定がある場合も必ず true にしてください。
             - `recurrenceRule` (Object): 繰り返しルール。**以下のJSONオブジェクト**を設定してください。
               - **JSONキーはDTO定義に準拠します (小文字)**:
-                - `frequency`: 頻度 ("DAILY", "WEEKLY", "MONTHLY", "YEARLY", "CUSTOM")
+                - `frequency`: 頻度 ("DAILY", "WEEKLY", "MONTHLY", "YEARLY")
                 - `interval`: 間隔 (整数, デフォルト: 1)。例: "2週間ごと"なら 2
                 - `byDay`: 曜日リスト (例: ["MONDAY", "WEDNESDAY", "FRIDAY"])。JavaのDayOfWeek形式(全大文字の英単語)。
                 - `count`: 回数 (整数)
                 - `until`: 終了日 ("YYYY-MM-DD")
-                - `occurs`: 特定の日付リスト (例: ["2023-12-01", "2023-12-05"])。frequencyが"CUSTOM"の場合に使用。
               - **フォーマット例**:
                 - 毎日: `{"frequency": "DAILY"}`
                 - 2週間ごと(水・金): `{"frequency": "WEEKLY", "interval": 2, "byDay": ["WEDNESDAY", "FRIDAY"]}`
@@ -113,9 +149,7 @@ public class AiService {
                 - 回数指定(5回): `{"frequency": "WEEKLY", "byDay": ["SATURDAY"], "count": 5}`
                 - 期限指定(日付): `{"frequency": "DAILY", "until": "2023-12-31"}`
 
-
             - `subtasks` (List<Object>): サブタスクのリスト（各要素は { "title": "...", "isCompleted": false }）。
-            - `isDeleted` (Boolean): 削除時は `true` に設定し、`id` を維持してください。
             - `isDeleted` (Boolean): 削除時は `true` に設定し、`id` を維持してください。
             - `status` (String): タスクのステータス ("PENDING", "COMPLETED")。
 
@@ -140,7 +174,8 @@ public class AiService {
             ChatMemory chatMemory,
             AiConversationService conversationService,
             ConversationRepository conversationRepository,
-            ChatMemoryRepository chatMemoryRepository) {
+            ChatMemoryRepository chatMemoryRepository,
+            CategoryRepository categoryRepository) {
         // Build the basic chatClient first
         this.chatClient = chatClientBuilder.build();
 
@@ -155,24 +190,20 @@ public class AiService {
         this.conversationService = conversationService;
         this.conversationRepository = conversationRepository;
         this.chatMemoryRepository = chatMemoryRepository;
+        this.categoryRepository = categoryRepository;
     }
 
     /**
      * 会話型タスク管理のメイン処理
      *
-     * @param command チャット実行コマンド
-     * @return チャット結果（プレビュー用のタスクリスト + 生成タイトル）
-     */
-    /**
-     * 会話型タスク管理のメイン処理
-     *
      * @param conversationId 会話ID
+     * @param userId         認証済みユーザーID
      * @param userInput      ユーザーの入力
      * @param currentTasks   現在のタスクリスト (DTO, with String/Long IDs)
      * @param projectTitle   プロジェクト名（あれば）
      * @return チャット結果（プレビュー用のタスクリスト + 生成タイトル）
      */
-    public ChatResult chat(String conversationId, String userInput,
+    public ChatResult chat(String conversationId, String userId, String userInput,
             List<TaskDto.SyncTaskDto> currentTasks,
             String projectTitle) {
         // 初回メッセージかどうかをチェック（AIリクエスト前にカウント）
@@ -182,8 +213,10 @@ public class AiService {
 
         String todayDate = LocalDate.now().toString();
         String tasksContext = formatTasksContextAsJson(currentTasks, projectTitle);
-        log.info("AI Chat Context JSON: {}", tasksContext); // Log the context for debugging
-        String systemPrompt = String.format(SYSTEM_PROMPT, todayDate, tasksContext);
+        String categoriesContext = formatCategoriesContext(userId);
+        log.info("AI Chat Context JSON: {}", tasksContext);
+        log.info("AI Chat Categories: {}", categoriesContext);
+        String systemPrompt = String.format(SYSTEM_PROMPT, categoriesContext, todayDate, tasksContext);
 
         String generatedTitle = null;
 
@@ -197,6 +230,7 @@ public class AiService {
 
             String cleanedResponse = cleanJsonResponse(responseContent);
             ObjectMapper mapper = new ObjectMapper();
+            mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
             TaskDto.SyncTaskList result = mapper.readValue(cleanedResponse, TaskDto.SyncTaskList.class);
 
             log.info("AI Chat result - advice: {}", result.advice());
@@ -287,11 +321,6 @@ public class AiService {
         }
 
         try {
-            // AiContextTask is already a DTO suitable for JSON context, but we might want
-            // to ensure format
-            // or we can just serialize it directly.
-            // Let's serialize the subset or the DTO itself.
-
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
             mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
@@ -304,6 +333,26 @@ public class AiService {
         } catch (Exception e) {
             log.error("Failed to format tasks context as JSON", e);
             return "[]";
+        }
+    }
+
+    /**
+     * ユーザーの登録済みカテゴリをプロンプト用の文字列に変換
+     */
+    private String formatCategoriesContext(String userId) {
+        try {
+            List<com.todoapp.resource.model.Category> categories = categoryRepository.findAllByUserId(userId);
+            if (categories.isEmpty()) {
+                return "（カテゴリ未登録）";
+            }
+            StringBuilder sb = new StringBuilder();
+            for (com.todoapp.resource.model.Category c : categories) {
+                sb.append("- ").append(c.getName()).append("\n");
+            }
+            return sb.toString().trim();
+        } catch (Exception e) {
+            log.error("Failed to fetch categories for user: {}", userId, e);
+            return "（カテゴリ取得失敗）";
         }
     }
 

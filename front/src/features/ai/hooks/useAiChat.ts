@@ -165,7 +165,7 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 						params: { conversationId: conversation.id },
 					},
 				);
-
+				console.log("response", response);
 				if (response.data && response.data.length > 0) {
 					const historyMessages: ChatMessage[] = response.data
 						.filter((msg) => msg.role !== "system" && msg.role !== "tool") // Filter out system/tool messages if needed

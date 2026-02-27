@@ -4,12 +4,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.todoapp.resource.model.TaskStatus;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import com.todoapp.resource.model.TaskStatus;
 
+import com.todoapp.resource.dto.RecurrenceRuleDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,6 +19,7 @@ import lombok.NoArgsConstructor;
 
 public class TaskDto {
 
+        @Builder
         @Schema(name = "TaskCreate", description = "タスク作成リクエスト")
         public record Create(
                         @Schema(description = "タスクのタイトル（必須）") String title,

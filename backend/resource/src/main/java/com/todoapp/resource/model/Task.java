@@ -10,6 +10,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.todoapp.resource.dto.RecurrenceRuleDto;
 
 import io.micrometer.common.lang.NonNull;
 import jakarta.persistence.CascadeType;
@@ -113,12 +114,12 @@ public class Task {
     private String recurrenceRule;
 
     @JsonProperty("recurrenceRule")
-    public com.todoapp.resource.dto.RecurrenceRuleDto getRecurrenceRuleDto() {
+    public RecurrenceRuleDto getRecurrenceRuleDto() {
         if (recurrenceRule == null || recurrenceRule.isBlank()) {
             return null;
         }
         try {
-            return com.todoapp.resource.dto.RecurrenceRuleDto.fromRRuleString(recurrenceRule);
+            return RecurrenceRuleDto.fromRRuleString(recurrenceRule);
         } catch (Exception e) {
             return null;
         }
@@ -178,7 +179,7 @@ public class Task {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id")
-    private Category category;
+    private com.todoapp.resource.model.Category category;
 
     /**
      * Subtasks belonging to this task

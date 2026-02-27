@@ -119,6 +119,4 @@ For team members joining the project:
 2. Read the [Environment Variables Guide](./README.env.md)
 3. Ask team lead for API keys (never commit them!)
 
-## 📝 License
 
-[Your License Here]
