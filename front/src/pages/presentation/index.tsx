@@ -555,7 +555,7 @@ export default function PresentationPage() {
 						を実践し、主要クラウド上でのシステム運用能力を高める。
 					</RationaleItem>
 					<RationaleItem icon="📖" title="公式ドキュメントの網羅的な学習">
-						AIによる機能生成に留まらず、
+						AIによる機能生成→該当する公式ドキュメントを読んで確認する、から
 						<strong className="text-indigo-400 font-medium">
 							公式ドキュメントを深く読み込み、技術スタックへの根本的な理解度を向上させる
 						</strong>
@@ -584,8 +584,8 @@ export default function PresentationPage() {
 				<h1 className="text-6xl md:text-8xl font-extrabold tracking-tight bg-gradient-to-br from-indigo-500 to-cyan-400 bg-clip-text text-transparent mb-6">
 					Thank You
 				</h1>
-				<p className="text-2xl md:text-3xl text-muted-foreground font-light mb-12">
-					ご質問をお待ちしています
+				<p className="text-2xl md:text-3xl text-muted-foreground font-light mb-4">
+					お時間をいただき、ありがとうございました！！
 				</p>
 				<Link to="/home">
 					<Button

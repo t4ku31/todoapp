@@ -7,6 +7,7 @@ import {
 	Settings,
 	TrendingUp,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Logo from "@/components/Logo";
 import {
@@ -32,6 +33,20 @@ export function AppSidebar({ className, ...props }: AppSidebarProps) {
 		{ icon: TrendingUp, path: "/analytics", label: "Analytics" },
 		{ icon: Settings, path: "/settings", label: "Settings" },
 	];
+
+	const [hasSeenSlideGuide, setHasSeenSlideGuide] = useState(true);
+
+	useEffect(() => {
+		const seen = localStorage.getItem("hasSeenSlideGuide");
+		setHasSeenSlideGuide(seen === "true");
+	}, []);
+
+	const handleSlideClick = () => {
+		if (!hasSeenSlideGuide) {
+			localStorage.setItem("hasSeenSlideGuide", "true");
+			setHasSeenSlideGuide(true);
+		}
+	};
 
 	return (
 		<Sidebar
@@ -78,29 +93,38 @@ export function AppSidebar({ className, ...props }: AppSidebarProps) {
 					<div className="w-12 h-px bg-slate-200/60 mb-2" />
 
 					{/* Presentation Button - Differentiated */}
-					<SidebarMenuButton
-						asChild
-						className={cn(
-							"h-14 w-14 rounded-2xl flex items-center justify-center transition-all duration-300",
-							isActive("/presentation")
-								? "bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-orange-500/20 scale-110"
-								: "bg-amber-50/50 text-amber-600 border border-amber-100/50 hover:bg-amber-100 hover:scale-105",
+					<div className="relative flex justify-center w-full">
+						{!hasSeenSlideGuide && (
+							<div className="absolute -top-12 left-1/2 -translate-x-1/2 w-max bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg animate-bounce z-50">
+								Click here!
+								<div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-blue-500 rotate-45" />
+							</div>
 						)}
-					>
-						<Link
-							to="/presentation"
-							className="flex items-center justify-center"
-							title="Presentation"
+						<SidebarMenuButton
+							asChild
+							className={cn(
+								"h-14 w-14 rounded-2xl flex items-center justify-center transition-all duration-300",
+								isActive("/presentation")
+									? "bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-orange-500/20 scale-110"
+									: "bg-amber-50/50 text-amber-600 border border-amber-100/50 hover:bg-amber-100 hover:scale-105",
+							)}
 						>
-							<Presentation
-								className={cn(
-									"h-6 w-6",
-									isActive("/presentation") ? "text-white" : "text-amber-500",
-								)}
-								strokeWidth={2}
-							/>
-						</Link>
-					</SidebarMenuButton>
+							<Link
+								to="/presentation"
+								className="flex items-center justify-center"
+								title="Presentation"
+								onClick={handleSlideClick}
+							>
+								<Presentation
+									className={cn(
+										"h-6 w-6",
+										isActive("/presentation") ? "text-white" : "text-amber-500",
+									)}
+									strokeWidth={2}
+								/>
+							</Link>
+						</SidebarMenuButton>
+					</div>
 
 					{/* Logout Button */}
 					<SidebarMenuButton
