@@ -364,6 +364,10 @@ public class TaskController {
             @AuthenticationPrincipal Jwt jwt) {
         log.info("[TaskController] POST /api/tasks/sync - user: {}, tasks: {}",
                 jwt.getSubject(), tasks != null ? tasks.size() : 0);
+        if (tasks != null) {
+            tasks.forEach(t -> log.info("[TaskController] Task to sync: id={}, title={}, isDeleted={}", t.id(),
+                    t.title(), t.isDeleted()));
+        }
         String userId = jwt.getSubject();
 
         TaskDto.SyncResult result = taskService.syncTasks(tasks, userId);

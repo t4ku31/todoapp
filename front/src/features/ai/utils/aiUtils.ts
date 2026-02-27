@@ -9,7 +9,7 @@ import {
 	deserializeRecurrenceConfig,
 	serializeRecurrenceConfig,
 } from "@/features/task/utils/recurrenceUtils";
-import type { AiChatResponse, ParsedTask, SyncTask } from "../types";
+import type { ParsedTask, SyncTask } from "../types";
 
 export const createEmptySubtask = (orderIndex: number): Subtask => ({
 	title: "",
@@ -125,7 +125,7 @@ export const toSyncTask = (task: Task | ParsedTask): SyncTask => {
 
 export const mergeTasks = (
 	currentTasks: ParsedTask[],
-	responseTasks: NonNullable<AiChatResponse["result"]>["tasks"],
+	responseTasks: SyncTask[],
 ): ParsedTask[] => {
 	// Map response tasks to ParsedTask
 	return (responseTasks || []).map((responseTask, index) => {
@@ -176,8 +176,9 @@ export const mergeTasks = (
 			taskListTitle: responseTask.taskListTitle,
 			subtasks:
 				normalizeSubtasks(responseTask.subtasks) ?? matchedTask?.subtasks,
+			isDeleted: responseTask.isDeleted ?? matchedTask?.isDeleted ?? false,
 			// If we matched an existing task, keep the reference
-			originalTask: matchedTask?.originalTask,
+			originalTask: matchedTask?.originalTask || matchedTask,
 		} as ParsedTask;
 	});
 };
@@ -189,9 +190,12 @@ export const generateDiffMessage = (
 	let diffMessage = advice || "タスクを生成しました。";
 
 	const createCount = tasks.filter((t) => !isExistingTask(t)).length;
-	const modifyCount = tasks.filter((t) => isExistingTask(t)).length;
+	const modifyCount = tasks.filter(
+		(t) => isExistingTask(t) && !t.isDeleted,
+	).length;
+	const deleteCount = tasks.filter((t) => t.isDeleted).length;
 
-	if (createCount > 0 || modifyCount > 0) {
+	if (createCount > 0 || modifyCount > 0 || deleteCount > 0) {
 		diffMessage += "\n\n";
 		if (createCount > 0) {
 			diffMessage += `🆕 **${createCount}件の新規タスク**:\n`;
@@ -205,7 +209,15 @@ export const generateDiffMessage = (
 			if (createCount > 0) diffMessage += "\n";
 			diffMessage += `📝 **${modifyCount}件の変更タスク**:\n`;
 			diffMessage += tasks
-				.filter((t) => isExistingTask(t))
+				.filter((t) => isExistingTask(t) && !t.isDeleted)
+				.map((t) => `• ${t.title}`)
+				.join("\n");
+		}
+		if (deleteCount > 0) {
+			if (createCount > 0 || modifyCount > 0) diffMessage += "\n";
+			diffMessage += `🗑️ **${deleteCount}件の削除タスク**:\n`;
+			diffMessage += tasks
+				.filter((t) => t.isDeleted)
 				.map((t) => `• ${t.title}`)
 				.join("\n");
 		}
@@ -228,6 +240,7 @@ export const createPreviewTasks = (
 		const taskId = t.id;
 
 		return {
+			...((t.originalTask as Task) || {}),
 			id: taskId,
 			title: t.title,
 			description: t.description,
@@ -241,7 +254,7 @@ export const createPreviewTasks = (
 			isRecurring: t.isRecurring,
 			recurrenceRule: t.recurrenceRule,
 			subtasks: t.subtasks,
-			isDeleted: false,
+			isDeleted: t.isDeleted ?? false,
 			suggestedTaskListTitle: t.taskListTitle,
 		} as Task;
 	});

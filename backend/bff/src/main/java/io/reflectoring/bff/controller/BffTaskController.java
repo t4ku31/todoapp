@@ -2,7 +2,6 @@ package io.reflectoring.bff.controller;
 
 import java.util.List;
 
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +24,7 @@ import io.reflectoring.bff.service.BffTaskService;
 @RequestMapping("/api")
 public class BffTaskController {
 
-    private static final Logger log = LoggerFactory.getLogger(BffTaskController.class);
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(BffTaskController.class);
     private final BffTaskService taskService;
 
     public BffTaskController(BffTaskService taskService) {

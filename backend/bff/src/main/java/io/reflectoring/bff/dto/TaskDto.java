@@ -4,9 +4,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import io.reflectoring.bff.dto.RecurrenceRuleDto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import io.reflectoring.bff.dto.SubtaskDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public class TaskDto {
@@ -15,7 +17,9 @@ public class TaskDto {
         public record Create(
                         @Schema(description = "Task title", example = "Buy milk") String title,
                         @Schema(description = "Task list ID", example = "1") Long taskListId,
+                        @Schema(description = "Task list title") String taskListTitle,
                         @Schema(description = "Category ID", example = "1") Long categoryId,
+                        @Schema(description = "Category name") String categoryName,
                         @Schema(description = "Subtasks list") List<SubtaskDto.Create> subtasks,
                         @Schema(description = "Estimated number of pomodoros", example = "2") Integer estimatedPomodoros,
                         @Schema(description = "Whether this is a recurring task") Boolean isRecurring,
@@ -24,6 +28,7 @@ public class TaskDto {
                         @Schema(description = "Scheduled start time") java.time.OffsetDateTime scheduledStartAt,
                         @Schema(description = "Scheduled end time") java.time.OffsetDateTime scheduledEndAt,
                         @Schema(description = "Whether this is an all-day event") Boolean isAllDay,
+                        @Schema(description = "Task description") String description,
                         @Schema(description = "Task status", example = "PENDING") TaskStatus status) {
         }
 
@@ -33,7 +38,9 @@ public class TaskDto {
                         @Schema(description = "Task title", example = "Buy milk") String title,
                         @Schema(description = "Task status", example = "COMPLETED") TaskStatus status,
                         @Schema(description = "Category ID", example = "1") Long categoryId,
+                        @Schema(description = "Category name") String categoryName,
                         @Schema(description = "Task list ID", example = "1") Long taskListId,
+                        @Schema(description = "Task list title") String taskListTitle,
                         @Schema(description = "Completed at timestamp", example = "2023-12-24T10:00:00") LocalDateTime completedAt,
                         @Schema(description = "Estimated number of pomodoros", example = "2") Integer estimatedPomodoros,
                         @Schema(description = "Whether this is a recurring task") Boolean isRecurring,
@@ -156,10 +163,10 @@ public class TaskDto {
                         String categoryName,
                         String taskListTitle,
                         Boolean isRecurring,
-                        String recurrencePattern,
+                        RecurrenceRuleDto recurrenceRule,
                         Boolean isDeleted,
                         List<SubtaskDto.Summary> subtasks,
-                        TaskStatus status,
+                        String status,
                         @com.fasterxml.jackson.annotation.JsonProperty("suggestedTaskList") String suggestedTaskListTitle) {
         }
 
