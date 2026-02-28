@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.todoapp.resource.dto.TaskDto;
 import com.todoapp.resource.repository.CategoryRepository;
-import com.todoapp.resource.repository.ChatMemoryRepository;
+import com.todoapp.resource.repository.ChatMemoryEntityRepository;
 import com.todoapp.resource.repository.ConversationRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +30,7 @@ public class AiService {
     private final AiConversationService conversationService;
     private final ConversationRepository conversationRepository;
 
-    private final ChatMemoryRepository chatMemoryRepository;
+    private final ChatMemoryEntityRepository chatMemoryRepository;
     private final CategoryRepository categoryRepository;
 
     // ==============================================================================================
@@ -174,7 +174,7 @@ public class AiService {
             ChatMemory chatMemory,
             AiConversationService conversationService,
             ConversationRepository conversationRepository,
-            ChatMemoryRepository chatMemoryRepository,
+            ChatMemoryEntityRepository chatMemoryRepository,
             CategoryRepository categoryRepository) {
         // Build the basic chatClient first
         this.chatClient = chatClientBuilder.build();
@@ -206,16 +206,23 @@ public class AiService {
     public ChatResult chat(String conversationId, String userId, String userInput,
             List<TaskDto.SyncTaskDto> currentTasks,
             String projectTitle) {
+            
+        // 操作対象の会話が存在する場合、自身の所有物かチェック
+        java.util.Optional<com.todoapp.resource.model.Conversation> convOpt = conversationRepository.findById(conversationId);
+        if (convOpt.isPresent() && !convOpt.get().getUserId().equals(userId)) {
+            log.warn("[Security] Unauthorized access attempt: user {} tried to chat in conversation {}", userId, conversationId);
+            throw new org.springframework.security.access.AccessDeniedException("この会話に対するアクセス権限がありません。");
+        }
+
         // 初回メッセージかどうかをチェック（AIリクエスト前にカウント）
         int messageCount = conversationRepository.countChatMessages(conversationId);
         boolean isFirstMessage = (messageCount == 0);
-        log.info("AI Chat - messageCount: {}, isFirstMessage: {}", messageCount, isFirstMessage);
+        log.debug("AI Chat - messageCount: {}, isFirstMessage: {}", messageCount, isFirstMessage);
 
         String todayDate = LocalDate.now().toString();
         String tasksContext = formatTasksContextAsJson(currentTasks, projectTitle);
         String categoriesContext = formatCategoriesContext(userId);
-        log.info("AI Chat Context JSON: {}", tasksContext);
-        log.info("AI Chat Categories: {}", categoriesContext);
+        
         String systemPrompt = String.format(SYSTEM_PROMPT, categoriesContext, todayDate, tasksContext);
 
         String generatedTitle = null;
@@ -233,14 +240,14 @@ public class AiService {
             mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
             TaskDto.SyncTaskList result = mapper.readValue(cleanedResponse, TaskDto.SyncTaskList.class);
 
-            log.info("AI Chat result - advice: {}", result.advice());
-            log.info("AI Chat result - tasks: {}", result.tasks());
+            log.debug("AI Chat result - advice: {}", result.advice());
+            log.debug("AI Chat result - tasks: {}", result.tasks());
             // 初回メッセージの場合、タイトルを自動生成
             if (isFirstMessage) {
-                log.info("First message detected, generating title...");
+                log.debug("First message detected, generating title...");
                 generatedTitle = generateConversationTitle(userInput);
-                conversationService.updateTitle(conversationId, generatedTitle);
-                log.info("Generated and saved title: {}", generatedTitle);
+                conversationService.updateTitle(conversationId, generatedTitle, userId);
+                log.debug("Generated and saved title: {}", generatedTitle);
             }
             return new ChatResult(result, generatedTitle);
         } catch (Exception e) {
@@ -275,7 +282,7 @@ public class AiService {
      * @return 生成されたタイトル（3〜8語程度）
      */
     public String generateConversationTitle(String firstUserMessage) {
-        log.info("Generating conversation title for: {}", firstUserMessage);
+        log.debug("Generating conversation title for: {}", firstUserMessage);
         try {
             String prompt = String.format("""
                     以下のユーザーメッセージから、この会話の内容を表す簡潔なタイトルを生成してください。
@@ -300,7 +307,7 @@ public class AiService {
 
             // 改行や余分な空白を除去
             title = title != null ? title.trim().replaceAll("[\"']", "") : "New Chat";
-            log.info("Generated title: {}", title);
+            log.debug("Generated title: {}", title);
             return title.isEmpty() ? "New Chat" : title;
         } catch (Exception e) {
             log.error("Failed to generate title: {}", e.getMessage());
@@ -363,12 +370,17 @@ public class AiService {
     // For now, the chat context uses the incoming DTOs directly.
 
     public List<com.todoapp.resource.dto.MessageDto> getMessages(String userId, String conversationId) {
-        // Note: In a production environment, you should verify that the conversationId
-        // belongs to the userId
-        log.info("[AiService] getMessages - fetching messages for conversationId: {}", conversationId);
+        // 対象の会話履歴が存在する場合、自身の所有物かチェック
+        java.util.Optional<com.todoapp.resource.model.Conversation> convOpt = conversationRepository.findById(conversationId);
+        if (convOpt.isPresent() && !convOpt.get().getUserId().equals(userId)) {
+            log.warn("[Security] Unauthorized GET messages attempt: user {} for conversation {}", userId, conversationId);
+            throw new org.springframework.security.access.AccessDeniedException("この会話に対するアクセス権限がありません。");
+        }
+
+        log.debug("[AiService] getMessages - fetching messages for conversationId: {}", conversationId);
         List<com.todoapp.resource.model.ChatMemoryEntity> entities = chatMemoryRepository
                 .findByConversationIdOrderByTimestampAsc(conversationId);
-        log.info("[AiService] getMessages - fetched {} messages", entities);
+        log.debug("[AiService] getMessages - fetched {} messages", entities.size());
 
         return entities.stream()
                 .map(entity -> com.todoapp.resource.dto.MessageDto.builder()

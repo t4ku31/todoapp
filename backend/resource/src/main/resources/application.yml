@@ -5,6 +5,7 @@ spring:
         repository:
           jdbc:
             initialize-schema: never
+            table-name: spring_ai_chat_memory
     google:
       genai:
         api-key: ${SPRING_AI_GOOGLE_GENAI_API_KEY:dummy-api-key}
@@ -51,6 +52,12 @@ logging:
     com.todoapp.resource: INFO
   file:
     name: /home/takumi/todo-app/backend/logs/app1.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
+      total-size-cap: 100MB
+      file-name-pattern: ${logging.file.name}.%d{yyyy-MM-dd}.%i.gz
 
 
 app:
