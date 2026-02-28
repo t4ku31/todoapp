@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { apiClient } from "@/config/env";
 import { taskKeys } from "@/features/task/queries/queryKeys";
@@ -52,6 +52,14 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 		useState<string>("New Chat");
 	const [conversations, setConversations] = useState<Conversation[]>([]);
 	const [isInitializing, setIsInitializing] = useState(true);
+
+	// Create a ref to track the currently active conversation
+	// This helps prevent async race conditions when switching chats
+	const activeConversationRef = useRef<string>("");
+
+	useEffect(() => {
+		activeConversationRef.current = conversationId;
+	}, [conversationId]);
 
 	// Fetch active conversation on mount
 	useEffect(() => {
@@ -115,6 +123,14 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 				setConversationTitle(response.data.title || "New Chat");
 				// Add to conversation list
 				setConversations((prev) => {
+					// 既存の空チャットが再利用された場合の重複表示を防ぐ
+					const exists = prev.some((c) => c.id === response.data.id);
+					if (exists) {
+						return [
+							response.data,
+							...prev.filter((c) => c.id !== response.data.id),
+						];
+					}
 					return [response.data, ...prev];
 				});
 			}
@@ -165,7 +181,12 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 						params: { conversationId: conversation.id },
 					},
 				);
-				console.log("response", response);
+
+				// Race Condition Guard
+				if (activeConversationRef.current !== conversation.id) {
+					return;
+				}
+
 				if (response.data && response.data.length > 0) {
 					const historyMessages: ChatMessage[] = response.data
 						.filter((msg) => msg.role !== "system" && msg.role !== "tool") // Filter out system/tool messages if needed
@@ -175,7 +196,6 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 							content: msg.content,
 						}));
 					setMessages(historyMessages);
-					console.log("historyMessages", historyMessages);
 				} else {
 					// Fallback if no messages found
 					setMessages([
@@ -335,13 +355,9 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 		if (selectedTasks.length === 0) return;
 
 		setIsLoading(true);
-		console.log("selectedTasks", selectedTasks);
 		try {
 			const syncPayload = selectedTasks.map(toSyncTask);
-			console.log("syncPayload", syncPayload);
-
 			const result = await syncTasks(syncPayload);
-			console.log("result", result);
 
 			if (result.success) {
 				setMessages((prev) => [
@@ -389,6 +405,8 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 	const sendMessage = useCallback(async () => {
 		if (!input.trim() || isLoading) return;
 
+		const currentConversationId = conversationId;
+
 		const userMessage: ChatMessage = {
 			id: `user-${Date.now()}`,
 			role: "user",
@@ -424,7 +442,6 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 				...nonOverlappingContext,
 				...currentPreviewTasks,
 			];
-			console.log("~~~~~~~~~~~~~~~~~~~~finalContextTasks", finalContextTasks);
 
 			// Transform tasks to match backend contract (SyncTask)
 			const syncTasksPayload = finalContextTasks.map(toSyncTask);
@@ -435,14 +452,17 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 				currentTasks: syncTasksPayload,
 				projectTitle,
 			};
-			console.log("~~~~~~~~~~~~~~~~~~~~request", request);
 
 			const response = await apiClient.post<AiChatResponse>(
 				"/api/ai/tasks/chat",
 				request,
 			);
 
-			console.log("~~~~~~~~~~~~~~~~~~~~response from chat", response);
+			// Race Condition Guard
+			if (activeConversationRef.current !== currentConversationId) {
+				return;
+			}
+
 			if (response.data.success) {
 				const result = response.data;
 
@@ -450,10 +470,8 @@ export function useAiChat({ isOpen, onClose, taskLists }: UseAiChatProps) {
 				if (result.result?.tasks) {
 					// Use aiUtils.mergeTasks to handle merging logic
 					const currentStoreTasks = useAiPreviewStore.getState().aiPreviewTasks;
-
 					const nextTasks = mergeTasks(currentStoreTasks, result.result.tasks);
 
-					console.log("nextTasks", nextTasks);
 					setAiPreviewTasks(nextTasks);
 					setIsTaskListExpanded(true);
 				}

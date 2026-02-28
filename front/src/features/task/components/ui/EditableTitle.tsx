@@ -88,8 +88,9 @@ export function EditableTitle({
 		);
 	}
 
+	const safeTitle = title || "";
 	const displayTitle =
-		title.length > 50 ? `${title.substring(0, 50)}...` : title;
+		safeTitle.length > 50 ? `${safeTitle.substring(0, 50)}...` : safeTitle;
 
 	return (
 		<button

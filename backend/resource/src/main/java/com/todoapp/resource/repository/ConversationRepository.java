@@ -13,6 +13,6 @@ import com.todoapp.resource.model.Conversation;
 public interface ConversationRepository extends JpaRepository<Conversation, String> {
     List<Conversation> findByUserIdOrderByUpdatedAtDesc(String userId);
 
-    @NativeQuery(value = "SELECT COUNT(*) FROM SPRING_AI_CHAT_MEMORY WHERE conversation_id = :conversationId")
+    @NativeQuery(value = "SELECT COUNT(*) FROM spring_ai_chat_memory WHERE conversation_id = :conversationId")
     int countChatMessages(@Param("conversationId") String conversationId);
 }
