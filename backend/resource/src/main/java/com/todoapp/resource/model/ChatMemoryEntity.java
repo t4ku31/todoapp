@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "SPRING_AI_CHAT_MEMORY")
+@Table(name = "spring_ai_chat_memory")
 @IdClass(ChatMemoryId.class)
 public class ChatMemoryEntity {
 

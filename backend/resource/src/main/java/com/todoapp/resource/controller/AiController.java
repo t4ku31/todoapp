@@ -61,9 +61,9 @@ public class AiController {
                                 ? request.conversationId()
                                 : userId;
 
-                log.info("[POST /api/ai/tasks/chat] Request by user: {}, conversationId: {}", userId, conversationId);
-                log.info("[POST /api/ai/tasks/chat] Prompt: {}", request.prompt());
-                log.info("[POST /api/ai/tasks/chat] Context tasks count: {}",
+                log.debug("[POST /api/ai/tasks/chat] Request by user: {}, conversationId: {}", userId, conversationId);
+                log.debug("[POST /api/ai/tasks/chat] Prompt: {}", request.prompt());
+                log.debug("[POST /api/ai/tasks/chat] Context tasks count: {}",
                                 request.currentTasks() != null ? request.currentTasks().size() : 0);
 
                 try {
@@ -75,7 +75,7 @@ public class AiController {
                                         request.currentTasks(),
                                         request.projectTitle());
 
-                        log.info("[POST /api/ai/tasks/chat] generatedTitle: {}", chatResult.generatedTitle());
+                        log.debug("[POST /api/ai/tasks/chat] generatedTitle: {}", chatResult.generatedTitle());
                         return ResponseEntity.ok(AiTaskDto.ChatResponse.success(
                                         chatResult.result(),
                                         chatResult.generatedTitle()));

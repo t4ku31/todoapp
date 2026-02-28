@@ -3,9 +3,10 @@ package com.todoapp.resource.config;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.memory.repository.jdbc.JdbcChatMemoryRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.PlatformTransactionManager;
 
 /**
  * ChatMemory の設定クラス
@@ -14,13 +15,21 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ChatMemoryConfig {
 
-    @Autowired
-    JdbcChatMemoryRepository chatMemoryRepository;
+    @Bean
+    JdbcChatMemoryRepository jdbcChatMemoryRepository(JdbcTemplate jdbcTemplate,
+            PlatformTransactionManager transactionManager, LowercaseChatMemoryDialect dialect) {
+        
+        return JdbcChatMemoryRepository.builder()
+                .jdbcTemplate(jdbcTemplate)
+                .transactionManager(transactionManager)
+                .dialect(dialect)
+                .build();
+    }
 
     @Bean
-    ChatMemory chatMemory() {
+    ChatMemory chatMemory(JdbcChatMemoryRepository jdbcChatMemoryRepository) {
         return MessageWindowChatMemory.builder()
-                .chatMemoryRepository(chatMemoryRepository)
+                .chatMemoryRepository(jdbcChatMemoryRepository)
                 .maxMessages(20)
                 .build();
     }

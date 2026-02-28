@@ -33,9 +33,9 @@ public class AiConversationController {
     @GetMapping
     public ResponseEntity<List<Conversation>> getConversations(@AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getSubject();
-        log.info("[ConversationController] GET /api/ai/conversations - userId: {}", userId);
+        log.debug("[ConversationController] GET /api/ai/conversations - userId: {}", userId);
         List<Conversation> result = conversationService.getConversations(userId);
-        log.info("[ConversationController] GET /api/ai/conversations - returning {} conversations", result.size());
+        log.debug("[ConversationController] GET /api/ai/conversations - returning {} conversations", result.size());
         return ResponseEntity.ok(result);
     }
 
@@ -44,24 +44,26 @@ public class AiConversationController {
             @RequestBody Map<String, String> body) {
         String userId = jwt.getSubject();
         String title = body.get("title");
-        log.info("[ConversationController] POST /api/ai/conversations - userId: {}, title: {}", userId, title);
+        log.debug("[ConversationController] POST /api/ai/conversations - userId: {}, title: {}", userId, title);
         Conversation result = conversationService.createConversation(userId, title);
-        log.info("[ConversationController] POST /api/ai/conversations - created: id={}", result.getId());
+        log.debug("[ConversationController] POST /api/ai/conversations - created: id={}", result.getId());
         return ResponseEntity.ok(result);
     }
 
     @PatchMapping("/{id}/title")
-    public ResponseEntity<Void> updateTitle(@PathVariable String id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<Void> updateTitle(@AuthenticationPrincipal Jwt jwt, @PathVariable String id, @RequestBody Map<String, String> body) {
+        String userId = jwt.getSubject();
         String title = body.get("title");
-        log.info("[ConversationController] PATCH /api/ai/conversations/{}/title - newTitle: {}", id, title);
-        conversationService.updateTitle(id, title);
+        log.debug("[ConversationController] PATCH /api/ai/conversations/{}/title - newTitle: {}", id, title);
+        conversationService.updateTitle(id, title, userId);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteConversation(@PathVariable String id) {
-        log.info("[ConversationController] DELETE /api/ai/conversations/{}", id);
-        conversationService.deleteConversation(id);
+    public ResponseEntity<Void> deleteConversation(@AuthenticationPrincipal Jwt jwt, @PathVariable String id) {
+        String userId = jwt.getSubject();
+        log.debug("[ConversationController] DELETE /api/ai/conversations/{}", id);
+        conversationService.deleteConversation(id, userId);
         return ResponseEntity.ok().build();
     }
 }
